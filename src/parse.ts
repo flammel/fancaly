@@ -29,6 +29,7 @@ export type RPNItem =
   | Assignment
   | ValueGenerator
   | Percent;
+
 export type RPN = List<RPNItem>;
 
 type StackItem = Operator | LeftBracketOnStack | Assignment;

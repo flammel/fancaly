@@ -26,7 +26,7 @@ runTest("a : (0.1 cm - x in) to m", {
     { name: "identifier", value: "x" },
     { name: "unit", value: "in" },
     { name: ")", value: ")" },
-    { name: "identifier", value: "to" },
+    { name: "conversion", value: "to" },
     { name: "unit", value: "m" },
   ]),
 });
@@ -75,5 +75,25 @@ runTest("120 - 10 %", {
     { name: "operator", value: "-" },
     { name: "number", value: "10" },
     { name: "percent", value: "%" },
+  ]),
+});
+
+runTest("10 in to cm", {
+  type: "success",
+  tokens: new List<Token>([
+    { name: "number", value: "10" },
+    { name: "unit", value: "in" },
+    { name: "conversion", value: "to" },
+    { name: "unit", value: "cm" },
+  ]),
+});
+
+runTest("10 cm as in", {
+  type: "success",
+  tokens: new List<Token>([
+    { name: "number", value: "10" },
+    { name: "unit", value: "cm" },
+    { name: "conversion", value: "as" },
+    { name: "unit", value: "in" },
   ]),
 });

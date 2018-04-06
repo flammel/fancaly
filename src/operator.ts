@@ -116,7 +116,6 @@ export function makePercent(): Percent {
 
 export interface ValueGenerator {
   operation: (env: Environment) => Value;
-  name: string;
   type: "ValueGenerator";
 }
 
@@ -127,7 +126,6 @@ export interface ValueGenerator {
 export function makeReadVariable(varName: string): ValueGenerator {
   return {
     type: "ValueGenerator",
-    name: varName,
     operation: (env: Environment) => {
       if (env.variables[varName] !== undefined) {
         return env.variables[varName];
@@ -176,7 +174,6 @@ const aggregators: { [k: string]: ValueGenerator } = {
       const values = getAggregatorValues(env);
       return sumAggregator(values);
     },
-    name: "sum",
     type: "ValueGenerator",
   },
   average: {
@@ -188,7 +185,6 @@ const aggregators: { [k: string]: ValueGenerator } = {
       }
       return sum;
     },
-    name: "average",
     type: "ValueGenerator",
   },
 };

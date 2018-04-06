@@ -12,7 +12,8 @@ type TokenName =
   | "assignment"
   | "comment"
   | "aggregator"
-  | "percent";
+  | "percent"
+  | "conversion";
 
 export interface Token {
   name: TokenName;
@@ -152,6 +153,20 @@ function scanIdentifier(input: string): [Token, string] | null {
   return null;
 }
 
+function scanConversion(input: string): [Token, string] | null {
+  const matched = input.match(/^(to|as)(.*)$/);
+  if (matched !== null) {
+    return [
+      {
+        name: "conversion",
+        value: matched[1],
+      },
+      matched[2],
+    ];
+  }
+  return null;
+}
+
 function tryScanners(line: string): [Token, string] | null {
   const scanners = [
     scanComment,
@@ -161,6 +176,7 @@ function tryScanners(line: string): [Token, string] | null {
     scanOperator,
     scanAggregator,
     scanUnit,
+    scanConversion,
     scanIdentifier,
     scanPercent,
   ];

@@ -348,3 +348,40 @@ runTest(
     ]),
   },
 );
+
+// runTest("10 in to cm",[
+//     { name: "number", value: "10" },
+//     { name: "unit", value: "in" },
+//     { name: "conversion", value: "to" },
+//     { name: "unit", value: "cm" },
+//   ],
+//   {
+//     type: "success",
+//     rpn: new List([
+//       numericValue("10", unitless()),
+//       makeUnit("in"),
+//       numericValue("1", unitless()),
+//       getOperator("+"),
+//       makePercent(),
+//       getOperator("-"),
+//     ]),
+// });
+
+// runTest("10 cm as in", [
+//     { name: "number", value: "10" },
+//     { name: "unit", value: "cm" },
+//     { name: "conversion", value: "as" },
+//     { name: "unit", value: "in" },
+//   ],
+//   {
+//     type: "success",
+//     rpn: new List([
+//       numericValue("100", unitless()),
+//       numericValue("5", unitless()),
+//       numericValue("1", unitless()),
+//       getOperator("+"),
+//       makePercent(),
+//       getOperator("-"),
+//     ]),
+  
+// });
