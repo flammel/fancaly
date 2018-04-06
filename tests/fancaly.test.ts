@@ -8,9 +8,13 @@ function runTest(data: Array<[string, string]>) {
     const env = emptyEnvironment();
     for (const inOut of data) {
       const lexed = lex(inOut[0]);
-      expect(lexed.type).toEqual("success");
+      if (lexed.type !== "success") {
+        expect(lexed.description).toEqual("success");
+      }
       const parsed = parse(lexed.tokens);
-      expect(parsed.type).toEqual("success");
+      if (parsed.type !== "success") {
+        expect(parsed.description).toEqual("success");
+      }
       const evaluated = evaluate(parsed.rpn, env);
       expect(stringifyValue(evaluated)).toEqual(inOut[1]);
     }
@@ -35,3 +39,15 @@ runTest([
 runTest([["8", "8"], ["2", "2"], ["sum", "10"]]);
 
 runTest([["4", "4"], ["", ""], ["8", "8"], ["2", "2"], ["sum", "10"]]);
+
+runTest([["4", "4"], ["", ""], ["8", "8"], ["2", "2"], ["sum", "10"]]);
+
+runTest([["4", "4"], ["", ""], ["8", "8"], ["2", "2"], ["sum + 5", "15"]]);
+
+runTest([["4", "4"], ["", ""], ["8", "8"], ["2", "2"], ["2 * sum", "20"]]);
+
+runTest([["4", "4"], ["", ""], ["8", "8"], ["2", "2"], ["a = 2 * sum", "20"], ["a/2", "10"]]);
+
+// runTest([["120 - 10 %", "108"]]);
+
+// runTest([["4", "4"], ["", ""], ["8", "8"], ["2", "2"], ["sum + 10 %", "11"]]);

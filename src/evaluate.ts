@@ -1,10 +1,8 @@
 import {
   getOperator,
-  isAggregator,
   isAssignment,
   isOperator,
   isOperatorName,
-  isReadVariable,
   Operator,
 } from "./operator";
 import { RPN, RPNItem } from "./parse";
@@ -83,15 +81,6 @@ export function evaluate(rpn: RPN, env: Environment): Value {
       }
     }
 
-    if (curr.type === "ReadVariable") {
-      if (env.variables[curr.value] !== undefined) {
-        stack.push(env.variables[curr.value]);
-      } else {
-        stack.push(noValue());
-      }
-      continue;
-    }
-
     if (curr.type === "NumericValue") {
       stack.push(curr);
       continue;
@@ -101,17 +90,8 @@ export function evaluate(rpn: RPN, env: Environment): Value {
       continue;
     }
 
-    if (curr.type === "Aggregator") {
-      const values = [];
-      for (const val of env.lines.reverse()) {
-        if (isNumericValue(val)) {
-          values.unshift(val);
-        }
-        if (val.type === "NoValue") {
-          break;
-        }
-      }
-      stack.push(curr.operation(values));
+    if (curr.type === "ValueGenerator") {
+      stack.push(curr.operation(env));
       continue;
     }
 

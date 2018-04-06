@@ -1,5 +1,6 @@
+import { Environment } from "./evaluate";
 import { unitless } from "./unit";
-import { NumericValue, numericValue, Value } from "./value";
+import { isNumericValue, noValue, NumericValue, numericValue, Value } from "./value";
 
 type Associativity = "left" | "right";
 
@@ -94,32 +95,48 @@ export function makeAssignment(varName: string): Assignment {
 //
 //
 
-export interface ReadVariable {
-  type: "ReadVariable";
-  value: string;
-}
-
-export function isReadVariable(a: any): a is ReadVariable {
-  return a && a.type === "ReadVariable";
-}
-
-export function makeReadVariable(varName: string): ReadVariable {
-  return { type: "ReadVariable", value: varName };
+export function makeReadVariable(varName: string): ValueGenerator {
+  return { type: "ValueGenerator", name: varName, operation: (env: Environment) => {
+    if (env.variables[varName] !== undefined) {
+      return env.variables[varName];
+    } else {
+      return noValue();
+    }
+  },
+};
 }
 
 //
 //
 //
 
-export interface Aggregator {
-  operation: (values: NumericValue[]) => NumericValue;
-  operator: string;
-  type: "Aggregator";
+export interface ValueGenerator {
+  operation: (env: Environment) => Value;
+  name: string;
+  type: "ValueGenerator";
 }
 
-const aggregators: { [k: string]: Aggregator } = {
+//
+//
+//
+
+function getAggregatorValues(env: Environment): NumericValue[] {
+  const values = [];
+  for (const val of env.lines.reverse()) {
+    if (isNumericValue(val)) {
+      values.unshift(val);
+    }
+    if (val.type === "NoValue") {
+      break;
+    }
+  }
+  return values;
+}
+
+const aggregators: { [k: string]: ValueGenerator } = {
   sum: {
-    operation: (values: NumericValue[]) => {
+    operation: (env: Environment) => {
+      const values = getAggregatorValues(env);
       if (values.length === 0) {
         return numericValue("0", unitless());
       }
@@ -130,11 +147,12 @@ const aggregators: { [k: string]: Aggregator } = {
           values[0],
         );
     },
-    operator: "sum",
-    type: "Aggregator",
+    name: "sum",
+    type: "ValueGenerator",
   },
   average: {
-    operation: (values: NumericValue[]) => {
+    operation: (env: Environment) => {
+      const values = getAggregatorValues(env);
       if (values.length === 0) {
         return numericValue("0", unitless());
       }
@@ -147,8 +165,8 @@ const aggregators: { [k: string]: Aggregator } = {
 
       return numericValue(sum.value.dividedBy(values.length), sum.unit);
     },
-    operator: "average",
-    type: "Aggregator",
+    name: "average",
+    type: "ValueGenerator",
   },
 };
 
@@ -162,14 +180,6 @@ export function aggregatorNames(): string[] {
   return names;
 }
 
-export function isAggregator(a: any): a is Aggregator {
-  return a && a.type === "Aggregator";
-}
-
-export function isAggregatorName(a: any): boolean {
-  return a && a in aggregators;
-}
-
-export function getAggregator(name: string): Aggregator {
+export function getAggregator(name: string): ValueGenerator {
   return aggregators[name];
 }

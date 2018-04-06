@@ -1,6 +1,5 @@
 import { Token, Tokens } from "./lex";
 import {
-  Aggregator,
   Assignment,
   getAggregator,
   getOperator,
@@ -10,7 +9,7 @@ import {
   makeAssignment,
   makeReadVariable,
   Operator,
-  ReadVariable,
+  ValueGenerator,
 } from "./operator";
 import { Stack } from "./stack";
 import { isUnit, Unit, unitless, units } from "./unit";
@@ -23,10 +22,9 @@ export type ParserResult =
 export type RPNItem =
   | Value
   | Operator
-  | Aggregator
   | Unit
   | Assignment
-  | ReadVariable;
+  | ValueGenerator;
 export type RPN = RPNItem[];
 
 type StackItem = Operator | LeftBracketOnStack | Assignment;
@@ -65,27 +63,9 @@ function shuntingYardOperator(
   stack.push(operator);
 }
 
-function assignmentLine(tokens: Tokens, stack: Stack<StackItem>) {
-  const peek1 = tokens.peek(1);
-  const peek2 = tokens.peek(2);
-
-  if (
-    peek1.type === "notDone" &&
-    peek1.value.name === "identifier" &&
-    peek2.type === "notDone" &&
-    peek2.value.name === "assignment"
-  ) {
-    tokens.next();
-    tokens.next();
-    stack.push(makeAssignment(peek1.value.value));
-  }
-}
-
 export function parse(tokens: Tokens): ParserResult {
   const stack: Stack<StackItem> = new Stack();
   const queue: RPN = [];
-
-  assignmentLine(tokens, stack);
 
   while (tokens.next().type !== "done") {
     const cur = tokens.current() as Token;
@@ -121,7 +101,13 @@ export function parse(tokens: Tokens): ParserResult {
     }
 
     if (cur.name === "identifier") {
-      queue.push(makeReadVariable(cur.value));
+      const peeked = tokens.peek();
+      if (peeked.type === "notDone" && peeked.value.name === "assignment") {
+        stack.push(makeAssignment(cur.value));
+        tokens.next();
+      } else {
+        queue.push(makeReadVariable(cur.value));
+      }
       continue;
     }
 
@@ -130,7 +116,7 @@ export function parse(tokens: Tokens): ParserResult {
     }
 
     if (cur.name === "assignment") {
-      return { type: "error", description: "Invalid assignment.", rpn: queue };
+      return { type: "error", description: "Assignment operators are only allowed after identifiers.", rpn: queue };
     }
 
     if (cur.name === "comment") {
@@ -139,16 +125,8 @@ export function parse(tokens: Tokens): ParserResult {
     }
 
     if (cur.name === "aggregator") {
-      if (queue.length === 0 && stack.isEmpty()) {
-        queue.push(getAggregator(cur.value));
-        continue;
-      } else {
-        return {
-          type: "error",
-          description: "Aggregator must be the only item in a line.",
-          rpn: queue,
-        };
-      }
+      queue.push(getAggregator(cur.value));
+      continue;
     }
 
     assertNever(cur.name);

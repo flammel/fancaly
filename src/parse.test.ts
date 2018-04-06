@@ -1,3 +1,4 @@
+import { Environment } from "./evaluate";
 import { Token, Tokens } from "./lex";
 import { List } from "./list";
 import {
@@ -17,11 +18,26 @@ import {
   Value,
 } from "./value";
 
+function dummyOperation(env: Environment): Value {
+  return noValue();
+}
+
+function withoutOperations(result: ParserResult): ParserResult {
+  for (const item of result.rpn) {
+    if (item.type === "ValueGenerator") {
+      item.operation = dummyOperation;
+    }
+  }
+  return result;
+}
+
 function runTest(name: string, tokens: Tokens, output: ParserResult) {
   test(name, () => {
-    expect(parse(tokens)).toEqual(output);
+    const received = parse(tokens);
+    expect(withoutOperations(received)).toEqual(withoutOperations(output));
   });
 }
+
 runTest("", new List<Token>([]), {
   type: "success",
   rpn: [],
@@ -212,5 +228,18 @@ runTest(
   {
     type: "success",
     rpn: [getAggregator("average")],
+  },
+);
+
+runTest(
+  "0 = 1",
+  new List<Token>([
+    { name: "number", value: "0" },
+    { name: "assignment", value: "=" },
+    { name: "number", value: "1" },
+  ]),
+  {type: "error", description: "Assignment operators are only allowed after identifiers.", rpn: [
+        numericValue("0", unitless())
+      ]
   },
 );
