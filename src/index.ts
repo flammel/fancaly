@@ -1,9 +1,9 @@
 import { BigNumber } from "bignumber.js";
 
 import { emptyEnvironment, evaluate } from "./evaluate";
+import { stringifyValue, Value } from "./evaluate";
 import { lex } from "./lex";
 import { parse } from "./parse";
-import { stringifyValue, Value } from "./value";
 
 import "./main.scss";
 
@@ -41,7 +41,7 @@ function update(input: NodeList) {
       continue;
     }
     const evaluated = evaluate(parsed.rpn, env);
-    if (evaluated.type === "ErrorValue") {
+    if (evaluated.type === "error") {
       addResult("error");
       continue;
     }

@@ -1,8 +1,9 @@
 import { List } from "./list";
-import { aggregatorNames, operatorNames } from "./operator";
+import { operatorNames } from "./operator";
 import { unitNames } from "./unit";
+import { aggregatorNames } from "./valueGenerator";
 
-type TokenName =
+type TokenType =
   | "identifier"
   | "number"
   | "operator"
@@ -16,7 +17,7 @@ type TokenName =
   | "conversion";
 
 export interface Token {
-  name: TokenName;
+  type: TokenType;
   value: string;
 }
 
@@ -30,7 +31,7 @@ function scanComment(input: string): [Token, string] | null {
   if (input[0] === "#") {
     return [
       {
-        name: "comment",
+        type: "comment",
         value: input,
       },
       "",
@@ -44,7 +45,7 @@ function scanParenthesis(input: string): [Token, string] | null {
   if (firstChar === "(" || firstChar === ")") {
     return [
       {
-        name: firstChar,
+        type: firstChar,
         value: firstChar,
       },
       input.substr(1),
@@ -58,7 +59,7 @@ function scanAssignment(input: string): [Token, string] | null {
   if (firstChar === ":" || firstChar === "=") {
     return [
       {
-        name: "assignment",
+        type: "assignment",
         value: firstChar,
       },
       input.substr(1),
@@ -72,7 +73,7 @@ function scanNumber(input: string): [Token, string] | null {
   if (matched !== null) {
     return [
       {
-        name: "number",
+        type: "number",
         value: matched[1],
       },
       matched[2],
@@ -86,7 +87,7 @@ function scanOperator(input: string): [Token, string] | null {
     if (input.indexOf(operator) === 0) {
       return [
         {
-          name: "operator",
+          type: "operator",
           value: operator,
         },
         input.substr(operator.length),
@@ -100,7 +101,7 @@ function scanPercent(input: string): [Token, string] | null {
   if (input.indexOf("%") === 0) {
     return [
       {
-        name: "percent",
+        type: "percent",
         value: "%",
       },
       input.substr(1),
@@ -114,7 +115,7 @@ function scanAggregator(input: string): [Token, string] | null {
     if (input.indexOf(aggregator) === 0) {
       return [
         {
-          name: "aggregator",
+          type: "aggregator",
           value: aggregator,
         },
         input.substr(aggregator.length),
@@ -129,7 +130,7 @@ function scanUnit(input: string): [Token, string] | null {
     if (input.indexOf(unit) === 0) {
       return [
         {
-          name: "unit",
+          type: "unit",
           value: unit,
         },
         input.substr(unit.length),
@@ -144,7 +145,7 @@ function scanIdentifier(input: string): [Token, string] | null {
   if (matched !== null) {
     return [
       {
-        name: "identifier",
+        type: "identifier",
         value: matched[1],
       },
       matched[2],
@@ -158,7 +159,7 @@ function scanConversion(input: string): [Token, string] | null {
   if (matched !== null) {
     return [
       {
-        name: "conversion",
+        type: "conversion",
         value: matched[1],
       },
       matched[2],

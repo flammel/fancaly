@@ -1,7 +1,7 @@
 import { emptyEnvironment, evaluate } from "../src/evaluate";
+import { stringifyValue } from "../src/evaluate";
 import { lex, Tokens } from "../src/lex";
 import { parse } from "../src/parse";
-import { stringifyValue } from "../src/value";
 
 function runTest(data: Array<[string, string]>) {
   test(data.map((x) => x[0]).join(" | "), () => {
@@ -29,12 +29,9 @@ runTest([["a: 10 + 2", "12"]]);
 
 runTest([["a: 10 + 2", "12"]]);
 
-runTest([
-  ["a: 10 + 2", "12"],
-  ["b: a / 2", "6"],
-  ["c: a * b", "72"],
-  ["c - 2", "70"],
-]);
+runTest([["a: 10 + 2", "12"], ["b: a / 2", "6"], ["c: a * b", "72"], ["c - 2", "70"]]);
+
+runTest([["d", ""]]);
 
 runTest([["8", "8"], ["2", "2"], ["sum", "10"]]);
 
@@ -46,14 +43,7 @@ runTest([["4", "4"], ["", ""], ["8", "8"], ["2", "2"], ["sum + 5", "15"]]);
 
 runTest([["4", "4"], ["", ""], ["8", "8"], ["2", "2"], ["2 * sum", "20"]]);
 
-runTest([
-  ["4", "4"],
-  ["", ""],
-  ["8", "8"],
-  ["2", "2"],
-  ["a = 2 * sum", "20"],
-  ["a/2", "10"],
-]);
+runTest([["4", "4"], ["", ""], ["8", "8"], ["2", "2"], ["a = 2 * sum", "20"], ["a/2", "10"]]);
 
 runTest([["4 cm", "4 cm"], ["8 in", "8 in"], ["sum", "24.32 cm"]]);
 

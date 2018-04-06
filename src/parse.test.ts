@@ -1,38 +1,26 @@
-import { Environment } from "./evaluate";
+import { BigNumber } from "bignumber.js";
+import { Environment, Value } from "./evaluate";
 import { Token, Tokens } from "./lex";
 import { List } from "./list";
-import {
-  getAggregator,
-  getOperator,
-  makeAssignment,
-  makePercent,
-  makeReadVariable,
-} from "./operator";
+import { getOperator } from "./operator";
 import { parse, ParserResult, RPNItem } from "./parse";
-import { isUnit, makeUnit, Unit, unitless, units } from "./unit";
-import {
-  errorValue,
-  isNumericValue,
-  noValue,
-  NumericValue,
-  numericValue,
-  Value,
-} from "./value";
+import { getUnit, Unit, unitless, units } from "./unit";
+import { getAggregator, makeReadVariable } from "./valueGenerator";
 
 function dummyOperation(env: Environment): Value {
-  return noValue();
+  return { type: "empty" };
 }
 
 function withoutOperations(result: ParserResult): ParserResult {
   for (const item of result.rpn.items()) {
-    if (item.type === "ValueGenerator") {
-      item.operation = dummyOperation;
+    if (item.type === "valueGenerator") {
+      item.generator.operation = dummyOperation;
     }
   }
   return result;
 }
 
-function runTest(name: string, tokens: Token[], output: ParserResult) {
+function runTest(type: string, tokens: Token[], output: ParserResult) {
   test(name, () => {
     const received = parse(new List(tokens));
     expect(withoutOperations(received)).toEqual(withoutOperations(output));
@@ -41,22 +29,22 @@ function runTest(name: string, tokens: Token[], output: ParserResult) {
 
 runTest("", [], {
   type: "success",
-  rpn: new List([]),
+  rpn: new List<RPNItem>([]),
 });
 
 runTest(
   "1 + 2",
   [
-    { name: "number", value: "1" },
-    { name: "operator", value: "+" },
-    { name: "number", value: "2" },
+    { type: "number", value: "1" },
+    { type: "operator", value: "+" },
+    { type: "number", value: "2" },
   ],
   {
     type: "success",
-    rpn: new List([
-      numericValue("1", unitless()),
-      numericValue("2", unitless()),
-      getOperator("+"),
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("1") },
+      { type: "number", value: new BigNumber("2") },
+      { type: "operator", operator: getOperator("+") },
     ]),
   },
 );
@@ -64,22 +52,22 @@ runTest(
 runTest(
   "(1 + 2) * 3",
   [
-    { name: "(", value: "(" },
-    { name: "number", value: "1" },
-    { name: "operator", value: "+" },
-    { name: "number", value: "2" },
-    { name: ")", value: ")" },
-    { name: "operator", value: "*" },
-    { name: "number", value: "3" },
+    { type: "(", value: "(" },
+    { type: "number", value: "1" },
+    { type: "operator", value: "+" },
+    { type: "number", value: "2" },
+    { type: ")", value: ")" },
+    { type: "operator", value: "*" },
+    { type: "number", value: "3" },
   ],
   {
     type: "success",
-    rpn: new List([
-      numericValue("1", unitless()),
-      numericValue("2", unitless()),
-      getOperator("+"),
-      numericValue("3", unitless()),
-      getOperator("*"),
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("1") },
+      { type: "number", value: new BigNumber("2") },
+      { type: "operator", operator: getOperator("+") },
+      { type: "number", value: new BigNumber("3") },
+      { type: "operator", operator: getOperator("*") },
     ]),
   },
 );
@@ -87,21 +75,21 @@ runTest(
 runTest(
   "(1 + 2 * 3",
   [
-    { name: "(", value: "(" },
-    { name: "number", value: "1" },
-    { name: "operator", value: "+" },
-    { name: "number", value: "2" },
-    { name: "operator", value: "*" },
-    { name: "number", value: "3" },
+    { type: "(", value: "(" },
+    { type: "number", value: "1" },
+    { type: "operator", value: "+" },
+    { type: "number", value: "2" },
+    { type: "operator", value: "*" },
+    { type: "number", value: "3" },
   ],
   {
     type: "error",
-    rpn: new List([
-      numericValue("1", unitless()),
-      numericValue("2", unitless()),
-      numericValue("3", unitless()),
-      getOperator("*"),
-      getOperator("+"),
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("1") },
+      { type: "number", value: new BigNumber("2") },
+      { type: "number", value: new BigNumber("3") },
+      { type: "operator", operator: getOperator("*") },
+      { type: "operator", operator: getOperator("+") },
     ]),
     description: "Unbalanced parens in final loop.",
   },
@@ -110,19 +98,19 @@ runTest(
 runTest(
   "1 + 2) * 3",
   [
-    { name: "number", value: "1" },
-    { name: "operator", value: "+" },
-    { name: "number", value: "2" },
-    { name: ")", value: ")" },
-    { name: "operator", value: "*" },
-    { name: "number", value: "3" },
+    { type: "number", value: "1" },
+    { type: "operator", value: "+" },
+    { type: "number", value: "2" },
+    { type: ")", value: ")" },
+    { type: "operator", value: "*" },
+    { type: "number", value: "3" },
   ],
   {
     type: "error",
-    rpn: new List([
-      numericValue("1", unitless()),
-      numericValue("2", unitless()),
-      getOperator("+"),
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("1") },
+      { type: "number", value: new BigNumber("2") },
+      { type: "operator", operator: getOperator("+") },
     ]),
     description: 'Unbalanced parens in ")" loop.',
   },
@@ -131,20 +119,20 @@ runTest(
 runTest(
   "1 + 2 * 3",
   [
-    { name: "number", value: "1" },
-    { name: "operator", value: "+" },
-    { name: "number", value: "2" },
-    { name: "operator", value: "*" },
-    { name: "number", value: "3" },
+    { type: "number", value: "1" },
+    { type: "operator", value: "+" },
+    { type: "number", value: "2" },
+    { type: "operator", value: "*" },
+    { type: "number", value: "3" },
   ],
   {
     type: "success",
-    rpn: new List([
-      numericValue("1", unitless()),
-      numericValue("2", unitless()),
-      numericValue("3", unitless()),
-      getOperator("*"),
-      getOperator("+"),
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("1") },
+      { type: "number", value: new BigNumber("2") },
+      { type: "number", value: new BigNumber("3") },
+      { type: "operator", operator: getOperator("*") },
+      { type: "operator", operator: getOperator("+") },
     ]),
   },
 );
@@ -152,19 +140,19 @@ runTest(
 runTest(
   "a: 5/7",
   [
-    { name: "identifier", value: "a" },
-    { name: "assignment", value: ":" },
-    { name: "number", value: "5" },
-    { name: "operator", value: "/" },
-    { name: "number", value: "7" },
+    { type: "identifier", value: "a" },
+    { type: "assignment", value: ":" },
+    { type: "number", value: "5" },
+    { type: "operator", value: "/" },
+    { type: "number", value: "7" },
   ],
   {
     type: "success",
-    rpn: new List([
-      numericValue("5", unitless()),
-      numericValue("7", unitless()),
-      getOperator("/"),
-      makeAssignment("a"),
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("5") },
+      { type: "number", value: new BigNumber("7") },
+      { type: "operator", operator: getOperator("/") },
+      { type: "assignment", variableName: "a" },
     ]),
   },
 );
@@ -172,23 +160,23 @@ runTest(
 runTest(
   "d = y + x / 40",
   [
-    { name: "identifier", value: "d" },
-    { name: "assignment", value: "=" },
-    { name: "identifier", value: "y" },
-    { name: "operator", value: "+" },
-    { name: "identifier", value: "x" },
-    { name: "operator", value: "/" },
-    { name: "number", value: "40" },
+    { type: "identifier", value: "d" },
+    { type: "assignment", value: "=" },
+    { type: "identifier", value: "y" },
+    { type: "operator", value: "+" },
+    { type: "identifier", value: "x" },
+    { type: "operator", value: "/" },
+    { type: "number", value: "40" },
   ],
   {
     type: "success",
-    rpn: new List([
-      makeReadVariable("y"),
-      makeReadVariable("x"),
-      numericValue("40", unitless()),
-      getOperator("/"),
-      getOperator("+"),
-      makeAssignment("d"),
+    rpn: new List<RPNItem>([
+      { type: "valueGenerator", generator: makeReadVariable("y") },
+      { type: "valueGenerator", generator: makeReadVariable("x") },
+      { type: "number", value: new BigNumber("40") },
+      { type: "operator", operator: getOperator("/") },
+      { type: "operator", operator: getOperator("+") },
+      { type: "assignment", variableName: "d" },
     ]),
   },
 );
@@ -196,87 +184,82 @@ runTest(
 runTest(
   "5/7+10*75",
   [
-    { name: "number", value: "5" },
-    { name: "operator", value: "/" },
-    { name: "number", value: "7" },
-    { name: "operator", value: "+" },
-    { name: "number", value: "10" },
-    { name: "operator", value: "*" },
-    { name: "number", value: "75" },
+    { type: "number", value: "5" },
+    { type: "operator", value: "/" },
+    { type: "number", value: "7" },
+    { type: "operator", value: "+" },
+    { type: "number", value: "10" },
+    { type: "operator", value: "*" },
+    { type: "number", value: "75" },
   ],
   {
     type: "success",
-    rpn: new List([
-      numericValue("5", unitless()),
-      numericValue("7", unitless()),
-      getOperator("/"),
-      numericValue("10", unitless()),
-      numericValue("75", unitless()),
-      getOperator("*"),
-      getOperator("+"),
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("5") },
+      { type: "number", value: new BigNumber("7") },
+      { type: "operator", operator: getOperator("/") },
+      { type: "number", value: new BigNumber("10") },
+      { type: "number", value: new BigNumber("75") },
+      { type: "operator", operator: getOperator("*") },
+      { type: "operator", operator: getOperator("+") },
     ]),
   },
 );
 
-runTest("sum", [{ name: "aggregator", value: "sum" }], {
+runTest("sum", [{ type: "aggregator", value: "sum" }], {
   type: "success",
-  rpn: new List([getAggregator("sum")]),
+  rpn: new List<RPNItem>([{ type: "valueGenerator", generator: getAggregator("sum") }]),
 });
 
-runTest("average", [{ name: "aggregator", value: "average" }], {
+runTest("average", [{ type: "aggregator", value: "average" }], {
   type: "success",
-  rpn: new List([getAggregator("average")]),
+  rpn: new List<RPNItem>([{ type: "valueGenerator", generator: getAggregator("average") }]),
 });
 
 runTest(
   "0 = 1",
   [
-    { name: "number", value: "0" },
-    { name: "assignment", value: "=" },
-    { name: "number", value: "1" },
+    { type: "number", value: "0" },
+    { type: "assignment", value: "=" },
+    { type: "number", value: "1" },
   ],
   {
     type: "error",
     description: "Assignment operators are only allowed after identifiers.",
-    rpn: new List([numericValue("0", unitless())]),
+    rpn: new List<RPNItem>([{ type: "number", value: new BigNumber("0") }]),
   },
 );
 
-runTest(
-  "10 %",
-  [{ name: "number", value: "10" }, { name: "percent", value: "%" }],
-  {
-    type: "success",
-    rpn: new List([numericValue("10", unitless()), makePercent()]),
-  },
-);
+runTest("10 %", [{ type: "number", value: "10" }, { type: "percent", value: "%" }], {
+  type: "success",
+  rpn: new List<RPNItem>([{ type: "number", value: new BigNumber("10") }, { type: "percent" }]),
+});
 
-runTest(
-  "50.5 cm",
-  [{ name: "number", value: "50.5" }, { name: "unit", value: "cm" }],
-  {
-    type: "success",
-    rpn: new List([numericValue("50.5", unitless()), makeUnit("cm")]),
-  },
-);
+runTest("50.5 cm", [{ type: "number", value: "50.5" }, { type: "unit", value: "cm" }], {
+  type: "success",
+  rpn: new List<RPNItem>([
+    { type: "number", value: new BigNumber("50.5") },
+    { type: "unit", unit: getUnit("cm") },
+  ]),
+});
 
 runTest(
   "50.5 cm + 4 in",
   [
-    { name: "number", value: "50.5" },
-    { name: "unit", value: "cm" },
-    { name: "operator", value: "+" },
-    { name: "number", value: "4" },
-    { name: "unit", value: "in" },
+    { type: "number", value: "50.5" },
+    { type: "unit", value: "cm" },
+    { type: "operator", value: "+" },
+    { type: "number", value: "4" },
+    { type: "unit", value: "in" },
   ],
   {
     type: "success",
-    rpn: new List([
-      numericValue("50.5", unitless()),
-      makeUnit("cm"),
-      numericValue("4", unitless()),
-      makeUnit("in"),
-      getOperator("+"),
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("50.5") },
+      { type: "unit", unit: getUnit("cm") },
+      { type: "number", value: new BigNumber("4") },
+      { type: "unit", unit: getUnit("in") },
+      { type: "operator", operator: getOperator("+") },
     ]),
   },
 );
@@ -284,23 +267,23 @@ runTest(
 runTest(
   "a: 5 in  + 10 cm",
   [
-    { name: "identifier", value: "a" },
-    { name: "assignment", value: ":" },
-    { name: "number", value: "5" },
-    { name: "unit", value: "in" },
-    { name: "operator", value: "+" },
-    { name: "number", value: "10" },
-    { name: "unit", value: "cm" },
+    { type: "identifier", value: "a" },
+    { type: "assignment", value: ":" },
+    { type: "number", value: "5" },
+    { type: "unit", value: "in" },
+    { type: "operator", value: "+" },
+    { type: "number", value: "10" },
+    { type: "unit", value: "cm" },
   ],
   {
     type: "success",
-    rpn: new List([
-      numericValue("5", unitless()),
-      makeUnit("in"),
-      numericValue("10", unitless()),
-      makeUnit("cm"),
-      getOperator("+"),
-      makeAssignment("a"),
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("5") },
+      { type: "unit", unit: getUnit("in") },
+      { type: "number", value: new BigNumber("10") },
+      { type: "unit", unit: getUnit("cm") },
+      { type: "operator", operator: getOperator("+") },
+      { type: "assignment", variableName: "a" },
     ]),
   },
 );
@@ -308,18 +291,18 @@ runTest(
 runTest(
   "120 - 10 %",
   [
-    { name: "number", value: "120" },
-    { name: "operator", value: "-" },
-    { name: "number", value: "10" },
-    { name: "percent", value: "%" },
+    { type: "number", value: "120" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "10" },
+    { type: "percent", value: "%" },
   ],
   {
     type: "success",
-    rpn: new List([
-      numericValue("120", unitless()),
-      numericValue("10", unitless()),
-      makePercent(),
-      getOperator("-"),
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("120") },
+      { type: "number", value: new BigNumber("10") },
+      { type: "percent" },
+      { type: "operator", operator: getOperator("-") },
     ]),
   },
 );
@@ -327,61 +310,66 @@ runTest(
 runTest(
   "100 - (5 + 1) %",
   [
-    { name: "number", value: "100" },
-    { name: "operator", value: "-" },
-    { name: "(", value: "(" },
-    { name: "number", value: "5" },
-    { name: "operator", value: "+" },
-    { name: "number", value: "1" },
-    { name: ")", value: ")" },
-    { name: "percent", value: "%" },
+    { type: "number", value: "100" },
+    { type: "operator", value: "-" },
+    { type: "(", value: "(" },
+    { type: "number", value: "5" },
+    { type: "operator", value: "+" },
+    { type: "number", value: "1" },
+    { type: ")", value: ")" },
+    { type: "percent", value: "%" },
   ],
   {
     type: "success",
-    rpn: new List([
-      numericValue("100", unitless()),
-      numericValue("5", unitless()),
-      numericValue("1", unitless()),
-      getOperator("+"),
-      makePercent(),
-      getOperator("-"),
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("100") },
+      { type: "number", value: new BigNumber("5") },
+      { type: "number", value: new BigNumber("1") },
+      { type: "operator", operator: getOperator("+") },
+      { type: "percent" },
+      { type: "operator", operator: getOperator("-") },
     ]),
   },
 );
 
-// runTest("10 in to cm",[
-//     { name: "number", value: "10" },
-//     { name: "unit", value: "in" },
-//     { name: "conversion", value: "to" },
-//     { name: "unit", value: "cm" },
+// runTest(
+//   "10 in to cm",
+//   [
+//     { type: "number", value: "10" },
+//     { type: "unit", value: "in" },
+//     { type: "conversion", value: "to" },
+//     { type: "unit", value: "cm" },
 //   ],
 //   {
 //     type: "success",
-//     rpn: new List([
-//       numericValue("10", unitless()),
-//       makeUnit("in"),
-//       numericValue("1", unitless()),
-//       getOperator("+"),
-//       makePercent(),
-//       getOperator("-"),
+//     rpn: new List<RPNItem>([
+//       { type: "number", value: new BigNumber("10") },
+//       { type: "unit", unit: getUnit("in") },
+//       { type: "number", value: new BigNumber("1") },
+//       { type: "operator", operator: getOperator("+") },
+//       { type: "percent" },
+//       { type: "operator", operator: getOperator("-") },
 //     ]),
-// });
+//   },
+// );
 
-// runTest("10 cm as in", [
-//     { name: "number", value: "10" },
-//     { name: "unit", value: "cm" },
-//     { name: "conversion", value: "as" },
-//     { name: "unit", value: "in" },
+// runTest(
+//   "10 cm as in",
+//   [
+//     { type: "number", value: "10" },
+//     { type: "unit", value: "cm" },
+//     { type: "conversion", value: "as" },
+//     { type: "unit", value: "in" },
 //   ],
 //   {
 //     type: "success",
-//     rpn: new List([
-//       numericValue("100", unitless()),
-//       numericValue("5", unitless()),
-//       numericValue("1", unitless()),
-//       getOperator("+"),
-//       makePercent(),
-//       getOperator("-"),
+//     rpn: new List<RPNItem>([
+//       { type: "number", value: new BigNumber("100") },
+//       { type: "number", value: new BigNumber("5") },
+//       { type: "number", value: new BigNumber("1") },
+//       { type: "operator", operator: getOperator("+") },
+//       { type: "percent" },
+//       { type: "operator", operator: getOperator("-") },
 //     ]),
-  
-// });
+//   },
+// );
