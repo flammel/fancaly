@@ -5,9 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start": "parcel src/index.html",
-    "prettier": "prettier --write .babelrc *.json src/*.ts src/*.js src/*.scss",
+    "prettier":
+      "prettier --write .babelrc *.json src/*.ts src/*.js src/*.scss tests/*.ts",
     "test": "jest",
-    "lint": "tslint -c tslint.json 'src/*.ts'",
+    "lint": "tslint -c tslint.json 'src/*.ts' 'tests/*.ts'",
     "build": "parcel build src/index.html --public-url ./"
   },
   "author": "",
@@ -28,7 +29,7 @@
     "transform": {
       "^.+\\.tsx?$": "ts-jest"
     },
-    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "testRegex": "(/tests/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
     "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"]
   },
   "dependencies": {

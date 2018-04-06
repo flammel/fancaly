@@ -1,4 +1,4 @@
-import { Value, NumericValue, numericValue } from "./value";
+import { NumericValue, numericValue, Value } from "./value";
 
 export interface Operator {
   associativity: Associativity;
@@ -8,7 +8,9 @@ export interface Operator {
   type: "Operator";
 }
 type Associativity = "left" | "right";
-type Operators = { [k: string]: Operator };
+interface Operators {
+  [k: string]: Operator;
+}
 
 const operators: Operators = {
   "*": {
@@ -45,6 +47,16 @@ const operators: Operators = {
   },
 };
 
+export function operatorNames(): string[] {
+  const names = [];
+  for (const a in operators) {
+    if (operators.hasOwnProperty(a)) {
+      names.push(a);
+    }
+  }
+  return names;
+}
+
 export function isOperator(a: any): a is Operator {
   return a && a.type === "Operator";
 }
@@ -55,4 +67,38 @@ export function isOperatorName(a: any): boolean {
 
 export function getOperator(name: string): Operator {
   return operators[name];
+}
+
+//
+//
+//
+
+export interface Assignment {
+  type: "assignment";
+  value: string;
+}
+
+export function isAssignment(a: any): a is Assignment {
+  return a && a.type === "assignment";
+}
+
+export function makeAssignment(varName: string): Assignment {
+  return { type: "assignment", value: varName };
+}
+
+//
+//
+//
+
+export interface ReadVariable {
+  type: "ReadVariable";
+  value: string;
+}
+
+export function isReadVariable(a: any): a is ReadVariable {
+  return a && a.type === "ReadVariable";
+}
+
+export function makeReadVariable(varName: string): ReadVariable {
+  return { type: "ReadVariable", value: varName };
 }

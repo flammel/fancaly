@@ -9,11 +9,13 @@ export interface NumericValue {
   value: BigNumber;
 }
 interface ErrorValue {
-  type: "ErrorValue";
   description: string;
+  type: "ErrorValue";
 }
 
-type NoValue = { type: "NoValue" };
+interface NoValue {
+  type: "NoValue";
+}
 
 export function isNumericValue(a: any): a is NumericValue {
   return a && a.type === "NumericValue";
@@ -23,18 +25,21 @@ export function noValue(): NoValue {
   return { type: "NoValue" };
 }
 
-export function numericValue(value: BigNumber, unit: Unit): NumericValue {
+export function numericValue(
+  value: string | BigNumber,
+  unit: Unit,
+): NumericValue {
   return {
     type: "NumericValue",
     unit,
-    value,
+    value: new BigNumber(value),
   };
 }
 
 export function errorValue(description: string): ErrorValue {
   return {
-    type: "ErrorValue",
     description,
+    type: "ErrorValue",
   };
 }
 

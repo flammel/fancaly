@@ -21,3 +21,11 @@ export function unitless(): Unit {
 export function isUnit(a: any): a is Unit {
   return typeof a === "object" && a.type === "Unit";
 }
+
+export function unitNames(): string[] {
+  const names = [];
+  for (const a of units) {
+    names.push(a.name);
+  }
+  return names;
+}
