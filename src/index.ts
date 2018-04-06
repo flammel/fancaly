@@ -52,6 +52,10 @@ function update(input: NodeList) {
       continue;
     }
     const evaluated = evaluate(parsed.rpn, env);
+    if (evaluated.type === "ErrorValue") {
+      addResult("error");
+      continue;
+    }
     addResult(stringifyValue(evaluated));
   }
 }
