@@ -9,7 +9,9 @@
       "prettier --write .babelrc *.json src/*.ts src/*.js src/*.scss tests/*.ts",
     "test": "jest",
     "lint": "tslint -c tslint.json 'src/*.ts' 'tests/*.ts'",
-    "build": "parcel build src/index.html --public-url ./"
+    "lintfix": "tslint --fix -c tslint.json 'src/*.ts' 'tests/*.ts'",
+    "build": "parcel build src/index.html --public-url ./",
+    "typecheck": "tsc --noEmit -p ./tsconfig.json"
   },
   "author": "",
   "license": "MIT",

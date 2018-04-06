@@ -1,5 +1,5 @@
 import { List } from "./list";
-import { operatorNames } from "./operator";
+import { aggregatorNames, operatorNames } from "./operator";
 import { unitNames } from "./unit";
 
 type TokenName =
@@ -10,7 +10,8 @@ type TokenName =
   | "("
   | ")"
   | "assignment"
-  | "comment";
+  | "comment"
+  | "aggregator";
 
 export interface Token {
   name: TokenName;
@@ -93,6 +94,21 @@ function scanOperator(input: string): [Token, string] | null {
   return null;
 }
 
+function scanAggregator(input: string): [Token, string] | null {
+  for (const aggregator of aggregatorNames()) {
+    if (input.indexOf(aggregator) === 0) {
+      return [
+        {
+          name: "aggregator",
+          value: aggregator,
+        },
+        input.substr(aggregator.length),
+      ];
+    }
+  }
+  return null;
+}
+
 function scanUnit(input: string): [Token, string] | null {
   for (const unit of unitNames()) {
     if (input.indexOf(unit) === 0) {
@@ -129,6 +145,7 @@ function tryScanners(line: string): [Token, string] | null {
     scanParenthesis,
     scanNumber,
     scanOperator,
+    scanAggregator,
     scanUnit,
     scanIdentifier,
   ];

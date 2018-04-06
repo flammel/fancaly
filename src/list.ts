@@ -1,41 +1,45 @@
-type ListItem<T> = { done: true } | { done: false; value: T };
+type ListItem<T> = { type: "done" } | { type: "notDone"; value: T };
 
 export class List<T> {
-  private tokens: T[];
+  private items: T[];
   private idx: number = -1;
 
-  constructor(tokens: T[]) {
-    this.tokens = tokens;
+  constructor(items: T[]) {
+    this.items = items;
   }
 
   public next(): ListItem<T> {
-    if (this.idx + 1 < this.tokens.length) {
+    if (this.idx + 1 < this.items.length) {
       this.idx = this.idx + 1;
       return {
-        value: this.tokens[this.idx],
-        done: false,
+        value: this.items[this.idx],
+        type: "notDone",
       };
     } else {
       return {
-        done: true,
+        type: "done",
       };
     }
   }
 
   public peek(ahead: number = 1): ListItem<T> {
-    if (this.idx + ahead < this.tokens.length) {
+    if (this.idx + ahead < this.items.length) {
       return {
-        value: this.tokens[this.idx + ahead],
-        done: false,
+        value: this.items[this.idx + ahead],
+        type: "notDone",
       };
     } else {
       return {
-        done: true,
+        type: "done",
       };
     }
   }
 
   public current(): T | undefined {
-    return this.tokens[this.idx];
+    return this.items[this.idx];
+  }
+
+  public length(): number {
+    return this.items.length;
   }
 }

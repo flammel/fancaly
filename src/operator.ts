@@ -1,19 +1,20 @@
+import { unitless } from "./unit";
 import { NumericValue, numericValue, Value } from "./value";
 
+type Associativity = "left" | "right";
+
 export interface Operator {
+  arity: number;
   associativity: Associativity;
   operation: (a: NumericValue, b: NumericValue) => NumericValue;
   operator: string;
   precedence: number;
   type: "Operator";
 }
-type Associativity = "left" | "right";
-interface Operators {
-  [k: string]: Operator;
-}
 
-const operators: Operators = {
+const operators: { [k: string]: Operator } = {
   "*": {
+    arity: 2,
     associativity: "left",
     operation: (a: NumericValue, b: NumericValue) =>
       numericValue(a.value.times(b.value), a.unit),
@@ -22,6 +23,7 @@ const operators: Operators = {
     type: "Operator",
   },
   "+": {
+    arity: 2,
     associativity: "left",
     operation: (a: NumericValue, b: NumericValue) =>
       numericValue(a.value.plus(b.value), a.unit),
@@ -30,6 +32,7 @@ const operators: Operators = {
     type: "Operator",
   },
   "-": {
+    arity: 2,
     associativity: "left",
     operation: (a: NumericValue, b: NumericValue) =>
       numericValue(a.value.minus(b.value), a.unit),
@@ -38,6 +41,7 @@ const operators: Operators = {
     type: "Operator",
   },
   "/": {
+    arity: 2,
     associativity: "left",
     operation: (a: NumericValue, b: NumericValue) =>
       numericValue(a.value.dividedBy(b.value), a.unit),
@@ -101,4 +105,71 @@ export function isReadVariable(a: any): a is ReadVariable {
 
 export function makeReadVariable(varName: string): ReadVariable {
   return { type: "ReadVariable", value: varName };
+}
+
+//
+//
+//
+
+export interface Aggregator {
+  operation: (values: NumericValue[]) => NumericValue;
+  operator: string;
+  type: "Aggregator";
+}
+
+const aggregators: { [k: string]: Aggregator } = {
+  sum: {
+    operation: (values: NumericValue[]) => {
+      if (values.length === 0) {
+        return numericValue("0", unitless());
+      }
+      return values
+        .slice(1)
+        .reduce(
+          (prev, cur) => numericValue(prev.value.plus(cur.value), prev.unit),
+          values[0],
+        );
+    },
+    operator: "sum",
+    type: "Aggregator",
+  },
+  average: {
+    operation: (values: NumericValue[]) => {
+      if (values.length === 0) {
+        return numericValue("0", unitless());
+      }
+      const sum = values
+        .slice(1)
+        .reduce(
+          (prev, cur) => numericValue(prev.value.plus(cur.value), prev.unit),
+          values[0],
+        );
+
+      return numericValue(sum.value.dividedBy(values.length), sum.unit);
+    },
+    operator: "average",
+    type: "Aggregator",
+  },
+};
+
+export function aggregatorNames(): string[] {
+  const names = [];
+  for (const a in aggregators) {
+    if (aggregators.hasOwnProperty(a)) {
+      names.push(a);
+    }
+  }
+  return names;
+}
+
+export function isAggregator(a: any): a is Aggregator {
+  return a && a.type === "Aggregator";
+}
+
+export function isAggregatorName(a: any): boolean {
+  return a && a in aggregators;
+}
+
+export function getAggregator(name: string): Aggregator {
+  return aggregators[name];
 }

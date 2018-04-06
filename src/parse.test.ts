@@ -1,6 +1,11 @@
 import { Token, Tokens } from "./lex";
 import { List } from "./list";
-import { getOperator, makeAssignment, makeReadVariable } from "./operator";
+import {
+  getAggregator,
+  getOperator,
+  makeAssignment,
+  makeReadVariable,
+} from "./operator";
 import { parse, ParserResult } from "./parse";
 import { isUnit, Unit, unitless, units } from "./unit";
 import {
@@ -17,6 +22,10 @@ function runTest(name: string, tokens: Tokens, output: ParserResult) {
     expect(parse(tokens)).toEqual(output);
   });
 }
+runTest("", new List<Token>([]), {
+  type: "success",
+  rpn: [],
+});
 
 runTest(
   "1 + 2",
@@ -189,5 +198,19 @@ runTest(
       getOperator("*"),
       getOperator("+"),
     ],
+  },
+);
+
+runTest("sum", new List<Token>([{ name: "aggregator", value: "sum" }]), {
+  type: "success",
+  rpn: [getAggregator("sum")],
+});
+
+runTest(
+  "average",
+  new List<Token>([{ name: "aggregator", value: "average" }]),
+  {
+    type: "success",
+    rpn: [getAggregator("average")],
   },
 );

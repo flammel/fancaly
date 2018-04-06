@@ -30,3 +30,13 @@ runTest("a : (0.1 cm - x in) to m", {
     { name: "unit", value: "m" },
   ]),
 });
+
+runTest("sum", {
+  type: "success",
+  tokens: new List<Token>([{ name: "aggregator", value: "sum" }]),
+});
+
+runTest("average", {
+  type: "success",
+  tokens: new List<Token>([{ name: "aggregator", value: "average" }]),
+});

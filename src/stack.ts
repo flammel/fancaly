@@ -20,7 +20,7 @@ export class Stack<T> {
     return this.isEmpty() ? undefined : this.arr[this.arr.length - 1];
   }
 
-  private isEmpty(): boolean {
+  public isEmpty(): boolean {
     return this.arr.length === 0;
   }
 }

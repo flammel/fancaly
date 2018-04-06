@@ -3,6 +3,6 @@
     "target": "es2015",
     "module": "commonjs",
     "strict": true,
-    "lib": ["es2015", "dom", "dom.iterable"]
+    "lib": ["es6", "dom", "dom.iterable"]
   }
 }

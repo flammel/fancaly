@@ -1,6 +1,11 @@
 import { emptyEnvironment, Environment, evaluate } from "./evaluate";
 import { Token, Tokens } from "./lex";
-import { getOperator, makeAssignment, makeReadVariable } from "./operator";
+import {
+  getAggregator,
+  getOperator,
+  makeAssignment,
+  makeReadVariable,
+} from "./operator";
 import { parse, RPN } from "./parse";
 import { isUnit, Unit, unitless, units } from "./unit";
 import {
@@ -22,6 +27,8 @@ function runTest(
     expect(evaluate(rpn, env)).toEqual(output);
   });
 }
+
+runTest("", [], noValue());
 
 runTest(
   "1 + 2",
@@ -56,6 +63,44 @@ runTest(
   (() => {
     const env = emptyEnvironment();
     env.variables.a = numericValue("10", unitless());
+    return env;
+  })(),
+);
+
+runTest(
+  "sum",
+  [getAggregator("sum")],
+  numericValue("129", unitless()),
+  (() => {
+    const env = emptyEnvironment();
+    env.lines.push(numericValue("10", unitless()));
+    env.lines.push(numericValue("119", unitless()));
+    return env;
+  })(),
+);
+
+runTest(
+  "sum",
+  [getAggregator("sum")],
+  numericValue("129", unitless()),
+  (() => {
+    const env = emptyEnvironment();
+    env.lines.push(numericValue("10", unitless()));
+    env.lines.push(noValue());
+    env.lines.push(numericValue("10", unitless()));
+    env.lines.push(numericValue("119", unitless()));
+    return env;
+  })(),
+);
+
+runTest(
+  "average",
+  [getAggregator("average")],
+  numericValue("75", unitless()),
+  (() => {
+    const env = emptyEnvironment();
+    env.lines.push(numericValue("50", unitless()));
+    env.lines.push(numericValue("100", unitless()));
     return env;
   })(),
 );

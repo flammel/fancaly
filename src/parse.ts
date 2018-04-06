@@ -1,6 +1,8 @@
 import { Token, Tokens } from "./lex";
 import {
+  Aggregator,
   Assignment,
+  getAggregator,
   getOperator,
   isAssignment,
   isOperator,
@@ -18,7 +20,13 @@ export type ParserResult =
   | { type: "success"; rpn: RPN }
   | { type: "error"; description: string; rpn: RPN };
 
-export type RPNItem = Value | Operator | Unit | Assignment | ReadVariable;
+export type RPNItem =
+  | Value
+  | Operator
+  | Aggregator
+  | Unit
+  | Assignment
+  | ReadVariable;
 export type RPN = RPNItem[];
 
 type StackItem = Operator | LeftBracketOnStack | Assignment;
@@ -60,10 +68,11 @@ function shuntingYardOperator(
 function assignmentLine(tokens: Tokens, stack: Stack<StackItem>) {
   const peek1 = tokens.peek(1);
   const peek2 = tokens.peek(2);
+
   if (
-    !peek1.done &&
+    peek1.type === "notDone" &&
     peek1.value.name === "identifier" &&
-    !peek2.done &&
+    peek2.type === "notDone" &&
     peek2.value.name === "assignment"
   ) {
     tokens.next();
@@ -78,7 +87,7 @@ export function parse(tokens: Tokens): ParserResult {
 
   assignmentLine(tokens, stack);
 
-  while (!tokens.next().done) {
+  while (tokens.next().type !== "done") {
     const cur = tokens.current() as Token;
 
     if (cur.name === "number") {
@@ -127,6 +136,19 @@ export function parse(tokens: Tokens): ParserResult {
     if (cur.name === "comment") {
       // ignore comments
       continue;
+    }
+
+    if (cur.name === "aggregator") {
+      if (queue.length === 0 && stack.isEmpty()) {
+        queue.push(getAggregator(cur.value));
+        continue;
+      } else {
+        return {
+          type: "error",
+          description: "Aggregator must be the only item in a line.",
+          rpn: queue,
+        };
+      }
     }
 
     assertNever(cur.name);

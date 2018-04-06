@@ -1,5 +1,6 @@
 import {
   getOperator,
+  isAggregator,
   isAssignment,
   isOperator,
   isOperatorName,
@@ -38,9 +39,14 @@ function assertNever(x: never): never {
 }
 
 export function evaluate(rpn: RPN, env: Environment): Value {
+  if (rpn.length === 0) {
+    env.lines.push(noValue());
+    return noValue();
+  }
+
   const stack: Stack<RPNItem> = new Stack();
   for (const curr of rpn) {
-    if (isOperator(curr)) {
+    if (curr.type === "Operator") {
       const rgtOperand = stack.pop();
       const lftOperand = stack.pop();
       if (!isNumericValue(lftOperand) || !isNumericValue(rgtOperand)) {
@@ -63,7 +69,7 @@ export function evaluate(rpn: RPN, env: Environment): Value {
       continue;
     }
 
-    if (isAssignment(curr)) {
+    if (curr.type === "assignment") {
       const varValue = stack.peek();
       if (isNumericValue(varValue)) {
         env.variables[curr.value] = varValue;
@@ -77,7 +83,7 @@ export function evaluate(rpn: RPN, env: Environment): Value {
       }
     }
 
-    if (isReadVariable(curr)) {
+    if (curr.type === "ReadVariable") {
       if (env.variables[curr.value] !== undefined) {
         stack.push(env.variables[curr.value]);
       } else {
@@ -86,12 +92,26 @@ export function evaluate(rpn: RPN, env: Environment): Value {
       continue;
     }
 
-    if (isNumericValue(curr)) {
+    if (curr.type === "NumericValue") {
       stack.push(curr);
       continue;
     }
 
-    if (isUnit(curr)) {
+    if (curr.type === "Unit") {
+      continue;
+    }
+
+    if (curr.type === "Aggregator") {
+      const values = [];
+      for (const val of env.lines.reverse()) {
+        if (isNumericValue(val)) {
+          values.unshift(val);
+        }
+        if (val.type === "NoValue") {
+          break;
+        }
+      }
+      stack.push(curr.operation(values));
       continue;
     }
 
@@ -99,11 +119,15 @@ export function evaluate(rpn: RPN, env: Environment): Value {
       continue;
     }
 
-    assertNever(curr.type);
+    assertNever(curr);
   }
 
   const result = stack.pop();
-  if (isNumericValue(result)) {
+  if (
+    result !== undefined &&
+    (result.type === "NumericValue" || result.type === "NoValue")
+  ) {
+    env.lines.push(result);
     return result;
   } else {
     return errorValue(
