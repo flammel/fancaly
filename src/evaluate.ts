@@ -1,3 +1,4 @@
+import { convert } from "./conversion";
 import {
   getOperator,
   isAssignment,
@@ -7,7 +8,7 @@ import {
 } from "./operator";
 import { RPN, RPNItem } from "./parse";
 import { Stack } from "./stack";
-import { isUnit } from "./unit";
+import { isUnit, makeUnit, unitless } from "./unit";
 import {
   errorValue,
   isNumericValue,
@@ -37,13 +38,15 @@ function assertNever(x: never): never {
 }
 
 export function evaluate(rpn: RPN, env: Environment): Value {
-  if (rpn.length === 0) {
+  if (rpn.length() === 0) {
     env.lines.push(noValue());
     return noValue();
   }
 
   const stack: Stack<RPNItem> = new Stack();
-  for (const curr of rpn) {
+  while (rpn.next().type !== "done") {
+    const curr = rpn.current() as RPNItem;
+
     if (curr.type === "Operator") {
       const rgtOperand = stack.pop();
       const lftOperand = stack.pop();
@@ -54,16 +57,15 @@ export function evaluate(rpn: RPN, env: Environment): Value {
           } and ${rgtOperand ? rgtOperand.type : "undefined"}.`,
         );
       }
-      // const convertedRgt = convert(rgtOperand, lftOperand.unit);
-      // if (!isNumericValue(convertedRgt)) {
-      //   return errorValue(
-      //     `Could not convert ${rgtOperand.unit.name} in rgt operand to unit ${
-      //       lftOperand.unit.name
-      //     } of lft operand`,
-      //   );
-      // }
-      // stack.push(curr.operation(lftOperand, convertedRgt));
-      stack.push(curr.operation(lftOperand, rgtOperand));
+      const convertedRgt = convert(rgtOperand, lftOperand.unit);
+      if (!isNumericValue(convertedRgt)) {
+        return errorValue(
+          `Could not convert ${rgtOperand.unit.name} in rgt operand to unit ${
+            lftOperand.unit.name
+          } of lft operand`,
+        );
+      }
+      stack.push(curr.operation(lftOperand, convertedRgt));
       continue;
     }
 
@@ -87,12 +89,102 @@ export function evaluate(rpn: RPN, env: Environment): Value {
     }
 
     if (curr.type === "Unit") {
-      continue;
+      const lastVal = stack.pop();
+      if (isNumericValue(lastVal)) {
+        const converted = convert(lastVal, curr);
+        if (isNumericValue(converted)) {
+          stack.push(converted);
+          continue;
+        } else {
+          return errorValue(
+            `Cannot convert ${lastVal.unit.name} to ${curr.name}.`,
+          );
+        }
+      } else {
+        return errorValue(
+          `Top of stack must be a number when a unit is reached, but is ${
+            lastVal ? lastVal.type : "undefined"
+          }.`,
+        );
+      }
     }
 
     if (curr.type === "ValueGenerator") {
       stack.push(curr.operation(env));
       continue;
+    }
+
+    if (curr.type === "Percent") {
+      const next = rpn.peek();
+      const percentage = stack.pop();
+      if (!isNumericValue(percentage)) {
+        return errorValue(
+          `Top element of stack must be a number when a percentage sign is reached, but is ${
+            percentage ? percentage : "undefined"
+          }.`,
+        );
+      }
+
+      if (next.type === "notDone" && isOperator(next.value)) {
+        const baseValue = stack.pop();
+        if (!isNumericValue(baseValue)) {
+          return errorValue(
+            `Second element of stack must be a number when a percentage sign is reached with an operator, but is ${
+              baseValue ? baseValue : "undefined"
+            }.`,
+          );
+        }
+        const oneHundred = numericValue("100", unitless()).value;
+        if (next.value.operator === "+") {
+          rpn.next();
+          stack.push(
+            numericValue(
+              baseValue.value
+                .dividedBy(100)
+                .multipliedBy(percentage.value.plus(oneHundred)),
+              percentage.unit,
+            ),
+          );
+        }
+        if (next.value.operator === "-") {
+          rpn.next();
+          stack.push(
+            numericValue(
+              baseValue.value
+                .dividedBy(100)
+                .multipliedBy(oneHundred.minus(percentage.value)),
+              percentage.unit,
+            ),
+          );
+        }
+        if (next.value.operator === "*") {
+          rpn.next();
+          stack.push(
+            numericValue(
+              baseValue.value.dividedBy(100).multipliedBy(percentage.value),
+              percentage.unit,
+            ),
+          );
+        }
+        if (next.value.operator === "/") {
+          rpn.next();
+          stack.push(
+            numericValue(
+              baseValue.value.dividedBy(percentage.value.dividedBy(100)),
+              percentage.unit,
+            ),
+          );
+        }
+        continue;
+      }
+
+      const converted = convert(percentage, makeUnit("%"));
+      if (isNumericValue(converted)) {
+        stack.push(converted);
+        continue;
+      } else {
+        return errorValue(`Cannot convert ${percentage.unit.name} to %.`);
+      }
     }
 
     if (curr.type === "ErrorValue" || curr.type === "NoValue") {

@@ -1,18 +1,18 @@
 type ListItem<T> = { type: "done" } | { type: "notDone"; value: T };
 
 export class List<T> {
-  private items: T[];
+  private arr: T[];
   private idx: number = -1;
 
-  constructor(items: T[]) {
-    this.items = items;
+  constructor(arr: T[]) {
+    this.arr = arr;
   }
 
   public next(): ListItem<T> {
-    if (this.idx + 1 < this.items.length) {
+    if (this.idx + 1 < this.arr.length) {
       this.idx = this.idx + 1;
       return {
-        value: this.items[this.idx],
+        value: this.arr[this.idx],
         type: "notDone",
       };
     } else {
@@ -23,9 +23,9 @@ export class List<T> {
   }
 
   public peek(ahead: number = 1): ListItem<T> {
-    if (this.idx + ahead < this.items.length) {
+    if (this.idx + ahead < this.arr.length) {
       return {
-        value: this.items[this.idx + ahead],
+        value: this.arr[this.idx + ahead],
         type: "notDone",
       };
     } else {
@@ -36,10 +36,14 @@ export class List<T> {
   }
 
   public current(): T | undefined {
-    return this.items[this.idx];
+    return this.arr[this.idx];
   }
 
   public length(): number {
-    return this.items.length;
+    return this.arr.length;
+  }
+
+  public items(): T[] {
+    return this.arr;
   }
 }

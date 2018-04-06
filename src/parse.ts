@@ -1,4 +1,5 @@
 import { Token, Tokens } from "./lex";
+import { List } from "./list";
 import {
   Assignment,
   getAggregator,
@@ -7,12 +8,14 @@ import {
   isOperator,
   isOperatorName,
   makeAssignment,
+  makePercent,
   makeReadVariable,
   Operator,
+  Percent,
   ValueGenerator,
 } from "./operator";
 import { Stack } from "./stack";
-import { isUnit, Unit, unitless, units } from "./unit";
+import { isUnit, isUnitName, makeUnit, Unit, unitless, units } from "./unit";
 import { errorValue, numericValue, Value } from "./value";
 
 export type ParserResult =
@@ -24,8 +27,9 @@ export type RPNItem =
   | Operator
   | Unit
   | Assignment
-  | ValueGenerator;
-export type RPN = RPNItem[];
+  | ValueGenerator
+  | Percent;
+export type RPN = List<RPNItem>;
 
 type StackItem = Operator | LeftBracketOnStack | Assignment;
 interface LeftBracketOnStack {
@@ -46,7 +50,7 @@ function assertNever(x: never): never {
 function shuntingYardOperator(
   token: Token,
   stack: Stack<StackItem>,
-  queue: RPN,
+  queue: RPNItem[],
 ) {
   const operator = getOperator(token.value);
   let stackTop = stack.peek();
@@ -65,7 +69,7 @@ function shuntingYardOperator(
 
 export function parse(tokens: Tokens): ParserResult {
   const stack: Stack<StackItem> = new Stack();
-  const queue: RPN = [];
+  const queue: RPNItem[] = [];
 
   while (tokens.next().type !== "done") {
     const cur = tokens.current() as Token;
@@ -93,7 +97,7 @@ export function parse(tokens: Tokens): ParserResult {
         return {
           type: "error",
           description: 'Unbalanced parens in ")" loop.',
-          rpn: queue,
+          rpn: new List(queue),
         };
       }
       stack.pop();
@@ -112,11 +116,29 @@ export function parse(tokens: Tokens): ParserResult {
     }
 
     if (cur.name === "unit") {
+      if (isUnitName(cur.value)) {
+        queue.push(makeUnit(cur.value));
+        continue;
+      } else {
+        return {
+          type: "error",
+          description: 'Unknown unit "' + cur.value + '".',
+          rpn: new List(queue),
+        };
+      }
+    }
+
+    if (cur.name === "percent") {
+      queue.push(makePercent());
       continue;
     }
 
     if (cur.name === "assignment") {
-      return { type: "error", description: "Assignment operators are only allowed after identifiers.", rpn: queue };
+      return {
+        type: "error",
+        description: "Assignment operators are only allowed after identifiers.",
+        rpn: new List(queue),
+      };
     }
 
     if (cur.name === "comment") {
@@ -140,10 +162,10 @@ export function parse(tokens: Tokens): ParserResult {
       return {
         type: "error",
         description: "Unbalanced parens in final loop.",
-        rpn: queue,
+        rpn: new List(queue),
       };
     }
   }
 
-  return { type: "success", rpn: queue };
+  return { type: "success", rpn: new List(queue) };
 }

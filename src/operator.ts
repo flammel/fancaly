@@ -1,6 +1,13 @@
+import { convert } from "./conversion";
 import { Environment } from "./evaluate";
 import { unitless } from "./unit";
-import { isNumericValue, noValue, NumericValue, numericValue, Value } from "./value";
+import {
+  isNumericValue,
+  noValue,
+  NumericValue,
+  numericValue,
+  Value,
+} from "./value";
 
 type Associativity = "left" | "right";
 
@@ -95,15 +102,12 @@ export function makeAssignment(varName: string): Assignment {
 //
 //
 
-export function makeReadVariable(varName: string): ValueGenerator {
-  return { type: "ValueGenerator", name: varName, operation: (env: Environment) => {
-    if (env.variables[varName] !== undefined) {
-      return env.variables[varName];
-    } else {
-      return noValue();
-    }
-  },
-};
+export interface Percent {
+  type: "Percent";
+}
+
+export function makePercent(): Percent {
+  return { type: "Percent" };
 }
 
 //
@@ -114,6 +118,24 @@ export interface ValueGenerator {
   operation: (env: Environment) => Value;
   name: string;
   type: "ValueGenerator";
+}
+
+//
+//
+//
+
+export function makeReadVariable(varName: string): ValueGenerator {
+  return {
+    type: "ValueGenerator",
+    name: varName,
+    operation: (env: Environment) => {
+      if (env.variables[varName] !== undefined) {
+        return env.variables[varName];
+      } else {
+        return noValue();
+      }
+    },
+  };
 }
 
 //
@@ -133,19 +155,26 @@ function getAggregatorValues(env: Environment): NumericValue[] {
   return values;
 }
 
+function sumAggregator(values: NumericValue[]): Value {
+  if (values.length === 0) {
+    return numericValue("0", unitless());
+  }
+  return values.reduce((prev, cur) => {
+    if (isNumericValue(prev)) {
+      const converted = convert(cur, prev.unit);
+      if (isNumericValue(converted)) {
+        return numericValue(prev.value.plus(converted.value), prev.unit);
+      }
+    }
+    return prev;
+  });
+}
+
 const aggregators: { [k: string]: ValueGenerator } = {
   sum: {
     operation: (env: Environment) => {
       const values = getAggregatorValues(env);
-      if (values.length === 0) {
-        return numericValue("0", unitless());
-      }
-      return values
-        .slice(1)
-        .reduce(
-          (prev, cur) => numericValue(prev.value.plus(cur.value), prev.unit),
-          values[0],
-        );
+      return sumAggregator(values);
     },
     name: "sum",
     type: "ValueGenerator",
@@ -153,17 +182,11 @@ const aggregators: { [k: string]: ValueGenerator } = {
   average: {
     operation: (env: Environment) => {
       const values = getAggregatorValues(env);
-      if (values.length === 0) {
-        return numericValue("0", unitless());
+      const sum = sumAggregator(values);
+      if (isNumericValue(sum)) {
+        return numericValue(sum.value.dividedBy(values.length), sum.unit);
       }
-      const sum = values
-        .slice(1)
-        .reduce(
-          (prev, cur) => numericValue(prev.value.plus(cur.value), prev.unit),
-          values[0],
-        );
-
-      return numericValue(sum.value.dividedBy(values.length), sum.unit);
+      return sum;
     },
     name: "average",
     type: "ValueGenerator",

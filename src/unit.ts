@@ -22,10 +22,18 @@ export function isUnit(a: any): a is Unit {
   return typeof a === "object" && a.type === "Unit";
 }
 
+export function makeUnit(name: string): Unit {
+  return { type: "Unit", name };
+}
+
 export function unitNames(): string[] {
   const names = [];
   for (const a of units) {
     names.push(a.name);
   }
   return names;
+}
+
+export function isUnitName(name: string): boolean {
+  return unitNames().indexOf(name) >= 0;
 }

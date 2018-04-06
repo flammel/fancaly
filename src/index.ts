@@ -7,17 +7,6 @@ import { stringifyValue, Value } from "./value";
 
 import "./main.scss";
 
-BigNumber.config({
-  FORMAT: {
-    decimalSeparator: ".",
-    fractionGroupSeparator: "",
-    fractionGroupSize: 0,
-    groupSeparator: "",
-    groupSize: 0,
-    secondaryGroupSize: 0,
-  },
-});
-
 const inputEl = document.getElementById("input") as HTMLInputElement;
 const resultsEl = document.getElementById("results") as HTMLDivElement;
 

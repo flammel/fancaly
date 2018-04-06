@@ -17,6 +17,7 @@ const conversions: {
     cm: (a: BigNumber) => a,
     in: (a: BigNumber) => a,
     unitless: (a: BigNumber) => a,
+    "%": (a: BigNumber) => a,
   },
 };
 

@@ -11,7 +11,8 @@ type TokenName =
   | ")"
   | "assignment"
   | "comment"
-  | "aggregator";
+  | "aggregator"
+  | "percent";
 
 export interface Token {
   name: TokenName;
@@ -94,6 +95,19 @@ function scanOperator(input: string): [Token, string] | null {
   return null;
 }
 
+function scanPercent(input: string): [Token, string] | null {
+  if (input.indexOf("%") === 0) {
+    return [
+      {
+        name: "percent",
+        value: "%",
+      },
+      input.substr(1),
+    ];
+  }
+  return null;
+}
+
 function scanAggregator(input: string): [Token, string] | null {
   for (const aggregator of aggregatorNames()) {
     if (input.indexOf(aggregator) === 0) {
@@ -148,6 +162,7 @@ function tryScanners(line: string): [Token, string] | null {
     scanAggregator,
     scanUnit,
     scanIdentifier,
+    scanPercent,
   ];
   for (const scanner of scanners) {
     const result = scanner(line);

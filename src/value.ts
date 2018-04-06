@@ -1,6 +1,17 @@
 import { BigNumber } from "bignumber.js";
 import { Unit } from "./unit";
 
+BigNumber.config({
+  FORMAT: {
+    decimalSeparator: ".",
+    fractionGroupSeparator: "",
+    fractionGroupSize: 0,
+    groupSeparator: "",
+    groupSize: 0,
+    secondaryGroupSize: 0,
+  },
+});
+
 export type Value = NumericValue | NoValue | ErrorValue;
 
 export interface NumericValue {
