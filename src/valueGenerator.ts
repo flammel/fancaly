@@ -71,6 +71,7 @@ const aggregators: { [k: string]: ValueGenerator } = {
 export function aggregatorNames(): string[] {
   const names = [];
   for (const a in aggregators) {
+    /* istanbul ignore else  */
     if (aggregators.hasOwnProperty(a)) {
       names.push(a);
     }

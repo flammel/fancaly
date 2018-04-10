@@ -3,8 +3,6 @@ import { errorValue, numericValue, NumericValue, Value } from "./evaluate";
 
 type UnitName = string;
 
-type BigNumberable = BigNumber | string | number;
-
 export interface Unit {
   base: UnitName;
   name: UnitName;
@@ -16,19 +14,9 @@ const unitTable: { [key: string]: Unit } = {
   "%": { base: "%", name: "%", multiplier: new BigNumber(1) },
 };
 
-function toBigNumber(value: BigNumberable) {
-  if (typeof value === "string") {
-    return new BigNumber(value);
-  }
-  if (typeof value === "number") {
-    return new BigNumber(value);
-  }
-  return value;
-}
-
-export function addUnit(base: UnitName, multiplier: BigNumberable, ...names: UnitName[]) {
+export function addUnit(base: UnitName, multiplier: string, ...names: UnitName[]) {
   for (const name of names) {
-    unitTable[name] = { base, name, multiplier: toBigNumber(multiplier) };
+    unitTable[name] = { base, name, multiplier: new BigNumber(multiplier) };
   }
 }
 
@@ -65,6 +53,7 @@ export function getUnit(name: string): Unit | undefined {
 export function unitNames(): string[] {
   const names = [];
   for (const name in unitTable) {
+    /* istanbul ignore else  */
     if (unitTable.hasOwnProperty(name)) {
       names.push(name);
     }
