@@ -1,6 +1,6 @@
+import { unitNames } from "./conversion";
 import { List } from "./list";
 import { operatorNames } from "./operator";
-import { unitNames } from "./unit";
 import { aggregatorNames } from "./valueGenerator";
 
 type TokenType =
@@ -176,10 +176,10 @@ function tryScanners(line: string): [Token, string] | null {
     scanNumber,
     scanOperator,
     scanAggregator,
+    scanPercent,
     scanUnit,
     scanConversion,
     scanIdentifier,
-    scanPercent,
   ];
   for (const scanner of scanners) {
     const result = scanner(line);

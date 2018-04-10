@@ -52,4 +52,7 @@ runTest([["120 / 10 %", "1200"]]);
 
 runTest([["4", "4"], ["", ""], ["8", "8"], ["2", "2"], ["sum + 10 %", "11"]]);
 
-// runTest([["length: 54.3 in to cm", "137,922"]]);
+runTest([["length: 54.3 in to cm", "137.922 cm"]]);
+runTest([["length: 1 oz as g", "28.3495 g"]]);
+
+runTest([["tax: 20%", "20 %"], ["price: 100 €", "100 €"], ["price + tax", "120 €"]]);

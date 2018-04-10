@@ -1,9 +1,8 @@
 import { BigNumber } from "bignumber.js";
-import { convert } from "./conversion";
+import { convert, getUnit, Unit, unitless } from "./conversion";
 import { getOperator, Operator } from "./operator";
 import { RPN, RPNItem } from "./parse";
 import { Stack } from "./stack";
-import { getUnit, Unit, unitless } from "./unit";
 import { ValueGenerator } from "./valueGenerator";
 
 BigNumber.config({
@@ -51,7 +50,7 @@ export function stringifyValue(val: Value): string {
   switch (val.type) {
     case "number":
       let str = val.value.dp(4).toFormat();
-      if (val.unit.name !== "unitless") {
+      if (val.unit !== unitless) {
         str += " " + val.unit.name;
       }
       return str;
@@ -144,7 +143,7 @@ function evaluateNumber(
   env: Environment,
   value: BigNumber,
 ): ErrorMessage | null {
-  stack.push(numericValue(value, unitless()));
+  stack.push(numericValue(value, unitless));
   return null;
 }
 
@@ -187,12 +186,11 @@ function evaluatePercent(rpn: RPN, stack: Stack<Value>, env: Environment): Error
       }.`;
     }
     const operatorName = next.value.operator.operator;
-    const oneHundred = numericValue("100", unitless()).value;
     if (operatorName === "+") {
       rpn.next();
       stack.push(
         numericValue(
-          baseValue.value.dividedBy(100).multipliedBy(percentage.value.plus(oneHundred)),
+          baseValue.value.dividedBy(100).multipliedBy(percentage.value.plus(new BigNumber(100))),
           baseValue.unit,
         ),
       );
@@ -201,7 +199,7 @@ function evaluatePercent(rpn: RPN, stack: Stack<Value>, env: Environment): Error
       rpn.next();
       stack.push(
         numericValue(
-          baseValue.value.dividedBy(100).multipliedBy(oneHundred.minus(percentage.value)),
+          baseValue.value.dividedBy(100).multipliedBy(new BigNumber(100).minus(percentage.value)),
           baseValue.unit,
         ),
       );
@@ -221,7 +219,7 @@ function evaluatePercent(rpn: RPN, stack: Stack<Value>, env: Environment): Error
     return null;
   }
 
-  const converted = convert(percentage, getUnit("%"));
+  const converted = convert(percentage, getUnit("%") as Unit);
   if (isNumericValue(converted)) {
     stack.push(converted);
     return null;

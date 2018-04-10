@@ -1,6 +1,5 @@
-import { convert } from "./conversion";
+import { convert, unitless } from "./conversion";
 import { Environment, isNumericValue, numericValue, NumericValue, Value } from "./evaluate";
-import { unitless } from "./unit";
 
 export interface ValueGenerator {
   operation: (env: Environment) => Value;
@@ -35,7 +34,7 @@ function getAggregatorValues(env: Environment): NumericValue[] {
 
 function sumAggregator(values: NumericValue[]): Value {
   if (values.length === 0) {
-    return numericValue("0", unitless());
+    return numericValue("0", unitless);
   }
   return values.reduce((prev, cur) => {
     if (isNumericValue(prev)) {

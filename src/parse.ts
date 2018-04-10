@@ -1,9 +1,9 @@
 import { BigNumber } from "bignumber.js";
+import { getUnit, Unit } from "./conversion";
 import { Token, Tokens } from "./lex";
 import { List } from "./list";
 import { getOperator, Operator } from "./operator";
 import { Stack } from "./stack";
-import { getUnit, Unit } from "./unit";
 import { getAggregator, makeReadVariable, ValueGenerator } from "./valueGenerator";
 
 export type ParserResult =

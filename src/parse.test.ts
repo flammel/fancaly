@@ -1,10 +1,10 @@
 import { BigNumber } from "bignumber.js";
+import { getUnit, Unit, unitless } from "./conversion";
 import { Environment, Value } from "./evaluate";
 import { Token, Tokens } from "./lex";
 import { List } from "./list";
 import { getOperator } from "./operator";
 import { parse, ParserResult, RPNItem } from "./parse";
-import { getUnit, Unit, unitless, units } from "./unit";
 import { getAggregator, makeReadVariable } from "./valueGenerator";
 
 function dummyOperation(env: Environment): Value {
@@ -239,7 +239,7 @@ runTest("50.5 cm", [{ type: "number", value: "50.5" }, { type: "unit", value: "c
   type: "success",
   rpn: new List<RPNItem>([
     { type: "number", value: new BigNumber("50.5") },
-    { type: "unit", unit: getUnit("cm") },
+    { type: "unit", unit: getUnit("cm") as Unit },
   ]),
 });
 
@@ -256,9 +256,9 @@ runTest(
     type: "success",
     rpn: new List<RPNItem>([
       { type: "number", value: new BigNumber("50.5") },
-      { type: "unit", unit: getUnit("cm") },
+      { type: "unit", unit: getUnit("cm") as Unit },
       { type: "number", value: new BigNumber("4") },
-      { type: "unit", unit: getUnit("in") },
+      { type: "unit", unit: getUnit("in") as Unit },
       { type: "operator", operator: getOperator("+") },
     ]),
   },
@@ -279,9 +279,9 @@ runTest(
     type: "success",
     rpn: new List<RPNItem>([
       { type: "number", value: new BigNumber("5") },
-      { type: "unit", unit: getUnit("in") },
+      { type: "unit", unit: getUnit("in") as Unit },
       { type: "number", value: new BigNumber("10") },
-      { type: "unit", unit: getUnit("cm") },
+      { type: "unit", unit: getUnit("cm") as Unit },
       { type: "operator", operator: getOperator("+") },
       { type: "assignment", variableName: "a" },
     ]),
@@ -344,7 +344,7 @@ runTest(
 //     type: "success",
 //     rpn: new List<RPNItem>([
 //       { type: "number", value: new BigNumber("10") },
-//       { type: "unit", unit: getUnit("in") },
+//       { type: "unit", unit: getUnit("in") as Unit },
 //       { type: "number", value: new BigNumber("1") },
 //       { type: "operator", operator: getOperator("+") },
 //       { type: "percent" },
