@@ -43,7 +43,7 @@ runTest("average", {
 
 runTest("10 %", {
   type: "success",
-  tokens: new List<Token>([{ type: "number", value: "10" }, { type: "percent", value: "%" }]),
+  tokens: new List<Token>([{ type: "number", value: "10" }, { type: "unit", value: "%" }]),
 });
 
 runTest("50.5 cm", {
@@ -68,7 +68,7 @@ runTest("120 - 10 %", {
     { type: "number", value: "120" },
     { type: "operator", value: "-" },
     { type: "number", value: "10" },
-    { type: "percent", value: "%" },
+    { type: "unit", value: "%" },
   ]),
 });
 

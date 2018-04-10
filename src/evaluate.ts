@@ -1,5 +1,5 @@
 import { BigNumber } from "bignumber.js";
-import { convert, getUnit, Unit, unitless } from "./conversion";
+import { convert, getUnit, percent, Unit, unitless } from "./conversion";
 import { getOperator, Operator } from "./operator";
 import { RPN, RPNItem } from "./parse";
 import { Stack } from "./stack";
@@ -99,6 +99,10 @@ function evaluateOperator(
     } and ${rgtOperand ? rgtOperand.type : "undefined"}.`;
   }
 
+  if (lftOperand.unit !== percent && rgtOperand.unit === percent) {
+    return evaluateOperatorOnPercentage(stack, operator, lftOperand, rgtOperand);
+  }
+
   const convertedRgt = convert(rgtOperand, lftOperand.unit);
   if (!isNumericValue(convertedRgt)) {
     return `Could not convert ${rgtOperand.unit.name} in rgt operand to unit ${
@@ -108,6 +112,44 @@ function evaluateOperator(
 
   stack.push(operator.operation(lftOperand, convertedRgt));
   return null;
+}
+
+function evaluateOperatorOnPercentage(
+  stack: Stack<Value>,
+  operator: Operator,
+  baseValue: NumericValue,
+  percentage: NumericValue,
+): ErrorMessage | null {
+  switch (operator.operator) {
+    case "*":
+      stack.push(
+        numericValue(baseValue.value.dividedBy(100).multipliedBy(percentage.value), baseValue.unit),
+      );
+      return null;
+    case "+":
+      stack.push(
+        numericValue(
+          baseValue.value.dividedBy(100).multipliedBy(percentage.value.plus(new BigNumber(100))),
+          baseValue.unit,
+        ),
+      );
+      return null;
+    case "/":
+      stack.push(
+        numericValue(baseValue.value.dividedBy(percentage.value.dividedBy(100)), baseValue.unit),
+      );
+      return null;
+    case "-":
+      stack.push(
+        numericValue(
+          baseValue.value.dividedBy(100).multipliedBy(new BigNumber(100).minus(percentage.value)),
+          baseValue.unit,
+        ),
+      );
+      return null;
+    default:
+      return "Cannot use operation " + operator.operator + " with percentages";
+  }
 }
 
 function evaluateAssignment(
@@ -169,65 +211,6 @@ function evaluateUnit(
   return null;
 }
 
-function evaluatePercent(rpn: RPN, stack: Stack<Value>, env: Environment): ErrorMessage | null {
-  const percentage = stack.pop();
-  if (!isNumericValue(percentage)) {
-    return `Top element of stack must be a number when a percentage sign is reached, but is ${
-      percentage ? percentage : "undefined"
-    }.`;
-  }
-
-  const next = rpn.peek();
-  if (next.type === "notDone" && next.value.type === "operator") {
-    const baseValue = stack.pop();
-    if (!isNumericValue(baseValue)) {
-      return `Second element of stack must be a number when a percentage sign is reached with an operator, but is ${
-        baseValue ? baseValue : "undefined"
-      }.`;
-    }
-    const operatorName = next.value.operator.operator;
-    if (operatorName === "+") {
-      rpn.next();
-      stack.push(
-        numericValue(
-          baseValue.value.dividedBy(100).multipliedBy(percentage.value.plus(new BigNumber(100))),
-          baseValue.unit,
-        ),
-      );
-    }
-    if (operatorName === "-") {
-      rpn.next();
-      stack.push(
-        numericValue(
-          baseValue.value.dividedBy(100).multipliedBy(new BigNumber(100).minus(percentage.value)),
-          baseValue.unit,
-        ),
-      );
-    }
-    if (operatorName === "*") {
-      rpn.next();
-      stack.push(
-        numericValue(baseValue.value.dividedBy(100).multipliedBy(percentage.value), baseValue.unit),
-      );
-    }
-    if (operatorName === "/") {
-      rpn.next();
-      stack.push(
-        numericValue(baseValue.value.dividedBy(percentage.value.dividedBy(100)), baseValue.unit),
-      );
-    }
-    return null;
-  }
-
-  const converted = convert(percentage, getUnit("%") as Unit);
-  if (isNumericValue(converted)) {
-    stack.push(converted);
-    return null;
-  } else {
-    return `Cannot convert ${percentage.unit.name} to %.`;
-  }
-}
-
 function tryEvaluators(
   rpn: RPN,
   stack: Stack<Value>,
@@ -245,8 +228,6 @@ function tryEvaluators(
       return evaluateNumber(rpn, stack, env, currentItem.value);
     case "unit":
       return evaluateUnit(rpn, stack, env, currentItem.unit);
-    case "percent":
-      return evaluatePercent(rpn, stack, env);
     default:
       assertNever(currentItem);
       return null;

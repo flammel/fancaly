@@ -20,7 +20,7 @@ function withoutOperations(result: ParserResult): ParserResult {
   return result;
 }
 
-function runTest(type: string, tokens: Token[], output: ParserResult) {
+function runTest(name: string, tokens: Token[], output: ParserResult) {
   test(name, () => {
     const received = parse(new List(tokens));
     expect(withoutOperations(received)).toEqual(withoutOperations(output));
@@ -230,9 +230,12 @@ runTest(
   },
 );
 
-runTest("10 %", [{ type: "number", value: "10" }, { type: "percent", value: "%" }], {
+runTest("10 %", [{ type: "number", value: "10" }, { type: "unit", value: "%" }], {
   type: "success",
-  rpn: new List<RPNItem>([{ type: "number", value: new BigNumber("10") }, { type: "percent" }]),
+  rpn: new List<RPNItem>([
+    { type: "number", value: new BigNumber("10") },
+    { type: "unit", unit: getUnit("%") as Unit },
+  ]),
 });
 
 runTest("50.5 cm", [{ type: "number", value: "50.5" }, { type: "unit", value: "cm" }], {
@@ -294,14 +297,14 @@ runTest(
     { type: "number", value: "120" },
     { type: "operator", value: "-" },
     { type: "number", value: "10" },
-    { type: "percent", value: "%" },
+    { type: "unit", value: "%" },
   ],
   {
     type: "success",
     rpn: new List<RPNItem>([
       { type: "number", value: new BigNumber("120") },
       { type: "number", value: new BigNumber("10") },
-      { type: "percent" },
+      { type: "unit", unit: getUnit("%") as Unit },
       { type: "operator", operator: getOperator("-") },
     ]),
   },
@@ -317,7 +320,7 @@ runTest(
     { type: "operator", value: "+" },
     { type: "number", value: "1" },
     { type: ")", value: ")" },
-    { type: "percent", value: "%" },
+    { type: "unit", value: "%" },
   ],
   {
     type: "success",
@@ -326,7 +329,7 @@ runTest(
       { type: "number", value: new BigNumber("5") },
       { type: "number", value: new BigNumber("1") },
       { type: "operator", operator: getOperator("+") },
-      { type: "percent" },
+      { type: "unit", unit: getUnit("%") as Unit },
       { type: "operator", operator: getOperator("-") },
     ]),
   },
@@ -347,7 +350,7 @@ runTest(
 //       { type: "unit", unit: getUnit("in") as Unit },
 //       { type: "number", value: new BigNumber("1") },
 //       { type: "operator", operator: getOperator("+") },
-//       { type: "percent" },
+//       { type: "unit", unit: getUnit("%") as Unit },
 //       { type: "operator", operator: getOperator("-") },
 //     ]),
 //   },
@@ -368,7 +371,7 @@ runTest(
 //       { type: "number", value: new BigNumber("5") },
 //       { type: "number", value: new BigNumber("1") },
 //       { type: "operator", operator: getOperator("+") },
-//       { type: "percent" },
+//       { type: "unit", unit: getUnit("%") as Unit },
 //       { type: "operator", operator: getOperator("-") },
 //     ]),
 //   },

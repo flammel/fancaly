@@ -13,7 +13,6 @@ type TokenType =
   | "assignment"
   | "comment"
   | "aggregator"
-  | "percent"
   | "conversion";
 
 export interface Token {
@@ -97,19 +96,6 @@ function scanOperator(input: string): [Token, string] | null {
   return null;
 }
 
-function scanPercent(input: string): [Token, string] | null {
-  if (input.indexOf("%") === 0) {
-    return [
-      {
-        type: "percent",
-        value: "%",
-      },
-      input.substr(1),
-    ];
-  }
-  return null;
-}
-
 function scanAggregator(input: string): [Token, string] | null {
   for (const aggregator of aggregatorNames()) {
     if (input.indexOf(aggregator) === 0) {
@@ -176,7 +162,6 @@ function tryScanners(line: string): [Token, string] | null {
     scanNumber,
     scanOperator,
     scanAggregator,
-    scanPercent,
     scanUnit,
     scanConversion,
     scanIdentifier,

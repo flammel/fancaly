@@ -1,8 +1,8 @@
 import { BigNumber } from "bignumber.js";
-import { convert, getUnit, Unit, UnitName } from "./conversion";
+import { convert, getUnit, Unit } from "./conversion";
 import { numericValue } from "./evaluate";
 
-function runTest(value: string, from: UnitName, to: UnitName, expected: string) {
+function runTest(value: string, from: string, to: string, expected: string) {
   test(value + " " + from + " to " + to, () => {
     expect(convert(numericValue(value, getUnit(from) as Unit), getUnit(to) as Unit)).toEqual(
       numericValue(expected, getUnit(to) as Unit),

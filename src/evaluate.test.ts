@@ -106,7 +106,7 @@ runTest(
 
 runTest(
   "10 %",
-  [{ type: "number", value: new BigNumber("10") }, { type: "percent" }],
+  [{ type: "number", value: new BigNumber("10") }, { type: "unit", unit: getUnit("%") as Unit }],
   numericValue("10", getUnit("%") as Unit),
 );
 
@@ -115,7 +115,7 @@ runTest(
   [
     { type: "number", value: new BigNumber("120") },
     { type: "number", value: new BigNumber("10") },
-    { type: "percent" },
+    { type: "unit", unit: getUnit("%") as Unit },
     { type: "operator", operator: getOperator("-") },
   ],
   numericValue("108", unitless),

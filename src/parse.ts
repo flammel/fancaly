@@ -15,8 +15,7 @@ export type RPNItem =
   | { type: "assignment"; variableName: string }
   | { type: "number"; value: BigNumber }
   | { type: "unit"; unit: Unit }
-  | { type: "valueGenerator"; generator: ValueGenerator }
-  | { type: "percent" };
+  | { type: "valueGenerator"; generator: ValueGenerator };
 
 export type RPN = List<RPNItem>;
 
@@ -123,11 +122,6 @@ function parseUnit(state: ParserState, value: string): ErrorMessage | null {
   return null;
 }
 
-function parsePercent(state: ParserState, value: string): ErrorMessage | null {
-  state.queue.push({ type: "percent" });
-  return null;
-}
-
 function parseAssignment(state: ParserState, value: string): ErrorMessage | null {
   return "Assignment operators are only allowed after identifiers.";
 }
@@ -166,8 +160,6 @@ function tryParsers(state: ParserState, currentToken: Token): ErrorMessage | nul
       return parseIdentifier(state, currentToken.value);
     case "unit":
       return parseUnit(state, currentToken.value);
-    case "percent":
-      return parsePercent(state, currentToken.value);
     case "assignment":
       return parseAssignment(state, currentToken.value);
     case "comment":

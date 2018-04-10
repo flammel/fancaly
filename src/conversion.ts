@@ -1,7 +1,7 @@
 import { BigNumber } from "bignumber.js";
 import { errorValue, numericValue, NumericValue, Value } from "./evaluate";
 
-export type UnitName = string;
+type UnitName = string;
 
 type BigNumberable = BigNumber | string | number;
 
@@ -12,7 +12,8 @@ export interface Unit {
 }
 
 const unitTable: { [key: string]: Unit } = {
-  unitless: { base: "unitless", name: "unitless", multiplier: new BigNumber(0) },
+  unitless: { base: "unitless", name: "unitless", multiplier: new BigNumber(1) },
+  "%": { base: "%", name: "%", multiplier: new BigNumber(1) },
 };
 
 function toBigNumber(value: BigNumberable) {
@@ -48,7 +49,6 @@ addUnit("mm", "1000", "m");
 addUnit("mm", "1000000", "km");
 addUnit("mm", "304.8", "ft", "foot", "feet");
 addUnit("mm", "25.4", "in", "inch");
-addUnit("%", "1", "%");
 addUnit("€", "1", "€");
 addUnit("g", "1", "g", "gram", "grams");
 addUnit("g", "10", "dkg");
@@ -56,6 +56,7 @@ addUnit("g", "1000", "kg");
 addUnit("g", "28.3495", "oz");
 
 export const unitless = unitTable.unitless;
+export const percent = unitTable["%"];
 
 export function getUnit(name: string): Unit | undefined {
   return unitTable[name];
