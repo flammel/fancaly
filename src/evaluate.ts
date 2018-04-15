@@ -246,6 +246,7 @@ function tryEvaluators(
       return evaluateUnit(rpn, stack, env, currentItem.unit);
     case "conversion":
       return evaluateConversion(rpn, stack, env, currentItem.unit);
+    /* istanbul ignore next */
     default:
       assertNever(currentItem);
       return null;
