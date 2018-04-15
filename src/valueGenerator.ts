@@ -21,6 +21,7 @@ export function makeReadVariable(varName: string): ValueGenerator {
 
 function getAggregatorValues(env: Environment): NumericValue[] {
   const values = [];
+  // reverse() operates in-place, so slice() before reversing
   for (const val of env.lines.slice().reverse()) {
     if (val.type === "number") {
       values.unshift(val);
