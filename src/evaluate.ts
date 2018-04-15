@@ -205,6 +205,28 @@ function evaluateUnit(
   return null;
 }
 
+function evaluateConversion(
+  rpn: RPN,
+  stack: Stack<Value>,
+  env: Environment,
+  unit: Unit,
+): ErrorMessage | null {
+  const lastVal = stack.pop();
+  if (!isNumericValue(lastVal)) {
+    return `Top of stack must be a number when a conversion is reached, but is ${
+      lastVal ? lastVal.type : "undefined"
+    }.`;
+  }
+
+  const converted = convert(lastVal, unit);
+  if (!isNumericValue(converted)) {
+    return `Cannot convert ${lastVal.unit.name} to ${unit.name}.`;
+  }
+
+  stack.push(converted);
+  return null;
+}
+
 function tryEvaluators(
   rpn: RPN,
   stack: Stack<Value>,
@@ -222,6 +244,8 @@ function tryEvaluators(
       return evaluateNumber(rpn, stack, env, currentItem.value);
     case "unit":
       return evaluateUnit(rpn, stack, env, currentItem.unit);
+    case "conversion":
+      return evaluateConversion(rpn, stack, env, currentItem.unit);
     default:
       assertNever(currentItem);
       return null;

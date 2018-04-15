@@ -149,8 +149,12 @@ runTest(`
   sum     6
 `);
 
+runTest(`
+  1 m + 1 cm to mm    1010 mm
+`);
+
 // runTest(`
 //   Price: 7$ * 4     28 $
-//   Fee: 4 GBP in Euro      5.71 €
-//   sum in USD - 4 %      32.87 $
+//   Fee: 4 GBP to Euro      5.71 €
+//   sum to USD - 4 %      32.87 $
 // `);

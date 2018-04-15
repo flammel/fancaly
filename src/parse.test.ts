@@ -335,44 +335,45 @@ runTest(
   },
 );
 
-// runTest(
-//   "10 in to cm",
-//   [
-//     { type: "number", value: "10" },
-//     { type: "unit", value: "in" },
-//     { type: "conversion", value: "to" },
-//     { type: "unit", value: "cm" },
-//   ],
-//   {
-//     type: "success",
-//     rpn: new List<RPNItem>([
-//       { type: "number", value: new BigNumber("10") },
-//       { type: "unit", unit: getUnit("in") as Unit },
-//       { type: "number", value: new BigNumber("1") },
-//       { type: "operator", operator: getOperator("+") },
-//       { type: "unit", unit: getUnit("%") as Unit },
-//       { type: "operator", operator: getOperator("-") },
-//     ]),
-//   },
-// );
+runTest(
+  "10 in to cm",
+  [
+    { type: "number", value: "10" },
+    { type: "unit", value: "in" },
+    { type: "conversion", value: "to" },
+    { type: "unit", value: "cm" },
+  ],
+  {
+    type: "success",
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("10") },
+      { type: "unit", unit: getUnit("in") as Unit },
+      { type: "conversion", unit: getUnit("cm") as Unit },
+    ]),
+  },
+);
 
-// runTest(
-//   "10 cm as in",
-//   [
-//     { type: "number", value: "10" },
-//     { type: "unit", value: "cm" },
-//     { type: "conversion", value: "as" },
-//     { type: "unit", value: "in" },
-//   ],
-//   {
-//     type: "success",
-//     rpn: new List<RPNItem>([
-//       { type: "number", value: new BigNumber("100") },
-//       { type: "number", value: new BigNumber("5") },
-//       { type: "number", value: new BigNumber("1") },
-//       { type: "operator", operator: getOperator("+") },
-//       { type: "unit", unit: getUnit("%") as Unit },
-//       { type: "operator", operator: getOperator("-") },
-//     ]),
-//   },
-// );
+
+runTest(
+  "10 in + 120 mm as cm",
+  [
+    { type: "number", value: "10" },
+    { type: "unit", value: "in" },
+    { type: "operator", value: "+" },
+    { type: "number", value: "120" },
+    { type: "unit", value: "mm" },
+    { type: "conversion", value: "as" },
+    { type: "unit", value: "cm" },
+  ],
+  {
+    type: "success",
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("10") },
+      { type: "unit", unit: getUnit("in") as Unit },
+      { type: "number", value: new BigNumber("120") },
+      { type: "unit", unit: getUnit("mm") as Unit },
+      { type: "operator", operator: getOperator("+") },
+      { type: "conversion", unit: getUnit("cm") as Unit },
+    ]),
+  },
+);

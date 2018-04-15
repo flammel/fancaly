@@ -16,7 +16,8 @@ export type RPNItem =
   | { type: "assignment"; variableName: string }
   | { type: "number"; value: BigNumber }
   | { type: "unit"; unit: Unit }
-  | { type: "valueGenerator"; generator: ValueGenerator };
+  | { type: "valueGenerator"; generator: ValueGenerator }
+  | { type: "conversion"; unit: Unit };
 
 export type RPN = List<RPNItem>;
 
@@ -137,6 +138,31 @@ function parseAggregator(state: ParserState, value: string): ErrorMessage | null
 }
 
 function parseConversion(state: ParserState, value: string): ErrorMessage | null {
+  const peeked = state.tokens.peek();
+  
+  if (peeked.type === "done" || peeked.value.type !== "unit") {
+    return "Conversion \"" + value + "\" must be followed by unit, but is followed by " + peeked.type;
+  }
+
+  const unit = getUnit(peeked.value.value);
+  if (unit === undefined) {
+    return 'Unknown unit "' + value + '".';
+  }
+  state.tokens.next();
+
+  let stackTop = state.stack.peek();
+  while (
+    stackTop !== undefined &&
+    stackTop.type === "operator") {
+    state.stack.pop();
+    state.queue.push(stackTop);
+    stackTop = state.stack.peek();
+  }
+
+  state.queue.push({
+    type: "conversion",
+    unit: unit
+  });
   return null;
 }
 
