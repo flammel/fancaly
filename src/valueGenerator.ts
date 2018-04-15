@@ -21,11 +21,10 @@ export function makeReadVariable(varName: string): ValueGenerator {
 
 function getAggregatorValues(env: Environment): NumericValue[] {
   const values = [];
-  for (const val of env.lines.reverse()) {
+  for (const val of env.lines.slice().reverse()) {
     if (val.type === "number") {
       values.unshift(val);
-    }
-    if (val.type === "empty") {
+    } else {
       break;
     }
   }
@@ -50,8 +49,7 @@ function sumAggregator(values: NumericValue[]): Value {
 const aggregators: { [k: string]: ValueGenerator } = {
   sum: {
     operation: (env: Environment) => {
-      const values = getAggregatorValues(env);
-      return sumAggregator(values);
+      return sumAggregator(getAggregatorValues(env));
     },
     type: "ValueGenerator",
   },

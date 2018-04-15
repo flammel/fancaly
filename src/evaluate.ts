@@ -3,6 +3,7 @@ import { convert, getUnit, percent, Unit, unitless } from "./conversion";
 import { getOperator, Operator } from "./operator";
 import { RPN, RPNItem } from "./parse";
 import { Stack } from "./stack";
+import { assertNever } from "./util";
 import { ValueGenerator } from "./valueGenerator";
 
 BigNumber.config({
@@ -74,13 +75,6 @@ export function emptyEnvironment(): Environment {
     variables: {},
     lines: [],
   };
-}
-
-/**
- * For exhaustiveness checking.
- */
-function assertNever(x: never): never {
-  throw new Error("Unexpected object: " + x);
 }
 
 type ErrorMessage = string;

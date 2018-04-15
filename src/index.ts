@@ -1,12 +1,12 @@
 import { BigNumber } from "bignumber.js";
 
-import { emptyEnvironment, evaluate, Environment, stringifyValue } from "./evaluate";
+import { emptyEnvironment, Environment, evaluate, stringifyValue } from "./evaluate";
 import { lex } from "./lex";
 import { parse } from "./parse";
 
 import "./index.scss";
 
-const inputEl = document.getElementById("input") as HTMLInputElement;
+const inputEl = document.getElementById("input") as HTMLTextAreaElement;
 const resultsEl = document.getElementById("results") as HTMLDivElement;
 
 function makeHtml(str: string): HTMLElement {
@@ -21,30 +21,32 @@ function addResult(str: string) {
   resultsEl.appendChild(child);
 }
 
-function getLines(inputEl: HTMLTextAreaElement) {
-  return inputEl.value.split("\n").map((line) => line.trim());
+function getLines(textarea: HTMLTextAreaElement) {
+  return textarea.value.split("\n").map((line) => line.trim());
 }
 
 function evaluateLine(env: Environment, line: string) {
-    const lexed = lex(line);
-    if (lexed.type === "error") {
-      return "";
-    }
-    const parsed = parse(lexed.tokens);
-    if (parsed.type === "error") {
-      return "";
-    }
-    const evaluated = evaluate(parsed.rpn, env);
-    if (evaluated.type === "error") {
-      return ""
-    }
-    return stringifyValue(evaluated);
+  const lexed = lex(line);
+  if (lexed.type === "error") {
+    return "";
+  }
+  const parsed = parse(lexed.tokens);
+  if (parsed.type === "error") {
+    return "";
+  }
+  const evaluated = evaluate(parsed.rpn, env);
+  if (evaluated.type === "error") {
+    return "";
+  }
+  return stringifyValue(evaluated);
 }
 
 function handleChange() {
   resultsEl.innerHTML = "";
   const env = emptyEnvironment();
-  getLines(inputEl).map(evaluateLine.bind(null, env)).forEach(addResult)
+  getLines(inputEl)
+    .map((line) => evaluateLine(env, line))
+    .forEach(addResult);
 }
 
 inputEl.addEventListener("keyup", handleChange);

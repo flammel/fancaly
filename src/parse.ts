@@ -4,6 +4,7 @@ import { Token, Tokens } from "./lex";
 import { List } from "./list";
 import { getOperator, Operator } from "./operator";
 import { Stack } from "./stack";
+import { assertNever } from "./util";
 import { getAggregator, makeReadVariable, ValueGenerator } from "./valueGenerator";
 
 export type ParserResult =
@@ -23,13 +24,6 @@ type StackItem =
   | { type: "(" }
   | { type: "operator"; operator: Operator }
   | { type: "assignment"; variableName: string };
-
-/**
- * For exhaustiveness checking.
- */
-function assertNever(x: never): never {
-  throw new Error("Unexpected object: " + x);
-}
 
 interface ParserState {
   tokens: Tokens;
