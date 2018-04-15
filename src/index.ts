@@ -1,11 +1,10 @@
 import { BigNumber } from "bignumber.js";
 
-import { emptyEnvironment, evaluate } from "./evaluate";
-import { stringifyValue, Value } from "./evaluate";
+import { emptyEnvironment, evaluate, Environment, stringifyValue } from "./evaluate";
 import { lex } from "./lex";
 import { parse } from "./parse";
 
-import "./main.scss";
+import "./index.scss";
 
 const inputEl = document.getElementById("input") as HTMLInputElement;
 const resultsEl = document.getElementById("results") as HTMLDivElement;
@@ -13,7 +12,7 @@ const resultsEl = document.getElementById("results") as HTMLDivElement;
 function makeHtml(str: string): HTMLElement {
   const resultDiv = document.createElement("div");
   resultDiv.classList.add("result");
-  resultDiv.innerHTML = str;
+  resultDiv.innerHTML = str ? str : "&nbsp;";
   return resultDiv;
 }
 
@@ -22,32 +21,31 @@ function addResult(str: string) {
   resultsEl.appendChild(child);
 }
 
-function update(input: NodeList) {
-  resultsEl.innerHTML = "";
-  const env = emptyEnvironment();
-  for (const line of input) {
-    const text = line.textContent;
-    if (!text) {
-      continue;
-    }
-    const lexed = lex(text.trim());
+function getLines(inputEl: HTMLTextAreaElement) {
+  return inputEl.value.split("\n").map((line) => line.trim());
+}
+
+function evaluateLine(env: Environment, line: string) {
+    const lexed = lex(line);
     if (lexed.type === "error") {
-      addResult("");
-      continue;
+      return "";
     }
     const parsed = parse(lexed.tokens);
     if (parsed.type === "error") {
-      addResult("");
-      continue;
+      return "";
     }
     const evaluated = evaluate(parsed.rpn, env);
     if (evaluated.type === "error") {
-      addResult("error");
-      continue;
+      return ""
     }
-    addResult(stringifyValue(evaluated));
-  }
+    return stringifyValue(evaluated);
 }
 
-inputEl.addEventListener("keyup", () => update(inputEl.childNodes));
+function handleChange() {
+  resultsEl.innerHTML = "";
+  const env = emptyEnvironment();
+  getLines(inputEl).map(evaluateLine.bind(null, env)).forEach(addResult)
+}
+
+inputEl.addEventListener("keyup", handleChange);
 inputEl.focus();

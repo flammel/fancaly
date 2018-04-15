@@ -1,0 +1,43 @@
+html {
+  font-family: sans-serif;
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+}
+
+#container {
+  display: flex;
+  min-height: 100%;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+#input {
+  flex-grow: 1;
+  box-sizing: border-box;
+  padding: 8px;
+  border: none;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+#results {
+  background: #dcdcdc;
+  flex-basis: 200px;
+  box-sizing: border-box;
+  padding: 8px;
+}
+
+#results,
+#input {
+  font-family: sans-serif;
+  line-height: 1.4;
+  color: #383838;
+  font-size: 1rem;
+}
