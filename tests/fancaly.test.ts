@@ -124,8 +124,8 @@ runTest(`
 
 runTest(`
   tax: 20%          20 %
-  price: 100 €      100 €
-  price + tax       120 €
+  price: 100 €      100 EUR
+  price + tax       120 EUR
 `);
 
 runTest(`
@@ -153,8 +153,13 @@ runTest(`
   1 m + 1 cm to mm    1010 mm
 `);
 
-// runTest(`
-//   Price: 7$ * 4     28 $
-//   Fee: 4 GBP to Euro      5.71 €
-//   sum to USD - 4 %      32.87 $
-// `);
+runTest(`
+  asdf: 10      10
+  asdf + 1      11
+`);
+
+runTest(`
+  Price: 7$ * 4           28 USD
+  Fee: 4 GBP to Euro      4 EUR
+  sum to USD - 4 %        30.72 USD
+`);

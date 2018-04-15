@@ -353,7 +353,6 @@ runTest(
   },
 );
 
-
 runTest(
   "10 in + 120 mm as cm",
   [
@@ -374,6 +373,27 @@ runTest(
       { type: "unit", unit: getUnit("mm") as Unit },
       { type: "operator", operator: getOperator("+") },
       { type: "conversion", unit: getUnit("cm") as Unit },
+    ]),
+  },
+);
+
+runTest(
+  "Fee: 4 GBP to Euro",
+  [
+    { type: "identifier", value: "Fee" },
+    { type: "assignment", value: ":" },
+    { type: "number", value: "4" },
+    { type: "unit", value: "GBP" },
+    { type: "conversion", value: "to" },
+    { type: "unit", value: "Euro" },
+  ],
+  {
+    type: "success",
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("4") },
+      { type: "unit", unit: getUnit("GBP") as Unit },
+      { type: "conversion", unit: getUnit("EUR") as Unit },
+      { type: "assignment", variableName: "Fee" },
     ]),
   },
 );

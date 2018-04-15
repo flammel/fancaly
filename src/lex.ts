@@ -113,13 +113,17 @@ function scanAggregator(input: string): [Token, string] | null {
 
 function scanUnit(input: string): [Token, string] | null {
   for (const unit of unitNames()) {
-    if (input.indexOf(unit) === 0) {
+    if (input.toLowerCase().indexOf(unit.toLowerCase()) === 0) {
+      const remaining = input.substr(unit.length);
+      if (remaining !== "" && remaining[0] !== " " && remaining[0] !== ")") {
+        continue;
+      }
       return [
         {
           type: "unit",
           value: unit,
         },
-        input.substr(unit.length),
+        remaining,
       ];
     }
   }
@@ -141,7 +145,7 @@ function scanIdentifier(input: string): [Token, string] | null {
 }
 
 function scanConversion(input: string): [Token, string] | null {
-  const matched = input.match(/^(to|as)(.*)$/);
+  const matched = input.match(/^(to|as)\s+(.*)$/);
   if (matched !== null) {
     return [
       {

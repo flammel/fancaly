@@ -4,11 +4,13 @@ import { Environment, isNumericValue, numericValue, NumericValue, Value } from "
 export interface ValueGenerator {
   operation: (env: Environment) => Value;
   type: "ValueGenerator";
+  name: string;
 }
 
 export function makeReadVariable(varName: string): ValueGenerator {
   return {
     type: "ValueGenerator",
+    name: "readVariable",
     operation: (env: Environment) => {
       if (env.variables[varName] !== undefined) {
         return env.variables[varName];
@@ -53,6 +55,7 @@ const aggregators: { [k: string]: ValueGenerator } = {
       return sumAggregator(getAggregatorValues(env));
     },
     type: "ValueGenerator",
+    name: "sum",
   },
   average: {
     operation: (env: Environment) => {
@@ -64,6 +67,7 @@ const aggregators: { [k: string]: ValueGenerator } = {
       return sum;
     },
     type: "ValueGenerator",
+    name: "average",
   },
 };
 

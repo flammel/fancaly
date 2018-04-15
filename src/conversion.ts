@@ -16,7 +16,7 @@ const unitTable: { [key: string]: Unit } = {
 
 export function addUnit(base: UnitName, multiplier: string, ...names: UnitName[]) {
   for (const name of names) {
-    unitTable[name] = { base, name, multiplier: new BigNumber(multiplier) };
+    unitTable[name.toLowerCase()] = { base, name: names[0], multiplier: new BigNumber(multiplier) };
   }
 }
 
@@ -49,7 +49,7 @@ export const unitless = unitTable.unitless;
 export const percent = unitTable["%"];
 
 export function getUnit(name: string): Unit | undefined {
-  return unitTable[name];
+  return unitTable[name.toLowerCase()];
 }
 
 export function unitNames(): string[] {

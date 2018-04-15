@@ -139,9 +139,18 @@ function parseAggregator(state: ParserState, value: string): ErrorMessage | null
 
 function parseConversion(state: ParserState, value: string): ErrorMessage | null {
   const peeked = state.tokens.peek();
-  
-  if (peeked.type === "done" || peeked.value.type !== "unit") {
-    return "Conversion \"" + value + "\" must be followed by unit, but is followed by " + peeked.type;
+
+  if (peeked.type === "done") {
+    return 'Conversion "' + value + '" must not be followed by end of input';
+  }
+
+  if (peeked.value.type !== "unit") {
+    return (
+      'Conversion "' +
+      value +
+      '" must be followed by unit, but is followed by ' +
+      JSON.stringify(peeked.value)
+    );
   }
 
   const unit = getUnit(peeked.value.value);
@@ -151,9 +160,7 @@ function parseConversion(state: ParserState, value: string): ErrorMessage | null
   state.tokens.next();
 
   let stackTop = state.stack.peek();
-  while (
-    stackTop !== undefined &&
-    stackTop.type === "operator") {
+  while (stackTop !== undefined && stackTop.type === "operator") {
     state.stack.pop();
     state.queue.push(stackTop);
     stackTop = state.stack.peek();
@@ -161,7 +168,7 @@ function parseConversion(state: ParserState, value: string): ErrorMessage | null
 
   state.queue.push({
     type: "conversion",
-    unit: unit
+    unit,
   });
   return null;
 }

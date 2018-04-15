@@ -151,3 +151,14 @@ runTest(
   ],
   numericValue("8.9370078740157480315", getUnit("in") as Unit),
 );
+
+runTest(
+  "Fee: 4 GBP to Euro",
+  [
+    { type: "number", value: new BigNumber("4") },
+    { type: "unit", unit: getUnit("GBP") as Unit },
+    { type: "conversion", unit: getUnit("EUR") as Unit },
+    { type: "assignment", variableName: "Fee" },
+  ],
+  numericValue("4", getUnit("EUR") as Unit),
+);
