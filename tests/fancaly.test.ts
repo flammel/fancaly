@@ -159,6 +159,13 @@ runTest(`
 `);
 
 runTest(`
+  länge: 10 mm              10 mm
+  höhe: 10 cm               10 cm
+  ÜmlàutŞ: 1 in             1 in
+  länge + höhe + ÜmlàutŞ    135.4 mm
+`);
+
+runTest(`
   Price: 7$ * 4           28 USD
   Fee: 4 GBP to Euro      4 EUR
   sum to USD - 4 %        30.72 USD

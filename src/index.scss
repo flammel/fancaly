@@ -21,6 +21,7 @@ body {
   box-sizing: border-box;
   padding: 8px;
   border: none;
+  resize: none;
 
   &:focus {
     outline: none;

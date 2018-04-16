@@ -10,17 +10,10 @@ export class Stack<T> {
   }
 
   public pop(): T | undefined {
-    if (this.isEmpty()) {
-      return undefined;
-    }
     return this.arr.pop();
   }
 
   public peek(): T | undefined {
-    return this.isEmpty() ? undefined : this.arr[this.arr.length - 1];
-  }
-
-  public isEmpty(): boolean {
-    return this.arr.length === 0;
+    return this.arr[this.arr.length - 1];
   }
 }

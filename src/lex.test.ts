@@ -91,3 +91,13 @@ runTest("10 cm as in", {
     { type: "unit", value: "in" },
   ]),
 });
+
+runTest("LängȘe: 10 mm", {
+  type: "success",
+  tokens: new List<Token>([
+    { type: "identifier", value: "LängȘe" },
+    { type: "assignment", value: ":" },
+    { type: "number", value: "10" },
+    { type: "unit", value: "mm" },
+  ]),
+});
