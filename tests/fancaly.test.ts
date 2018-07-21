@@ -170,3 +170,15 @@ runTest(`
   Fee: 4 GBP to Euro      4 EUR
   sum to USD - 4 %        30.72 USD
 `);
+
+runTest(`
+  -11         -11
+  10          10
+  sum         -1
+`);
+
+runTest(`
+  11         11
+  -10        -10
+  sum        1
+`);

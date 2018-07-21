@@ -1,44 +1,65 @@
 import { numericValue, NumericValue, Value } from "./evaluate";
 
 export interface Operator {
-  arity: number;
   associativity: "left" | "right";
-  operation: (a: NumericValue, b: NumericValue) => NumericValue;
+  operation: Operation;
   operator: string;
   precedence: number;
   type: "Operator";
 }
 
+export type Operation =
+  | { action: (a: NumericValue) => NumericValue; arity: 1 }
+  | { action: (a: NumericValue, b: NumericValue) => NumericValue; arity: 2 };
+
 const operators: { [k: string]: Operator } = {
   "*": {
-    arity: 2,
     associativity: "left",
-    operation: (a: NumericValue, b: NumericValue) => numericValue(a.value.times(b.value), a.unit),
+    operation: {
+      arity: 2,
+      action: (a: NumericValue, b: NumericValue) => numericValue(a.value.times(b.value), a.unit),
+    },
     operator: "*",
     precedence: 14,
     type: "Operator",
   },
   "+": {
-    arity: 2,
     associativity: "left",
-    operation: (a: NumericValue, b: NumericValue) => numericValue(a.value.plus(b.value), a.unit),
+    operation: {
+      arity: 2,
+      action: (a: NumericValue, b: NumericValue) => numericValue(a.value.plus(b.value), a.unit),
+    },
     operator: "+",
     precedence: 13,
     type: "Operator",
   },
   "-": {
-    arity: 2,
     associativity: "left",
-    operation: (a: NumericValue, b: NumericValue) => numericValue(a.value.minus(b.value), a.unit),
+    operation: {
+      arity: 2,
+      action: (a: NumericValue, b: NumericValue) => numericValue(a.value.minus(b.value), a.unit),
+    },
     operator: "-",
     precedence: 13,
     type: "Operator",
   },
+  "-u": {
+    associativity: "right",
+    operation: {
+      arity: 1,
+      action: (a: NumericValue) => numericValue(a.value.negated(), a.unit),
+    },
+    operator: "-",
+    precedence: 15,
+    type: "Operator",
+  },
   "/": {
-    arity: 2,
     associativity: "left",
-    operation: (a: NumericValue, b: NumericValue) =>
-      numericValue(a.value.dividedBy(b.value), a.unit),
+    operation: {
+      arity: 2,
+      action: (a: NumericValue, b: NumericValue) =>
+        numericValue(a.value.dividedBy(b.value), a.unit),
+    },
     operator: "/",
     precedence: 14,
     type: "Operator",

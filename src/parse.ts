@@ -44,13 +44,25 @@ function parseNumber(state: ParserState, value: string): ErrorMessage | null {
 
 function parseOperator(state: ParserState, value: string): ErrorMessage | null {
   // https://en.wikipedia.org/wiki/Shunting-yard_algorithm#The_algorithm_in_detail
-  const operator = getOperator(value);
-
-  if (operator === undefined) {
-    return "Unknown operator " + value;
+  let operatorSymbol = value;
+  let stackTop = state.stack.peek();
+  if (
+    operatorSymbol === "-" &&
+    ((state.stack.peek() === undefined && state.queue.length === 0) ||
+      (stackTop !== undefined && stackTop.type === "assignment") ||
+      (stackTop !== undefined && stackTop.type === "(") ||
+      (stackTop !== undefined && stackTop.type === "operator"))
+  ) {
+    operatorSymbol = "-u";
   }
 
-  let stackTop = state.stack.peek();
+  const operator = getOperator(operatorSymbol);
+
+  if (operator === undefined) {
+    return "Unknown operator " + operatorSymbol;
+  }
+
+  stackTop = state.stack.peek();
   while (
     stackTop !== undefined &&
     stackTop.type === "operator" &&

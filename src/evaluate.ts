@@ -85,27 +85,39 @@ function evaluateOperator(
   env: Environment,
   operator: Operator,
 ): ErrorMessage | null {
-  const rgtOperand = stack.pop();
-  const lftOperand = stack.pop();
-  if (!isNumericValue(lftOperand) || !isNumericValue(rgtOperand)) {
-    return `Operands of "${operator.operator}" must be numeric values but are ${
-      lftOperand ? lftOperand.type : "undefined"
-    } and ${rgtOperand ? rgtOperand.type : "undefined"}.`;
+  if (operator.operation.arity === 1) {
+    const operand = stack.pop();
+    if (!isNumericValue(operand)) {
+      return `Operand of "${operator.operator}" must be numeric value but is ${
+        operand ? operand.type : "undefined"
+      }.`;
+    }
+    stack.push(operator.operation.action(operand));
+    return null;
   }
 
-  if (lftOperand.unit !== percent && rgtOperand.unit === percent) {
-    return evaluateOperatorOnPercentage(stack, operator, lftOperand, rgtOperand);
+  if (operator.operation.arity === 2) {
+    const rgtOperand = stack.pop();
+    const lftOperand = stack.pop();
+    if (!isNumericValue(lftOperand) || !isNumericValue(rgtOperand)) {
+      return `Operands of "${operator.operator}" must be numeric values but are ${
+        lftOperand ? lftOperand.type : "undefined"
+      } and ${rgtOperand ? rgtOperand.type : "undefined"}.`;
+    }
+    if (lftOperand.unit !== percent && rgtOperand.unit === percent) {
+      return evaluateOperatorOnPercentage(stack, operator, lftOperand, rgtOperand);
+    }
+    const convertedRgt = convert(rgtOperand, lftOperand.unit);
+    if (!isNumericValue(convertedRgt)) {
+      return `Could not convert ${rgtOperand.unit.name} in rgt operand to unit ${
+        lftOperand.unit.name
+      } of lft operand`;
+    }
+    stack.push(operator.operation.action(lftOperand, convertedRgt));
+    return null;
   }
 
-  const convertedRgt = convert(rgtOperand, lftOperand.unit);
-  if (!isNumericValue(convertedRgt)) {
-    return `Could not convert ${rgtOperand.unit.name} in rgt operand to unit ${
-      lftOperand.unit.name
-    } of lft operand`;
-  }
-
-  stack.push(operator.operation(lftOperand, convertedRgt));
-  return null;
+  return "Invalid operator arity";
 }
 
 function evaluateOperatorOnPercentage(

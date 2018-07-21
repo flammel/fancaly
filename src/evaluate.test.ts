@@ -162,3 +162,31 @@ runTest(
   ],
   numericValue("4", getUnit("EUR") as Unit),
 );
+
+runTest(
+  "Discount: -4 GBP to Euro",
+  [
+    { type: "number", value: new BigNumber("4") },
+    { type: "unit", unit: getUnit("GBP") as Unit },
+    { type: "operator", operator: getOperator("-u") },
+    { type: "conversion", unit: getUnit("EUR") as Unit },
+    { type: "assignment", variableName: "Discount" },
+  ],
+  numericValue("-4", getUnit("EUR") as Unit),
+);
+
+runTest(
+  "3+-5*-(7*4)",
+  [
+    { type: "number", value: new BigNumber("3") },
+    { type: "number", value: new BigNumber("5") },
+    { type: "operator", operator: getOperator("-u") },
+    { type: "number", value: new BigNumber("7") },
+    { type: "number", value: new BigNumber("4") },
+    { type: "operator", operator: getOperator("*") },
+    { type: "operator", operator: getOperator("-u") },
+    { type: "operator", operator: getOperator("*") },
+    { type: "operator", operator: getOperator("+") },
+  ],
+  numericValue("143", unitless),
+);

@@ -397,3 +397,26 @@ runTest(
     ]),
   },
 );
+
+runTest(
+  "Discount: -4 GBP to Euro",
+  [
+    { type: "identifier", value: "Discount" },
+    { type: "assignment", value: ":" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "4" },
+    { type: "unit", value: "GBP" },
+    { type: "conversion", value: "to" },
+    { type: "unit", value: "Euro" },
+  ],
+  {
+    type: "success",
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("4") },
+      { type: "unit", unit: getUnit("GBP") as Unit },
+      { type: "operator", operator: getOperator("-u") },
+      { type: "conversion", unit: getUnit("EUR") as Unit },
+      { type: "assignment", variableName: "Discount" },
+    ]),
+  },
+);

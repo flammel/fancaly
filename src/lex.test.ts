@@ -101,3 +101,12 @@ runTest("LängȘe: 10 mm", {
     { type: "unit", value: "mm" },
   ]),
 });
+
+runTest("- 20 km", {
+  type: "success",
+  tokens: new List<Token>([
+    { type: "operator", value: "-" },
+    { type: "number", value: "20" },
+    { type: "unit", value: "km" },
+  ]),
+});
