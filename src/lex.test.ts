@@ -110,3 +110,16 @@ runTest("- 20 km", {
     { type: "unit", value: "km" },
   ]),
 });
+
+runTest("10*(1-1)", {
+  type: "success",
+  tokens: new List<Token>([
+    { type: "number", value: "10" },
+    { type: "operator", value: "*" },
+    { type: "(", value: "(" },
+    { type: "number", value: "1" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "1" },
+    { type: ")", value: ")" },
+  ]),
+});

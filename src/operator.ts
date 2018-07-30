@@ -49,7 +49,7 @@ const operators: { [k: string]: Operator } = {
       arity: 1,
       action: (a: NumericValue) => numericValue(a.value.negated(), a.unit),
     },
-    operator: "-",
+    operator: "-u",
     precedence: 15,
     type: "Operator",
   },

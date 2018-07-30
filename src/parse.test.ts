@@ -420,3 +420,46 @@ runTest(
     ]),
   },
 );
+
+runTest(
+  "Fee: 4 GBP to Euro",
+  [
+    { type: "identifier", value: "Fee" },
+    { type: "assignment", value: ":" },
+    { type: "number", value: "4" },
+    { type: "unit", value: "GBP" },
+    { type: "conversion", value: "to" },
+    { type: "unit", value: "Euro" },
+  ],
+  {
+    type: "success",
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("4") },
+      { type: "unit", unit: getUnit("GBP") as Unit },
+      { type: "conversion", unit: getUnit("EUR") as Unit },
+      { type: "assignment", variableName: "Fee" },
+    ]),
+  },
+);
+
+runTest("10*(1-1)",
+  [
+    { type: "number", value: "10" },
+    { type: "operator", value: "*" },
+    { type: "(", value: "(" },
+    { type: "number", value: "1" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "1" },
+    { type: ")", value: ")" },
+  ],
+  {
+    type: "success",
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("10") },
+      { type: "number", value: new BigNumber("1") },
+      { type: "number", value: new BigNumber("1") },
+      { type: "operator", operator: getOperator("-") },
+      { type: "operator", operator: getOperator("*") },
+    ]),
+  },
+);

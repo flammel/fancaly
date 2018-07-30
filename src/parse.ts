@@ -30,11 +30,13 @@ interface ParserState {
   tokens: Tokens;
   stack: Stack<StackItem>;
   queue: RPNItem[];
+  nextMinus: "-" | "-u";
 }
 
 type ErrorMessage = string;
 
 function parseNumber(state: ParserState, value: string): ErrorMessage | null {
+  state.nextMinus = "-";
   state.queue.push({
     type: "number",
     value: new BigNumber(value),
@@ -44,25 +46,15 @@ function parseNumber(state: ParserState, value: string): ErrorMessage | null {
 
 function parseOperator(state: ParserState, value: string): ErrorMessage | null {
   // https://en.wikipedia.org/wiki/Shunting-yard_algorithm#The_algorithm_in_detail
-  let operatorSymbol = value;
-  let stackTop = state.stack.peek();
-  if (
-    operatorSymbol === "-" &&
-    ((state.stack.peek() === undefined && state.queue.length === 0) ||
-      (stackTop !== undefined && stackTop.type === "assignment") ||
-      (stackTop !== undefined && stackTop.type === "(") ||
-      (stackTop !== undefined && stackTop.type === "operator"))
-  ) {
-    operatorSymbol = "-u";
-  }
-
+  const operatorSymbol = value === "-" ? state.nextMinus : value;
   const operator = getOperator(operatorSymbol);
 
   if (operator === undefined) {
     return "Unknown operator " + operatorSymbol;
   }
 
-  stackTop = state.stack.peek();
+  state.nextMinus = "-u";
+  let stackTop = state.stack.peek();
   while (
     stackTop !== undefined &&
     stackTop.type === "operator" &&
@@ -82,11 +74,13 @@ function parseOperator(state: ParserState, value: string): ErrorMessage | null {
 }
 
 function parseLeftBracket(state: ParserState, value: string): ErrorMessage | null {
+  state.nextMinus = "-u";
   state.stack.push({ type: "(" });
   return null;
 }
 
 function parseRightBracket(state: ParserState, value: string): ErrorMessage | null {
+  state.nextMinus = "-";
   let stackTop = state.stack.peek();
   while (stackTop && stackTop.type === "operator") {
     state.queue.push(stackTop);
@@ -103,12 +97,14 @@ function parseRightBracket(state: ParserState, value: string): ErrorMessage | nu
 function parseIdentifier(state: ParserState, value: string): ErrorMessage | null {
   const peeked = state.tokens.peek();
   if (peeked.type === "notDone" && peeked.value.type === "assignment") {
+    state.nextMinus = "-u";
     state.stack.push({
       type: "assignment",
       variableName: value,
     });
     state.tokens.next();
   } else {
+    state.nextMinus = "-";
     state.queue.push({
       type: "valueGenerator",
       generator: makeReadVariable(value),
@@ -118,6 +114,7 @@ function parseIdentifier(state: ParserState, value: string): ErrorMessage | null
 }
 
 function parseUnit(state: ParserState, value: string): ErrorMessage | null {
+  state.nextMinus = "-";
   const unit = getUnit(value);
   if (unit === undefined) {
     return 'Unknown unit "' + value + '".';
@@ -138,6 +135,7 @@ function parseComment(state: ParserState, value: string): ErrorMessage | null {
 }
 
 function parseAggregator(state: ParserState, value: string): ErrorMessage | null {
+  state.nextMinus = "-";
   const aggregator = getAggregator(value);
   if (aggregator === undefined) {
     return 'Unknown aggregator "' + value + '".';
@@ -150,6 +148,7 @@ function parseAggregator(state: ParserState, value: string): ErrorMessage | null
 }
 
 function parseConversion(state: ParserState, value: string): ErrorMessage | null {
+  state.nextMinus = "-";
   const peeked = state.tokens.peek();
 
   if (peeked.type === "done") {
@@ -237,6 +236,7 @@ export function parse(tokens: Tokens): ParserResult {
     tokens,
     stack: new Stack(),
     queue: [],
+    nextMinus: "-u",
   };
 
   while (state.tokens.next().type !== "done") {
