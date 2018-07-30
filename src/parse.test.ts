@@ -442,7 +442,8 @@ runTest(
   },
 );
 
-runTest("10*(1-1)",
+runTest(
+  "10*(1-1)",
   [
     { type: "number", value: "10" },
     { type: "operator", value: "*" },

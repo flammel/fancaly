@@ -1,6 +1,6 @@
 import { unitNames } from "./conversion";
 import { List } from "./list";
-import { operatorNames } from "./operator";
+import { getOperator, operatorNames } from "./operator";
 import { aggregatorNames } from "./valueGenerator";
 
 type TokenType =
@@ -31,7 +31,12 @@ function startsWithFollowedBySeparator(haytack: string, needle: string): boolean
     return false;
   }
   const remaining = haytack.substr(needle.length);
-  return remaining === "" || remaining[0] === " " || remaining[0] === ")";
+  return (
+    remaining === "" ||
+    remaining[0] === " " ||
+    remaining[0] === ")" ||
+    operatorNames().indexOf(remaining[0]) !== -1
+  );
 }
 
 function scanComment(input: string): [Token, string] | null {

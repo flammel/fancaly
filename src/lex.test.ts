@@ -123,3 +123,24 @@ runTest("10*(1-1)", {
     { type: ")", value: ")" },
   ]),
 });
+
+runTest("sum-1", {
+  type: "success",
+  tokens: new List<Token>([
+    { type: "aggregator", value: "sum" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "1" },
+  ]),
+});
+
+runTest("1in to cm-1", {
+  type: "success",
+  tokens: new List<Token>([
+    { type: "number", value: "1" },
+    { type: "unit", value: "in" },
+    { type: "conversion", value: "to" },
+    { type: "unit", value: "cm" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "1" },
+  ]),
+});

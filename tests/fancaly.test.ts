@@ -200,3 +200,7 @@ runTest(`
   a:1          1
   10*(-a)      -10
 `);
+
+runTest(`
+  1 fl oz to ml      29.5735 ml
+`);
