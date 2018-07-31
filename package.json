@@ -32,8 +32,16 @@
     "transform": {
       "^.+\\.tsx?$": "ts-jest"
     },
+    "testURL": "http://localhost/",
     "testRegex": "(/tests/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
-    "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"]
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ]
   },
   "dependencies": {
     "bignumber.js": "^6.0.0"
