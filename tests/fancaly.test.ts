@@ -226,3 +226,11 @@ runTest(`
 runTest(`
   1 fl oz to ml      29.5735 ml
 `);
+
+runTest(`
+  ipad costs 500 € + 10 % tax       550 EUR
+`);
+
+runTest(`
+  333 $ flug * 3 personen       999 USD
+`);
