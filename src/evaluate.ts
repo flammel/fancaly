@@ -26,7 +26,11 @@ export interface ErrorValue {
   type: "error";
   description: string;
 }
-export type Value = NumericValue | ErrorValue | { type: "empty" };
+export interface UnitValue {
+  type: "unit";
+  unit: Unit;
+}
+export type Value = NumericValue | ErrorValue | UnitValue | { type: "empty" };
 
 export function numericValue(value: string | BigNumber, unit: Unit): NumericValue {
   return {
@@ -55,6 +59,8 @@ export function stringifyValue(val: Value): string {
         str += " " + val.unit.name;
       }
       return str;
+    case "unit":
+      return val.unit.name;
     case "empty":
       return "";
     case "error":
@@ -79,87 +85,16 @@ export function emptyEnvironment(): Environment {
 
 type ErrorMessage = string;
 
-function evaluateOperator(
-  rpn: RPN,
-  stack: Stack<Value>,
-  env: Environment,
-  operator: Operator,
-): ErrorMessage | null {
-  if (operator.operation.arity === 1) {
-    const operand = stack.pop();
-    if (!isNumericValue(operand)) {
-      return `Operand of "${operator.operator}" must be numeric value but is ${
-        operand ? operand.type : "undefined"
-      }.`;
-    }
-    stack.push(operator.operation.action(operand));
-    return null;
+function evaluateOperator(stack: Stack<Value>, operator: Operator): ErrorMessage | null {
+  const result = operator.operation(stack);
+  if (result.type === "error") {
+    return result.description;
   }
-
-  if (operator.operation.arity === 2) {
-    const rgtOperand = stack.pop();
-    const lftOperand = stack.pop();
-    if (!isNumericValue(lftOperand) || !isNumericValue(rgtOperand)) {
-      return `Operands of "${operator.operator}" must be numeric values but are ${
-        lftOperand ? lftOperand.type : "undefined"
-      } and ${rgtOperand ? rgtOperand.type : "undefined"}.`;
-    }
-    if (lftOperand.unit !== percent && rgtOperand.unit === percent) {
-      return evaluateOperatorOnPercentage(stack, operator, lftOperand, rgtOperand);
-    }
-    const convertedRgt = convert(rgtOperand, lftOperand.unit);
-    if (!isNumericValue(convertedRgt)) {
-      return `Could not convert ${rgtOperand.unit.name} in rgt operand to unit ${
-        lftOperand.unit.name
-      } of lft operand`;
-    }
-    stack.push(operator.operation.action(lftOperand, convertedRgt));
-    return null;
-  }
-
-  return "Invalid operator arity";
-}
-
-function evaluateOperatorOnPercentage(
-  stack: Stack<Value>,
-  operator: Operator,
-  baseValue: NumericValue,
-  percentage: NumericValue,
-): ErrorMessage | null {
-  switch (operator.operator) {
-    case "*":
-      stack.push(
-        numericValue(baseValue.value.dividedBy(100).multipliedBy(percentage.value), baseValue.unit),
-      );
-      return null;
-    case "+":
-      stack.push(
-        numericValue(
-          baseValue.value.dividedBy(100).multipliedBy(percentage.value.plus(new BigNumber(100))),
-          baseValue.unit,
-        ),
-      );
-      return null;
-    case "/":
-      stack.push(
-        numericValue(baseValue.value.dividedBy(percentage.value.dividedBy(100)), baseValue.unit),
-      );
-      return null;
-    case "-":
-      stack.push(
-        numericValue(
-          baseValue.value.dividedBy(100).multipliedBy(new BigNumber(100).minus(percentage.value)),
-          baseValue.unit,
-        ),
-      );
-      return null;
-    default:
-      return "Cannot use operation " + operator.operator + " with percentages";
-  }
+  stack.push(result);
+  return null;
 }
 
 function evaluateAssignment(
-  rpn: RPN,
   stack: Stack<Value>,
   env: Environment,
   variableName: string,
@@ -176,7 +111,6 @@ function evaluateAssignment(
 }
 
 function evaluateValueGenerator(
-  rpn: RPN,
   stack: Stack<Value>,
   env: Environment,
   generator: ValueGenerator,
@@ -185,57 +119,19 @@ function evaluateValueGenerator(
   return null;
 }
 
-function evaluateNumber(
-  rpn: RPN,
-  stack: Stack<Value>,
-  env: Environment,
-  value: BigNumber,
-): ErrorMessage | null {
+function evaluateNumber(stack: Stack<Value>, value: BigNumber): ErrorMessage | null {
   stack.push(numericValue(value, unitless));
   return null;
 }
 
-function evaluateUnit(
-  rpn: RPN,
-  stack: Stack<Value>,
-  env: Environment,
-  unit: Unit,
-): ErrorMessage | null {
-  const lastVal = stack.pop();
-  if (!isNumericValue(lastVal)) {
-    return `Top of stack must be a number when a unit is reached, but is ${
-      lastVal ? lastVal.type : "undefined"
-    }.`;
+function evaluateUnit(stack: Stack<Value>, unit: Unit): ErrorMessage | null {
+  const lastVal = stack.peek();
+  if (isNumericValue(lastVal) && lastVal.unit === unitless) {
+    stack.pop();
+    stack.push(numericValue(lastVal.value, unit));
+  } else {
+    stack.push({ type: "unit", unit });
   }
-
-  const converted = convert(lastVal, unit);
-  if (!isNumericValue(converted)) {
-    return `Cannot convert ${lastVal.unit.name} to ${unit.name}.`;
-  }
-
-  stack.push(converted);
-  return null;
-}
-
-function evaluateConversion(
-  rpn: RPN,
-  stack: Stack<Value>,
-  env: Environment,
-  unit: Unit,
-): ErrorMessage | null {
-  const lastVal = stack.pop();
-  if (!isNumericValue(lastVal)) {
-    return `Top of stack must be a number when a conversion is reached, but is ${
-      lastVal ? lastVal.type : "undefined"
-    }.`;
-  }
-
-  const converted = convert(lastVal, unit);
-  if (!isNumericValue(converted)) {
-    return `Cannot convert ${lastVal.unit.name} to ${unit.name}.`;
-  }
-
-  stack.push(converted);
   return null;
 }
 
@@ -247,17 +143,15 @@ function tryEvaluators(
 ): ErrorMessage | null {
   switch (currentItem.type) {
     case "operator":
-      return evaluateOperator(rpn, stack, env, currentItem.operator);
+      return evaluateOperator(stack, currentItem.operator);
     case "assignment":
-      return evaluateAssignment(rpn, stack, env, currentItem.variableName);
+      return evaluateAssignment(stack, env, currentItem.variableName);
     case "valueGenerator":
-      return evaluateValueGenerator(rpn, stack, env, currentItem.generator);
+      return evaluateValueGenerator(stack, env, currentItem.generator);
     case "number":
-      return evaluateNumber(rpn, stack, env, currentItem.value);
+      return evaluateNumber(stack, currentItem.value);
     case "unit":
-      return evaluateUnit(rpn, stack, env, currentItem.unit);
-    case "conversion":
-      return evaluateConversion(rpn, stack, env, currentItem.unit);
+      return evaluateUnit(stack, currentItem.unit);
     /* istanbul ignore next */
     default:
       assertNever(currentItem);

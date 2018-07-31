@@ -157,7 +157,8 @@ runTest(
   [
     { type: "number", value: new BigNumber("4") },
     { type: "unit", unit: getUnit("GBP") as Unit },
-    { type: "conversion", unit: getUnit("EUR") as Unit },
+    { type: "unit", unit: getUnit("EUR") as Unit },
+    { type: "operator", operator: getOperator("to") },
     { type: "assignment", variableName: "Fee" },
   ],
   numericValue("4", getUnit("EUR") as Unit),
@@ -169,7 +170,8 @@ runTest(
     { type: "number", value: new BigNumber("4") },
     { type: "unit", unit: getUnit("GBP") as Unit },
     { type: "operator", operator: getOperator("-u") },
-    { type: "conversion", unit: getUnit("EUR") as Unit },
+    { type: "unit", unit: getUnit("EUR") as Unit },
+    { type: "operator", operator: getOperator("to") },
     { type: "assignment", variableName: "Discount" },
   ],
   numericValue("-4", getUnit("EUR") as Unit),
@@ -192,21 +194,12 @@ runTest(
 );
 
 runTest(
-  "4 GBP to mm",
-  [
-    { type: "number", value: new BigNumber("4") },
-    { type: "unit", unit: getUnit("GBP") as Unit },
-    { type: "conversion", unit: getUnit("mm") as Unit },
-  ],
-  errorValue("Cannot convert GBP to mm."),
-);
-
-runTest(
-  "4 GBP mm",
+  "4 GBP as mm",
   [
     { type: "number", value: new BigNumber("4") },
     { type: "unit", unit: getUnit("GBP") as Unit },
     { type: "unit", unit: getUnit("mm") as Unit },
+    { type: "operator", operator: getOperator("to") },
   ],
-  errorValue("Cannot convert GBP to mm."),
+  errorValue("Cannot convert unit GBP to mm."),
 );

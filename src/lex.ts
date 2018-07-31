@@ -12,8 +12,7 @@ type TokenType =
   | ")"
   | "assignment"
   | "comment"
-  | "aggregator"
-  | "conversion";
+  | "aggregator";
 
 export interface Token {
   type: TokenType;
@@ -29,20 +28,19 @@ export type LexerResult =
 type Scanner = (input: string) => [Token, string] | null;
 
 function startsWith(haytack: string, needle: string): boolean {
-  return haytack.toLowerCase().indexOf(needle.toLowerCase()) === 0;
-}
-
-function startsWithFollowedBySeparator(haytack: string, needle: string): boolean {
-  if (!startsWith(haytack, needle)) {
+  if (haytack.toLowerCase().indexOf(needle.toLowerCase()) !== 0) {
     return false;
   }
-  const remaining = haytack.substr(needle.length);
-  return (
-    remaining === "" ||
-    remaining[0] === " " ||
-    remaining[0] === ")" ||
-    operatorNames().indexOf(remaining[0]) !== -1
-  );
+  if (needle.match(/^[a-z]+$/i)) {
+    const remaining = haytack.substr(needle.length);
+    return (
+      remaining === "" ||
+      remaining[0] === " " ||
+      remaining[0] === ")" ||
+      operatorNames().indexOf(remaining[0]) !== -1
+    );
+  }
+  return true;
 }
 
 function nameScanner(
@@ -117,9 +115,8 @@ const scanners = [
   regexScanner(/^([\)])\s*(.*)$/, ")"),
   regexScanner(/^([0-9]+(?:\.[0-9]+)?)\s*(.*)$/, "number"),
   nameScanner(operatorNames(), "operator", startsWith),
-  nameScanner(aggregatorNames(), "aggregator", startsWithFollowedBySeparator),
-  nameScanner(unitNames(), "unit", startsWithFollowedBySeparator),
-  regexScanner(/^(to|as)\s+(.*)$/, "conversion"),
+  nameScanner(aggregatorNames(), "aggregator", startsWith),
+  nameScanner(unitNames(), "unit", startsWith),
   // https://stackoverflow.com/questions/20690499
   regexScanner(/^([a-zA-Z\u00C0-\u024F_]+)\s*(.*)$/, "identifier"),
 ];

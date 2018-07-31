@@ -20,12 +20,12 @@ function addUnit(base: UnitName, multiplier: string, ...names: UnitName[]) {
   }
 }
 
-export function convert(value: NumericValue, to: Unit): NumericValue | null {
+export function convert(value: NumericValue, to: Unit): Value {
   if (value.unit === unitless) {
     return numericValue(value.value, to);
   }
   if (value.unit.base !== to.base) {
-    return null;
+    return errorValue("Cannot convert unit " + value.unit.name + " to " + to.name + ".");
   }
   return numericValue(value.value.times(value.unit.multiplier.dividedBy(to.multiplier)), to);
 }

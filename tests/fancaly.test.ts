@@ -150,7 +150,11 @@ runTest(`
 `);
 
 runTest(`
-  1 m + 1 cm to mm    1010 mm
+  1 m + 1 cm to mm    1.01 m
+`);
+
+runTest(`
+  (1 m + 1 cm) to mm    1010 mm
 `);
 
 runTest(`
@@ -169,6 +173,24 @@ runTest(`
   Price: 7$ * 4           28 USD
   Fee: 4 GBP to Euro      4 EUR
   sum to USD - 4 %        30.72 USD
+`);
+
+runTest(`
+  Price: 7$ * 4           28 USD
+  Fee: 4 GBP to Euro      4 EUR
+  (sum - 4 %) to USD        30.72 USD
+`);
+
+runTest(`
+  Price: 7$ * 4           28 USD
+  Fee: 4 GBP to Euro      4 EUR
+  sum to USD * 4 %        1.28 USD
+`);
+
+runTest(`
+  Price: 7$ * 4           28 USD
+  Fee: 4 GBP to Euro      4 EUR
+  sum to USD + 3 €        35 USD
 `);
 
 runTest(`

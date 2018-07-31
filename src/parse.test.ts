@@ -340,7 +340,7 @@ runTest(
   [
     { type: "number", value: "10" },
     { type: "unit", value: "in" },
-    { type: "conversion", value: "to" },
+    { type: "operator", value: "to" },
     { type: "unit", value: "cm" },
   ],
   {
@@ -348,7 +348,8 @@ runTest(
     rpn: new List<RPNItem>([
       { type: "number", value: new BigNumber("10") },
       { type: "unit", unit: getUnit("in") as Unit },
-      { type: "conversion", unit: getUnit("cm") as Unit },
+      { type: "unit", unit: getUnit("cm") as Unit },
+      { type: "operator", operator: getOperator("to") },
     ]),
   },
 );
@@ -361,7 +362,7 @@ runTest(
     { type: "operator", value: "+" },
     { type: "number", value: "120" },
     { type: "unit", value: "mm" },
-    { type: "conversion", value: "as" },
+    { type: "operator", value: "as" },
     { type: "unit", value: "cm" },
   ],
   {
@@ -371,8 +372,9 @@ runTest(
       { type: "unit", unit: getUnit("in") as Unit },
       { type: "number", value: new BigNumber("120") },
       { type: "unit", unit: getUnit("mm") as Unit },
+      { type: "unit", unit: getUnit("cm") as Unit },
+      { type: "operator", operator: getOperator("as") },
       { type: "operator", operator: getOperator("+") },
-      { type: "conversion", unit: getUnit("cm") as Unit },
     ]),
   },
 );
@@ -384,7 +386,7 @@ runTest(
     { type: "assignment", value: ":" },
     { type: "number", value: "4" },
     { type: "unit", value: "GBP" },
-    { type: "conversion", value: "to" },
+    { type: "operator", value: "to" },
     { type: "unit", value: "Euro" },
   ],
   {
@@ -392,7 +394,8 @@ runTest(
     rpn: new List<RPNItem>([
       { type: "number", value: new BigNumber("4") },
       { type: "unit", unit: getUnit("GBP") as Unit },
-      { type: "conversion", unit: getUnit("EUR") as Unit },
+      { type: "unit", unit: getUnit("EUR") as Unit },
+      { type: "operator", operator: getOperator("to") },
       { type: "assignment", variableName: "Fee" },
     ]),
   },
@@ -406,7 +409,7 @@ runTest(
     { type: "operator", value: "-" },
     { type: "number", value: "4" },
     { type: "unit", value: "GBP" },
-    { type: "conversion", value: "to" },
+    { type: "operator", value: "to" },
     { type: "unit", value: "Euro" },
   ],
   {
@@ -415,20 +418,21 @@ runTest(
       { type: "number", value: new BigNumber("4") },
       { type: "unit", unit: getUnit("GBP") as Unit },
       { type: "operator", operator: getOperator("-u") },
-      { type: "conversion", unit: getUnit("EUR") as Unit },
+      { type: "unit", unit: getUnit("EUR") as Unit },
+      { type: "operator", operator: getOperator("to") },
       { type: "assignment", variableName: "Discount" },
     ]),
   },
 );
 
 runTest(
-  "Fee: 4 GBP to Euro",
+  "Fee: 4 GBP as Euro",
   [
     { type: "identifier", value: "Fee" },
     { type: "assignment", value: ":" },
     { type: "number", value: "4" },
     { type: "unit", value: "GBP" },
-    { type: "conversion", value: "to" },
+    { type: "operator", value: "as" },
     { type: "unit", value: "Euro" },
   ],
   {
@@ -436,7 +440,8 @@ runTest(
     rpn: new List<RPNItem>([
       { type: "number", value: new BigNumber("4") },
       { type: "unit", unit: getUnit("GBP") as Unit },
-      { type: "conversion", unit: getUnit("EUR") as Unit },
+      { type: "unit", unit: getUnit("EUR") as Unit },
+      { type: "operator", operator: getOperator("as") },
       { type: "assignment", variableName: "Fee" },
     ]),
   },

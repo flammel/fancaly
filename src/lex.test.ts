@@ -26,7 +26,7 @@ runTest("a : (0.1 cm - x in) to m", {
     { type: "identifier", value: "x" },
     { type: "unit", value: "in" },
     { type: ")", value: ")" },
-    { type: "conversion", value: "to" },
+    { type: "operator", value: "to" },
     { type: "unit", value: "m" },
   ]),
 });
@@ -77,7 +77,7 @@ runTest("10 in to cm", {
   tokens: new List<Token>([
     { type: "number", value: "10" },
     { type: "unit", value: "in" },
-    { type: "conversion", value: "to" },
+    { type: "operator", value: "to" },
     { type: "unit", value: "cm" },
   ]),
 });
@@ -87,7 +87,7 @@ runTest("10 cm as in", {
   tokens: new List<Token>([
     { type: "number", value: "10" },
     { type: "unit", value: "cm" },
-    { type: "conversion", value: "as" },
+    { type: "operator", value: "as" },
     { type: "unit", value: "in" },
   ]),
 });
@@ -138,9 +138,21 @@ runTest("1in to cm-1", {
   tokens: new List<Token>([
     { type: "number", value: "1" },
     { type: "unit", value: "in" },
-    { type: "conversion", value: "to" },
+    { type: "operator", value: "to" },
     { type: "unit", value: "cm" },
     { type: "operator", value: "-" },
     { type: "number", value: "1" },
+  ]),
+});
+
+runTest("asdf: 10 cm as mm", {
+  type: "success",
+  tokens: new List<Token>([
+    { type: "identifier", value: "asdf" },
+    { type: "assignment", value: ":" },
+    { type: "number", value: "10" },
+    { type: "unit", value: "cm" },
+    { type: "operator", value: "as" },
+    { type: "unit", value: "mm" },
   ]),
 });
