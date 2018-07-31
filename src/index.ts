@@ -48,24 +48,36 @@ function handleChange() {
   getLines(inputEl)
     .map((line) => evaluateLine(env, line))
     .forEach(addResult);
+  isSaved = false;
 }
 
 inputEl.addEventListener("keyup", handleChange);
 inputEl.focus();
 
 const storage = new Storage();
+let isSaved = true;
 
 const saveButtonEl = document.getElementById("saveButton") as HTMLButtonElement;
 saveButtonEl.addEventListener("click", () => {
   storage.save(inputEl.value);
   loadSavedList();
+  isSaved = true;
 });
 
 const clearButtonEl = document.getElementById("clearButton") as HTMLButtonElement;
 clearButtonEl.addEventListener("click", () => {
+  if (!isSaved) {
+    const answer = confirm(
+      "You have unsaved changes that will be lost if you clear the calculation.",
+    );
+    if (!answer) {
+      return;
+    }
+  }
   inputEl.value = "";
   inputEl.focus();
   handleChange();
+  isSaved = true;
 });
 
 const savedListEl = document.getElementById("savedList") as HTMLUListElement;
@@ -77,6 +89,14 @@ function loadSavedList() {
     const loadLink = document.createElement("a");
     loadLink.innerHTML = key;
     loadLink.addEventListener("click", () => {
+      if (!isSaved) {
+        const answer = confirm(
+          "You have unsaved changes that will be lost if you load a new calculation.",
+        );
+        if (!answer) {
+          return;
+        }
+      }
       inputEl.value = storage.loadSingle(key);
       handleChange();
     });
