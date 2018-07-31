@@ -26,8 +26,14 @@ export type LexerResult =
   | { type: "success"; tokens: Tokens }
   | { type: "error"; description: string; tokens: Tokens };
 
+type Scanner = (input: string) => [Token, string] | null;
+
+function startsWith(haytack: string, needle: string): boolean {
+  return haytack.toLowerCase().indexOf(needle.toLowerCase()) === 0;
+}
+
 function startsWithFollowedBySeparator(haytack: string, needle: string): boolean {
-  if (haytack.toLowerCase().indexOf(needle.toLowerCase()) !== 0) {
+  if (!startsWith(haytack, needle)) {
     return false;
   }
   const remaining = haytack.substr(needle.length);
@@ -39,147 +45,86 @@ function startsWithFollowedBySeparator(haytack: string, needle: string): boolean
   );
 }
 
-function scanComment(input: string): [Token, string] | null {
-  if (input[0] === "#") {
-    return [
-      {
-        type: "comment",
-        value: input,
-      },
-      "",
-    ];
-  }
-  return null;
+function nameScanner(
+  names: string[],
+  type: TokenType,
+  condition: (name: string, input: string) => boolean,
+): Scanner {
+  return (input: string) => {
+    for (const name of names) {
+      if (condition(input, name)) {
+        return [
+          {
+            type,
+            value: name,
+          },
+          input.substr(name.length),
+        ];
+      }
+    }
+    return null;
+  };
 }
 
-function scanParenthesis(input: string): [Token, string] | null {
-  const firstChar = input[0];
-  if (firstChar === "(" || firstChar === ")") {
-    return [
-      {
-        type: firstChar,
-        value: firstChar,
-      },
-      input.substr(1),
-    ];
-  }
-  return null;
-}
-
-function scanAssignment(input: string): [Token, string] | null {
-  const firstChar = input[0];
-  if (firstChar === ":" || firstChar === "=") {
-    return [
-      {
-        type: "assignment",
-        value: firstChar,
-      },
-      input.substr(1),
-    ];
-  }
-  return null;
-}
-
-function scanNumber(input: string): [Token, string] | null {
-  const matched = input.match(/^([0-9]+(?:\.[0-9]+)?)\s*(.*)$/);
-  if (matched !== null) {
-    return [
-      {
-        type: "number",
-        value: matched[1],
-      },
-      matched[2],
-    ];
-  }
-  return null;
-}
-
-function scanOperator(input: string): [Token, string] | null {
-  for (const operator of operatorNames()) {
-    if (input.indexOf(operator) === 0) {
+function regexScanner(regex: RegExp, type: TokenType): Scanner {
+  return (input: string) => {
+    const matched = input.match(regex);
+    if (matched !== null) {
       return [
         {
-          type: "operator",
-          value: operator,
+          type,
+          value: matched[1],
         },
-        input.substr(operator.length),
+        matched[2],
       ];
     }
-  }
-  return null;
+    return null;
+  };
 }
 
-function scanAggregator(input: string): [Token, string] | null {
-  for (const aggregator of aggregatorNames()) {
-    if (startsWithFollowedBySeparator(input, aggregator)) {
-      return [
-        {
-          type: "aggregator",
-          value: aggregator,
-        },
-        input.substr(aggregator.length),
-      ];
-    }
-  }
-  return null;
-}
-
-function scanUnit(input: string): [Token, string] | null {
-  for (const unit of unitNames()) {
-    if (startsWithFollowedBySeparator(input, unit)) {
-      return [
-        {
-          type: "unit",
-          value: unit,
-        },
-        input.substr(unit.length),
-      ];
-    }
-  }
-  return null;
-}
-
-function scanIdentifier(input: string): [Token, string] | null {
+/**
+ *
+ * Some regex scanners could also be converted to nameScanners:
+ *
+ * const scanners = [
+ *   regexScanner(/^(#.*)(.*)$/, "comment"),
+ *   nameScanner([":", "="], "assignment", startsWith),
+ *   nameScanner(["("], "(", startsWith),
+ *   nameScanner([")"], ")", startsWith),
+ *   regexScanner(/^([0-9]+(?:\.[0-9]+)?)\s*(.*)$/, "number"),
+ *   nameScanner(operatorNames(), "operator", startsWith),
+ *   nameScanner(aggregatorNames(), "aggregator", startsWithFollowedBySeparator),
+ *   nameScanner(unitNames(), "unit", startsWithFollowedBySeparator),
+ *   nameScanner(["to", "as"], "conversion", startsWithFollowedBySeparator),
+ *   // https://stackoverflow.com/questions/20690499
+ *   regexScanner(/^([a-zA-Z\u00C0-\u024F_]+)\s*(.*)$/, "identifier"),
+ * ];
+ *
+ * The regex version is faster (~1400 vs ~1700 ms in chrome 65 for the following benchmark)
+ *
+ * const iterations = 100000;
+ * console.time('Function #1');
+ * for (let i = 0; i < iterations; i++) {
+ *   lex("a : (0.1 cm - x in) to m");
+ * };
+ * console.timeEnd('Function #1')
+ *
+ */
+const scanners = [
+  regexScanner(/^(#.*)(.*)$/, "comment"),
+  regexScanner(/^([:=])\s*(.*)$/, "assignment"),
+  regexScanner(/^([\(])\s*(.*)$/, "("),
+  regexScanner(/^([\)])\s*(.*)$/, ")"),
+  regexScanner(/^([0-9]+(?:\.[0-9]+)?)\s*(.*)$/, "number"),
+  nameScanner(operatorNames(), "operator", startsWith),
+  nameScanner(aggregatorNames(), "aggregator", startsWithFollowedBySeparator),
+  nameScanner(unitNames(), "unit", startsWithFollowedBySeparator),
+  regexScanner(/^(to|as)\s+(.*)$/, "conversion"),
   // https://stackoverflow.com/questions/20690499
-  const matched = input.match(/^([a-zA-Z\u00C0-\u024F_]+)\s*(.*)$/);
-  if (matched !== null) {
-    return [
-      {
-        type: "identifier",
-        value: matched[1],
-      },
-      matched[2],
-    ];
-  }
-  return null;
-}
-
-function scanConversion(input: string): [Token, string] | null {
-  const matched = input.match(/^(to|as)\s+(.*)$/);
-  if (matched !== null) {
-    return [
-      {
-        type: "conversion",
-        value: matched[1],
-      },
-      matched[2],
-    ];
-  }
-  return null;
-}
+  regexScanner(/^([a-zA-Z\u00C0-\u024F_]+)\s*(.*)$/, "identifier"),
+];
 
 function tryScanners(line: string): [Token, string] | null {
-  const scanners = [
-    scanComment,
-    scanAssignment,
-    scanParenthesis,
-    scanNumber,
-    scanOperator,
-    scanAggregator,
-    scanUnit,
-    scanConversion,
-    scanIdentifier,
-  ];
   for (const scanner of scanners) {
     const result = scanner(line);
     if (result) {
@@ -191,7 +136,6 @@ function tryScanners(line: string): [Token, string] | null {
 
 export function lex(line: string): LexerResult {
   const tokens: Token[] = [];
-
   while (line.trim().length > 0) {
     const result = tryScanners(line.trim());
     if (result) {
