@@ -3,6 +3,7 @@ import { BigNumber } from "bignumber.js";
 import { emptyEnvironment, Environment, evaluate, stringifyValue } from "./evaluate";
 import { lex } from "./lex";
 import { parse } from "./parse";
+import { Storage } from "./storage";
 
 import "./index.scss";
 
@@ -51,3 +52,45 @@ function handleChange() {
 
 inputEl.addEventListener("keyup", handleChange);
 inputEl.focus();
+
+const storage = new Storage();
+
+const saveButtonEl = document.getElementById("saveButton") as HTMLButtonElement;
+saveButtonEl.addEventListener("click", () => {
+  storage.save(inputEl.value);
+  loadSavedList();
+});
+
+const clearButtonEl = document.getElementById("clearButton") as HTMLButtonElement;
+clearButtonEl.addEventListener("click", () => {
+  inputEl.value = "";
+  inputEl.focus();
+  handleChange();
+});
+
+const savedListEl = document.getElementById("savedList") as HTMLUListElement;
+function loadSavedList() {
+  const loaded = storage.load();
+  savedListEl.innerHTML = "";
+  Object.keys(loaded).forEach((key) => {
+    const item = document.createElement("li") as HTMLLIElement;
+    const loadLink = document.createElement("a") as HTMLAnchorElement;
+    loadLink.innerHTML = key;
+    loadLink.addEventListener("click", () => {
+      inputEl.value = storage.loadSingle(key);
+      handleChange();
+    });
+    const removeLink = document.createElement("a") as HTMLAnchorElement;
+    removeLink.innerHTML = "del";
+    removeLink.addEventListener("click", () => {
+      storage.remove(key);
+      loadSavedList();
+    });
+    item.appendChild(loadLink);
+    item.appendChild(document.createTextNode(" ("));
+    item.appendChild(removeLink);
+    item.appendChild(document.createTextNode(")"));
+    savedListEl.appendChild(item);
+  });
+}
+loadSavedList();

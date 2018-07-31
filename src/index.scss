@@ -14,8 +14,12 @@ body {
   display: flex;
   min-height: 100%;
   width: 100%;
-  max-width: 640px;
+  max-width: 940px;
   margin: 0 auto;
+}
+
+#nav {
+  flex-basis: 200px;
 }
 
 #input {
@@ -23,6 +27,7 @@ body {
   box-sizing: border-box;
   padding: 8px;
   border: none;
+  border-left: 1px solid #dcdcdc;
   resize: none;
 
   &:focus {
@@ -43,6 +48,21 @@ body {
   line-height: 1.7;
   color: #383838;
   font-size: 1rem;
+}
+
+#savedList {
+  font-size: 0.8rem;
+  list-style: none;
+  padding: 0;
+  a {
+    cursor: pointer;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  li {
+    margin-bottom: 8px;
+  }
 }
 
 @font-face {
