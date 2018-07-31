@@ -190,3 +190,23 @@ runTest(
   ],
   numericValue("143", unitless),
 );
+
+runTest(
+  "4 GBP to mm",
+  [
+    { type: "number", value: new BigNumber("4") },
+    { type: "unit", unit: getUnit("GBP") as Unit },
+    { type: "conversion", unit: getUnit("mm") as Unit },
+  ],
+  errorValue("Cannot convert GBP to mm."),
+);
+
+runTest(
+  "4 GBP mm",
+  [
+    { type: "number", value: new BigNumber("4") },
+    { type: "unit", unit: getUnit("GBP") as Unit },
+    { type: "unit", unit: getUnit("mm") as Unit },
+  ],
+  errorValue("Cannot convert GBP to mm."),
+);

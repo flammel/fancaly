@@ -67,14 +67,7 @@ const operators: { [k: string]: Operator } = {
 };
 
 export function operatorNames(): string[] {
-  const names = [];
-  for (const a in operators) {
-    /* istanbul ignore else  */
-    if (operators.hasOwnProperty(a)) {
-      names.push(a);
-    }
-  }
-  return names;
+  return Object.keys(operators);
 }
 
 export function getOperator(name: string): Operator {

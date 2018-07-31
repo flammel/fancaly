@@ -14,7 +14,7 @@ const unitTable: { [key: string]: Unit } = {
   "%": { base: "%", name: "%", multiplier: new BigNumber(1) },
 };
 
-export function addUnit(base: UnitName, multiplier: string, ...names: UnitName[]) {
+function addUnit(base: UnitName, multiplier: string, ...names: UnitName[]) {
   for (const name of names) {
     unitTable[name.toLowerCase()] = { base, name: names[0], multiplier: new BigNumber(multiplier) };
   }
@@ -61,12 +61,5 @@ export function getUnit(name: string): Unit | undefined {
 }
 
 export function unitNames(): string[] {
-  const names = [];
-  for (const name in unitTable) {
-    /* istanbul ignore else  */
-    if (unitTable.hasOwnProperty(name)) {
-      names.push(name);
-    }
-  }
-  return names;
+  return Object.keys(unitTable);
 }
