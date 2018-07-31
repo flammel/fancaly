@@ -66,16 +66,18 @@ runTest(
   })(),
 );
 
+const aggregatorEnv = () => {
+  const env = emptyEnvironment();
+  env.lines.push(numericValue("10", unitless));
+  env.lines.push(numericValue("118", unitless));
+  return env;
+};
+
 runTest(
   "sum",
   [{ type: "valueGenerator", generator: getAggregator("sum") }],
-  numericValue("129", unitless),
-  (() => {
-    const env = emptyEnvironment();
-    env.lines.push(numericValue("10", unitless));
-    env.lines.push(numericValue("119", unitless));
-    return env;
-  })(),
+  numericValue("128", unitless),
+  aggregatorEnv(),
 );
 
 runTest(
@@ -95,13 +97,8 @@ runTest(
 runTest(
   "average",
   [{ type: "valueGenerator", generator: getAggregator("average") }],
-  numericValue("75", unitless),
-  (() => {
-    const env = emptyEnvironment();
-    env.lines.push(numericValue("50", unitless));
-    env.lines.push(numericValue("100", unitless));
-    return env;
-  })(),
+  numericValue("64", unitless),
+  aggregatorEnv(),
 );
 
 runTest(

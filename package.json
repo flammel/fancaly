@@ -8,8 +8,8 @@
     "prettier": "prettier --write .babelrc *.json src/*.ts src/*.js src/*.scss tests/*.ts",
     "test": "jest",
     "coverage": "jest --coverage",
-    "lint": "tslint -c tslint.json 'src/*.ts' 'tests/*.ts'",
-    "lintfix": "tslint --fix -c tslint.json 'src/*.ts' 'tests/*.ts'",
+    "lint": "tslint --project tsconfig.json -c tslint.json 'src/*.ts' 'tests/*.ts'",
+    "lintfix": "tslint --project tsconfig.json --fix -c tslint.json 'src/*.ts' 'tests/*.ts'",
     "build": "parcel build src/index.html --public-url ./",
     "typecheck": "tsc --noEmit -p ./tsconfig.json"
   },
@@ -25,6 +25,7 @@
     "prettier": "^1.11.1",
     "ts-jest": "^22.4.1",
     "tslint": "^5.9.1",
+    "tslint-sonarts": "^1.7.0",
     "typescript": "^2.7.2"
   },
   "jest": {

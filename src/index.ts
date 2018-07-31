@@ -73,14 +73,14 @@ function loadSavedList() {
   const loaded = storage.load();
   savedListEl.innerHTML = "";
   Object.keys(loaded).forEach((key) => {
-    const item = document.createElement("li") as HTMLLIElement;
-    const loadLink = document.createElement("a") as HTMLAnchorElement;
+    const item = document.createElement("li");
+    const loadLink = document.createElement("a");
     loadLink.innerHTML = key;
     loadLink.addEventListener("click", () => {
       inputEl.value = storage.loadSingle(key);
       handleChange();
     });
-    const removeLink = document.createElement("a") as HTMLAnchorElement;
+    const removeLink = document.createElement("a");
     removeLink.innerHTML = "del";
     removeLink.addEventListener("click", () => {
       storage.remove(key);
