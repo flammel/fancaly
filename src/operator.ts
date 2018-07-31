@@ -21,8 +21,8 @@ function binaryOperation(
   operationPercent: BinaryOperation,
 ): Operation {
   return (stack) => {
-    const rgtOperand = stack.pop();
-    const lftOperand = stack.pop();
+    const rgtOperand = firstNonEmpty(stack);
+    const lftOperand = firstNonEmpty(stack);
     if (!isNumericValue(lftOperand) || !isNumericValue(rgtOperand)) {
       return errorValue(
         `Operands of "${operator}" must be numeric values but are ${
@@ -44,6 +44,14 @@ function binaryOperation(
     }
     return operation(lftOperand, convertedRgt);
   };
+}
+
+function firstNonEmpty(stack: Stack<Value>): Value | undefined {
+  let stackTop = stack.pop();
+  while (stackTop && stackTop.type === "empty") {
+    stackTop = stack.pop();
+  }
+  return stackTop;
 }
 
 function unaryOperation(operator: string, operation: (a: NumericValue) => Value): Operation {
