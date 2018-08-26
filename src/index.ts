@@ -1,14 +1,23 @@
-import { BigNumber } from "bignumber.js";
-
-import { emptyEnvironment, Environment, evaluate, stringifyValue } from "./evaluate";
-import { lex } from "./lex";
-import { parse } from "./parse";
+import { defaultConfig } from "./defaultConfig";
+import { Environment } from "./environment";
+import { Interpreter } from "./interpreter";
 import { Storage } from "./storage";
 
 import "./index.scss";
 
 const inputEl = document.getElementById("input") as HTMLTextAreaElement;
 const resultsEl = document.getElementById("results") as HTMLDivElement;
+const saveButtonEl = document.getElementById("saveButton") as HTMLButtonElement;
+const clearButtonEl = document.getElementById("clearButton") as HTMLButtonElement;
+const savedListEl = document.getElementById("savedList") as HTMLUListElement;
+
+const interpreter = new Interpreter(defaultConfig());
+
+inputEl.addEventListener("keyup", handleChange);
+inputEl.focus();
+
+const storage = new Storage();
+let isSaved = true;
 
 function makeHtml(str: string): HTMLElement {
   const resultDiv = document.createElement("div");
@@ -26,45 +35,21 @@ function getLines(textarea: HTMLTextAreaElement) {
   return textarea.value.split("\n").map((line) => line.trim());
 }
 
-function evaluateLine(env: Environment, line: string) {
-  const lexed = lex(line);
-  if (lexed.type === "error") {
-    return "";
-  }
-  const parsed = parse(lexed.tokens);
-  if (parsed.type === "error") {
-    return "";
-  }
-  const evaluated = evaluate(parsed.rpn, env);
-  if (evaluated.type === "error") {
-    return "";
-  }
-  return stringifyValue(evaluated);
-}
-
 function handleChange() {
   resultsEl.innerHTML = "";
-  const env = emptyEnvironment();
+  const env = new Environment();
   getLines(inputEl)
-    .map((line) => evaluateLine(env, line))
+    .map((line) => interpreter.evaluateLine(env, line))
     .forEach(addResult);
   isSaved = false;
 }
 
-inputEl.addEventListener("keyup", handleChange);
-inputEl.focus();
-
-const storage = new Storage();
-let isSaved = true;
-
-const saveButtonEl = document.getElementById("saveButton") as HTMLButtonElement;
 saveButtonEl.addEventListener("click", () => {
   storage.save(inputEl.value);
   loadSavedList();
   isSaved = true;
 });
 
-const clearButtonEl = document.getElementById("clearButton") as HTMLButtonElement;
 clearButtonEl.addEventListener("click", () => {
   if (!isSaved) {
     const answer = confirm(
@@ -80,7 +65,6 @@ clearButtonEl.addEventListener("click", () => {
   isSaved = true;
 });
 
-const savedListEl = document.getElementById("savedList") as HTMLUListElement;
 function loadSavedList() {
   const loaded = storage.load();
   savedListEl.innerHTML = "";
