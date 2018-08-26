@@ -1,6 +1,6 @@
-import { defaultConfig } from "../src/defaultConfig";
-import { Environment } from "../src/environment";
-import { Interpreter } from "../src/interpreter";
+import { defaultConfig } from "./defaultConfig";
+import { Environment } from "./environment";
+import { Interpreter } from "./interpreter";
 
 function runTest(data: string) {
   // data.trim() removes leading and trailing newline from multiline string which is contained in
