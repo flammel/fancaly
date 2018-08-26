@@ -1,7 +1,6 @@
-import { emptyEnvironment, evaluate } from "../src/evaluate";
-import { stringifyValue } from "../src/evaluate";
-import { lex, Tokens } from "../src/lex";
-import { parse } from "../src/parse";
+import { defaultConfig } from "../src/defaultConfig";
+import { Environment } from "../src/environment";
+import { Interpreter } from "../src/interpreter";
 
 function runTest(data: string) {
   // data.trim() removes leading and trailing newline from multiline string which is contained in
@@ -11,18 +10,10 @@ function runTest(data: string) {
     .split("\n")
     .map((line) => line.split(/\ {4,}/).map((linePart) => linePart.trim()));
   test(data, () => {
-    const env = emptyEnvironment();
+    const interpreter = new Interpreter(defaultConfig());
+    const env = new Environment();
     for (const inOut of inputsOutputs) {
-      const lexed = lex(inOut[0]);
-      if (lexed.type !== "success") {
-        expect(lexed.description).toEqual("success");
-      }
-      const parsed = parse(lexed.tokens);
-      if (parsed.type !== "success") {
-        expect(parsed.description).toEqual("success");
-      }
-      const evaluated = evaluate(parsed.rpn, env);
-      expect(stringifyValue(evaluated)).toEqual(inOut[1] ? inOut[1] : "");
+      expect(interpreter.evaluateLine(env, inOut[0])).toEqual(inOut[1] ? inOut[1] : "");
     }
   });
 }

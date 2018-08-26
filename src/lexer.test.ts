@@ -1,9 +1,14 @@
-import { lex, LexerResult, Token, Tokens } from "./lex";
+import { Lexer, LexerResult, Token } from "./lexer";
 import { List } from "./list";
 
 function runTest(input: string, output: LexerResult) {
   test(input, () => {
-    expect(lex(input)).toEqual(output);
+    const lexer = new Lexer(
+      ["*", "+", "-", "/", "as", "to"],
+      ["mm", "cm", "m", "km", "in", "%", "$"],
+      ["sum", "average"],
+    );
+    expect(lexer.lex(input)).toEqual(output);
   });
 }
 
@@ -154,5 +159,27 @@ runTest("asdf: 10 cm as mm", {
     { type: "unit", value: "cm" },
     { type: "operator", value: "as" },
     { type: "unit", value: "mm" },
+  ]),
+});
+
+runTest("10 * 8.7 mm", {
+  type: "success",
+  tokens: new List<Token>([
+    { type: "number", value: "10" },
+    { type: "operator", value: "*" },
+    { type: "number", value: "8.7" },
+    { type: "unit", value: "mm" },
+  ]),
+});
+
+runTest("333 $ flug * 3 personen", {
+  type: "success",
+  tokens: new List<Token>([
+    { type: "number", value: "333" },
+    { type: "unit", value: "$" },
+    { type: "identifier", value: "flug" },
+    { type: "operator", value: "*" },
+    { type: "number", value: "3" },
+    { type: "identifier", value: "personen" },
   ]),
 });
