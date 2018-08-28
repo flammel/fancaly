@@ -101,7 +101,7 @@ export class ErrorValue implements Value {
   constructor(public description: string) {}
 
   public toString(): string {
-    return this.description;
+    return "";
   }
 }
 
@@ -111,7 +111,7 @@ export class UnitValue implements Value {
   constructor(public unit: Unit) {}
 
   public toString(): string {
-    return this.unit.name;
+    return "";
   }
 }
 
