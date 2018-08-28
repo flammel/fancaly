@@ -1,4 +1,5 @@
 $font-family: "Fira Code", sans-serif;
+$font-color: #383838;
 
 html {
   font-family: $font-family;
@@ -23,6 +24,11 @@ body {
   display: flex;
   justify-content: space-between;
   flex-direction: column;
+
+  h1 a {
+    text-decoration: none;
+    color: $font-color;
+  }
 }
 
 #input {
@@ -49,12 +55,13 @@ body {
 #input {
   font-family: $font-family;
   line-height: 1.7;
-  color: #383838;
+  color: $font-color;
   font-size: 1rem;
 }
 
 #navFooter {
   font-size: 0.8rem;
+  line-height: 1.8;
 }
 
 #savedList {
