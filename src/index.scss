@@ -75,11 +75,6 @@ body {
     text-decoration: underline;
   }
 
-  svg {
-    width: $nav-height - 4 * $nav-padding;
-    margin: $nav-padding;
-  }
-
   .navSlideIn {
     display: none;
     position: absolute;
@@ -185,6 +180,9 @@ body {
     line-height: 1.7;
     color: $font-color;
     font-size: 1rem;
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: scroll;
   }
 }
 

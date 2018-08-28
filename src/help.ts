@@ -26,6 +26,10 @@ export function helpTextForTest(): string {
     3 * 7 + 2                   23
     3 * (7 + 2)                 27
 
+    You can also do calculations with very large numbers:
+
+    239487932423402374*2364981629873245897632458963429384756      566384560757671918706202925369911087820345279049810744
+
     #
     # Variables
     #
