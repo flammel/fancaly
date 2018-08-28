@@ -6,12 +6,18 @@ import { Storage } from "./storage";
 import "./index.scss";
 
 const inputEl = document.getElementById("input") as HTMLTextAreaElement;
+const decSepEl = document.getElementById("decSep") as HTMLSelectElement;
 const resultsEl = document.getElementById("results") as HTMLDivElement;
 const saveButtonEl = document.getElementById("saveButton") as HTMLButtonElement;
 const clearButtonEl = document.getElementById("clearButton") as HTMLButtonElement;
 const savedListEl = document.getElementById("savedList") as HTMLUListElement;
 
-const interpreter = new Interpreter(defaultConfig());
+let interpreter = new Interpreter(defaultConfig(decSepEl.value));
+
+decSepEl.addEventListener("change", () => {
+  interpreter = new Interpreter(defaultConfig(decSepEl.value));
+  handleChange();
+});
 
 inputEl.addEventListener("keyup", handleChange);
 inputEl.focus();

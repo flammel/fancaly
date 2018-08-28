@@ -29,7 +29,7 @@ const valueGenerators = config.getValueGenerators();
 
 function runTest(name: string, tokens: Token[], output: ParserResult) {
   test(name, () => {
-    const parser = new Parser(operators, units, valueGenerators);
+    const parser = new Parser(operators, units, valueGenerators, config.getNumberFormat());
     const received = parser.parse(new List(tokens));
     expect(withoutOperations(received)).toEqual(withoutOperations(output));
   });

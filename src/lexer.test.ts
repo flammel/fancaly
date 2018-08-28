@@ -1,5 +1,6 @@
 import { Lexer, LexerResult, Token } from "./lexer";
 import { List } from "./list";
+import { NumberFormat } from "./numberFormat";
 
 function runTest(input: string, output: LexerResult) {
   test(input, () => {
@@ -7,6 +8,7 @@ function runTest(input: string, output: LexerResult) {
       ["*", "+", "-", "/", "as", "to"],
       ["mm", "cm", "m", "km", "in", "%", "$"],
       ["sum", "average"],
+      new NumberFormat("."),
     );
     expect(lexer.lex(input)).toEqual(output);
   });

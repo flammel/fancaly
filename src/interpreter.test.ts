@@ -229,3 +229,9 @@ runTest(`
 runTest(`
   333 $ flug * 3 personen       999 USD
 `);
+
+test("1,67823 + 30", () => {
+  const interpreter = new Interpreter(defaultConfig(","));
+  const env = new Environment();
+  expect(interpreter.evaluateLine(env, "1,67823 + 30")).toEqual("31,6782");
+});

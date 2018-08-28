@@ -1,4 +1,5 @@
 import { List } from "./list";
+import { NumberFormat } from "./numberFormat";
 
 type TokenType =
   | "identifier"
@@ -55,13 +56,18 @@ export class Lexer {
    */
   private scanners: Scanner[];
 
-  constructor(operatorNames: string[], unitNames: string[], aggregatorNames: string[]) {
+  constructor(
+    operatorNames: string[],
+    unitNames: string[],
+    aggregatorNames: string[],
+    numberFormat: NumberFormat,
+  ) {
     this.scanners = [
       regexScanner(/^(#.*)(.*)$/, "comment"),
       regexScanner(/^([:=])\s*(.*)$/, "assignment"),
       regexScanner(/^([\(])\s*(.*)$/, "("),
       regexScanner(/^([\)])\s*(.*)$/, ")"),
-      regexScanner(/^([0-9]+(?:\.[0-9]+)?)\s*(.*)$/, "number"),
+      regexScanner(numberFormat.getRegExp(), "number"),
       nameScanner(operatorNames, "operator", startsWith(operatorNames)),
       nameScanner(aggregatorNames, "aggregator", startsWith(operatorNames)),
       nameScanner(unitNames, "unit", startsWith(operatorNames)),
