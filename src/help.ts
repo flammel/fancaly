@@ -30,6 +30,10 @@ export function helpTextForTest(): string {
 
     239487932423402374*2364981629873245897632458963429384756      566384560757671918706202925369911087820345279049810744
 
+    And you can put calculations somewhere in text:
+
+    The total length is 43 in + 10 ft if I measured correctly           163 in
+
     #
     # Variables
     #
@@ -107,13 +111,18 @@ export function helpTextForTest(): string {
     # Comments
     #
 
-    All lines that start with # are comments.
-    Lines that fancaly does not understand are
-    also treated as comments.
+    All lines that start with # are comments
+    and will not be evaluated:
 
     # 1 + 1
     1 + 1                   2
-    fancaly does not know what to do
+
+    Lines that do not contain a calculation will also
+    be ignored:
+
+    This line will be ignored, it contains no calculation
+    This line 1 cm + 1 mm contains a calculation          1.1 cm
+    This line 3784 g as kg contains a conversion          3.784 kg
 
     #
     # Saving Calculations
