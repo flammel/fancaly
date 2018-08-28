@@ -48,9 +48,6 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
   addUnit(config, "mm", "304.8", "ft", "foot", "feet");
   addUnit(config, "mm", "25.4", "in", "inch");
   addUnit(config, "mm", "1609340", "mile", "miles");
-  addUnit(config, "USD", "1", "USD", "$", "dollar", "dollars");
-  addUnit(config, "USD", "1", "EUR", "€", "euro", "euros");
-  addUnit(config, "USD", "1", "GBP");
   addUnit(config, "g", "1", "g", "gram", "grams");
   addUnit(config, "g", "10", "dkg");
   addUnit(config, "g", "1000", "kg");
@@ -62,6 +59,20 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
   addUnit(config, "ml", "1000", "l");
   addUnit(config, "ml", "1000", "l");
   addUnit(config, "ml", "29.5735", "fl oz");
+
+  const currencies = (window as any).currencies;
+  if (currencies && currencies.hasOwnProperty("rates") && currencies.hasOwnProperty("base")) {
+    Object.keys(currencies.rates || {}).forEach((key) => {
+      let names: string[] = [];
+      if (key === "USD") {
+        names = ["$", "dollar", "dollars"];
+      }
+      if (key === "EUR") {
+        names = ["€", "euro", "euros"];
+      }
+      addUnit(config, currencies.base, currencies.rates[key], key, ...names);
+    });
+  }
 
   config.getValueGenerators().addAggregator(sum);
   config.getValueGenerators().addAggregator(average);

@@ -1,7 +1,7 @@
-import { defaultConfig } from "./defaultConfig";
 import { Environment } from "./environment";
 import { helpTextForTest } from "./help";
 import { Interpreter } from "./interpreter";
+import { testConfig } from "./testConfig";
 
 const inputsOutputs = helpTextForTest()
   .trim()
@@ -13,7 +13,7 @@ const inputsOutputs = helpTextForTest()
       .map((linePart) => linePart.trim()),
   );
 
-const interpreter = new Interpreter(defaultConfig());
+const interpreter = new Interpreter(testConfig());
 const env = new Environment();
 for (const inOut of inputsOutputs) {
   test("help line '" + inOut + "'", () => {
