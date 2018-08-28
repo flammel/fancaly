@@ -1,4 +1,5 @@
 import { BigNumber } from "bignumber.js";
+import { NumberFormat } from "./numberFormat";
 import { Operator } from "./operator";
 import { Formatter, Unit, UnitName } from "./unit";
 import { Aggregator } from "./valueGenerator";
@@ -62,8 +63,10 @@ export class Config {
   private operators: Operators;
   private units: Units;
   private valueGenerators: ValueGenerators;
+  private numberFormat: NumberFormat;
 
-  constructor() {
+  constructor(numberFormat: NumberFormat) {
+    this.numberFormat = numberFormat;
     this.operators = new Operators();
     this.units = new Units();
     this.valueGenerators = new ValueGenerators();
@@ -79,5 +82,9 @@ export class Config {
 
   public getValueGenerators(): ValueGenerators {
     return this.valueGenerators;
+  }
+
+  public getNumberFormat(): NumberFormat {
+    return this.numberFormat;
   }
 }

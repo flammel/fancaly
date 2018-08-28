@@ -1,6 +1,7 @@
 import { BigNumber } from "bignumber.js";
 import { Config } from "./config";
 import { Environment } from "./environment";
+import { NumberFormat } from "./numberFormat";
 import { Operation, Operator } from "./operator";
 import { Stack } from "./stack";
 import { UnitName } from "./unit";
@@ -11,17 +12,15 @@ import {
   isUnit,
   isUnitful,
   NumericValue,
-  UnitfulNumericValue,
   UnitlessNumericValue,
-  UnitValue,
   Value,
 } from "./value";
 import { ValueGenerator } from "./valueGenerator";
 
-export function defaultConfig(): Config {
+export function defaultConfig(decimalSeparator: string = "."): Config {
   BigNumber.config({
     FORMAT: {
-      decimalSeparator: ".",
+      decimalSeparator,
       fractionGroupSeparator: "",
       fractionGroupSize: 0,
       groupSeparator: "",
@@ -30,7 +29,7 @@ export function defaultConfig(): Config {
     },
   });
 
-  const config = new Config();
+  const config = new Config(new NumberFormat(decimalSeparator));
 
   config.getOperators().addOperator(addition);
   config.getOperators().addOperator(subtraction);
