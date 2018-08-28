@@ -1,5 +1,6 @@
 import { defaultConfig } from "./defaultConfig";
 import { Environment } from "./environment";
+import { helpText } from "./help";
 import { Interpreter } from "./interpreter";
 import { Storage } from "./storage";
 
@@ -24,6 +25,21 @@ inputEl.focus();
 
 const storage = new Storage();
 let isSaved = true;
+
+function loadHelp() {
+  inputEl.value = helpText();
+  handleChange();
+}
+
+if (window.location.hash === "#help") {
+  loadHelp();
+}
+
+window.addEventListener("hashchange", () => {
+  if (window.location.hash === "#help") {
+    loadHelp();
+  }
+});
 
 function makeHtml(str: string): HTMLElement {
   const resultDiv = document.createElement("div");

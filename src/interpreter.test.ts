@@ -8,7 +8,13 @@ function runTest(data: string) {
   const inputsOutputs = data
     .trim()
     .split("\n")
-    .map((line) => line.split(/\ {4,}/).map((linePart) => linePart.trim()));
+    .map((line) =>
+      line
+        .trim()
+        .split(/\ {4,}/)
+        .map((linePart) => linePart.trim()),
+    );
+
   test(data, () => {
     const interpreter = new Interpreter(defaultConfig());
     const env = new Environment();
