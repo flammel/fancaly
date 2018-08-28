@@ -118,8 +118,8 @@ export class Evaluator {
   }
 
   private getResultFromStack(stack: Stack<Value>): Value {
-    const result = stack.pop();
-    if (isNumeric(result) || isEmpty(result)) {
+    const result = stack.popUntil((val) => !isEmpty(val));
+    if (isNumeric(result)) {
       return result;
     } else {
       return new ErrorValue(

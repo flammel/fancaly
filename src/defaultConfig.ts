@@ -121,7 +121,7 @@ const average: ValueGenerator = {
   operation: (env: Environment) => {
     const values = getAggregatorValues(env);
     const summed = sumAggregator(values);
-    if (isNumeric(summed)) {
+    if (isNumeric(summed) && values.length > 0) {
       return summed.changeValue(summed.value.dividedBy(values.length));
     }
     return summed;
@@ -233,11 +233,7 @@ function binaryOperation(
 }
 
 function firstNonEmpty(stack: Stack<Value>): Value {
-  let stackTop = stack.pop();
-  while (isEmpty(stackTop)) {
-    stackTop = stack.pop();
-  }
-  return stackTop;
+  return stack.popUntil((val) => !isEmpty(val));
 }
 
 //

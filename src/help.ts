@@ -85,7 +85,7 @@ export function helpTextForTest(): string {
     #
 
     A line that contains only the word "sum" or "average"
-    will calculate the sum or average of all lines above
+    will calculate the sum or average of all lines above      0
     up to the next empty line. Units will be converted
     automatically.
 
@@ -93,6 +93,10 @@ export function helpTextForTest(): string {
     30 mm               30 mm
     2 in                2 in
     sum                 18.08 cm
+
+    30 € for the train ticket     30 EUR
+    60 € for the hotel            60 EUR
+    total sum for the holiday     90 EUR
 
     10                  10
     20                  20

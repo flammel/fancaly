@@ -236,6 +236,12 @@ runTest(`
   333 $ flug * 3 personen       999 USD
 `);
 
+runTest(`
+  30 € for the train ticket     30 EUR
+  60 € for the hotel            60 EUR
+  total sum for the holiday     90 EUR
+`);
+
 test("1,67823 + 30", () => {
   const interpreter = new Interpreter(defaultConfig(","));
   const env = new Environment();

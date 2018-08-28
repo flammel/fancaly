@@ -1,15 +1,18 @@
+import { defaultConfig } from "./defaultConfig";
 import { Lexer, LexerResult, Token } from "./lexer";
 import { List } from "./list";
 import { NumberFormat } from "./numberFormat";
 
+const config = defaultConfig();
+const lexer = new Lexer(
+  config.getOperators().getNames(),
+  config.getUnits().getNames(),
+  config.getValueGenerators().getAggregatorNames(),
+  new NumberFormat("."),
+);
+
 function runTest(input: string, output: LexerResult) {
   test(input, () => {
-    const lexer = new Lexer(
-      ["*", "+", "-", "/", "as", "to"],
-      ["mm", "cm", "m", "km", "in", "%", "$"],
-      ["sum", "average"],
-      new NumberFormat("."),
-    );
     expect(lexer.lex(input)).toEqual(output);
   });
 }
@@ -183,5 +186,17 @@ runTest("333 $ flug * 3 personen", {
     { type: "operator", value: "*" },
     { type: "number", value: "3" },
     { type: "identifier", value: "personen" },
+  ]),
+});
+
+runTest("30 € for the train ticket", {
+  type: "success",
+  tokens: new List<Token>([
+    { type: "number", value: "30" },
+    { type: "unit", value: "€" },
+    { type: "identifier", value: "for" },
+    { type: "identifier", value: "the" },
+    { type: "identifier", value: "train" },
+    { type: "identifier", value: "ticket" },
   ]),
 });
