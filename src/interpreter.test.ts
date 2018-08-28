@@ -27,6 +27,10 @@ runTest(`
 `);
 
 runTest(`
+  1 +
+`);
+
+runTest(`
   a: 10 + 2     12
 `);
 
