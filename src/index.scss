@@ -1,5 +1,12 @@
 $font-family: "Fira Code", sans-serif;
 $font-color: #383838;
+$color-grey-light: #dcdcdc;
+$color-nav: #008f95;
+$nav-height: 40px;
+$nav-padding: 5px;
+$footer-height: 30px;
+$max-container-width: 940px;
+$input-padding: 8px;
 
 html {
   font-family: $font-family;
@@ -12,70 +19,191 @@ body {
 }
 
 #container {
-  display: flex;
   min-height: 100%;
   width: 100%;
-  max-width: 940px;
+  max-width: $max-container-width;
   margin: 0 auto;
+  padding-top: $nav-height;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  position: relative;
 }
 
 #nav {
-  flex-basis: 200px;
+  position: fixed;
+  width: 100%;
+  max-width: $max-container-width;
   display: flex;
+  background: $color-nav;
+  padding: $nav-padding $input-padding;
+  box-sizing: border-box;
+  height: $nav-height;
+  top: 0;
   justify-content: space-between;
-  flex-direction: column;
 
-  h1 a {
+  a,
+  button {
     text-decoration: none;
+    line-height: $nav-height - 2 * $nav-padding;
+    font-size: 0.8rem;
     color: $font-color;
-  }
-}
-
-#input {
-  flex-grow: 1;
-  box-sizing: border-box;
-  padding: 8px;
-  border: none;
-  border-left: 1px solid #dcdcdc;
-  resize: none;
-
-  &:focus {
-    outline: none;
-  }
-}
-
-#results {
-  background: #dcdcdc;
-  flex-basis: 200px;
-  box-sizing: border-box;
-  padding: 8px;
-}
-
-#results,
-#input {
-  font-family: $font-family;
-  line-height: 1.7;
-  color: $font-color;
-  font-size: 1rem;
-}
-
-#navFooter {
-  font-size: 0.8rem;
-  line-height: 1.8;
-}
-
-#savedList {
-  font-size: 0.8rem;
-  list-style: none;
-  padding: 0;
-  a {
+    font-family: $font-family;
+    padding: 0 5px;
+    display: inline-block;
+    border: none;
+    background: transparent;
     cursor: pointer;
+
+    @media only screen and (min-width: 500px) {
+      padding: 0 10px;
+    }
   }
-  a:hover {
+
+  .title {
+    font-size: 0.8rem;
+    font-weight: bold;
+    padding: 0;
+
+    @media only screen and (min-width: 350px) {
+      font-size: 1.2rem;
+    }
+  }
+
+  a:hover,
+  button:hover {
     text-decoration: underline;
   }
-  li {
-    margin-bottom: 8px;
+
+  svg {
+    width: $nav-height - 4 * $nav-padding;
+    margin: $nav-padding;
+  }
+
+  #savedList {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 40px;
+    background: #ffffff;
+    margin: 0;
+    border-bottom: 1px solid $color-nav;
+    list-style: none;
+    padding: 0;
+
+    &.visible {
+      display: block;
+    }
+
+    li {
+      width: 100%;
+      display: flex;
+      margin: 0;
+      box-sizing: border-box;
+
+      @media only screen and (min-width: $max-container-width) {
+        border-left: 1px solid $color-nav;
+        border-right: 1px solid $color-nav;
+      }
+
+      a {
+        display: block;
+        flex-grow: 1;
+        padding: 10px;
+        box-sizing: border-box;
+        // Necessary because the links have no href attribute
+        cursor: pointer;
+      }
+
+      button {
+        padding: 10px;
+      }
+
+      &:hover {
+        background: lighten($color-nav, 5%);
+      }
+
+      &.empty {
+        font-size: 0.8rem;
+        color: $font-color;
+        font-family: $font-family;
+        text-align: center;
+        padding: 10px;
+        justify-content: center;
+        align-items: center;
+        &:hover {
+          background: transparent;
+        }
+      }
+    }
+  }
+}
+
+#calculator {
+  display: flex;
+  min-height: 100%;
+  width: 100%;
+  max-width: $max-container-width;
+  margin: 0 auto;
+  flex-grow: 1;
+
+  #input {
+    flex-grow: 1;
+    box-sizing: border-box;
+    padding: $input-padding;
+    border: none;
+    resize: none;
+
+    @media only screen and (min-width: $max-container-width) {
+      border-left: 1px solid $color-grey-light;
+    }
+
+    &:focus {
+      outline: none;
+    }
+  }
+
+  #results {
+    background: $color-grey-light;
+    flex-basis: 100px;
+    box-sizing: border-box;
+    padding: $input-padding;
+
+    @media only screen and (min-width: 400px) {
+      flex-basis: 150px;
+    }
+
+    @media only screen and (min-width: 500px) {
+      flex-basis: 200px;
+    }
+  }
+
+  #results,
+  #input {
+    font-family: $font-family;
+    line-height: 1.7;
+    color: $font-color;
+    font-size: 1rem;
+  }
+}
+
+#footer {
+  $footer-font-color: lighten($font-color, 30%);
+  height: $footer-height;
+  text-align: center;
+  color: $footer-font-color;
+  font-size: 0.7rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  bottom: 0;
+  left: 10px;
+  right: 10px;
+
+  a {
+    color: $footer-font-color;
   }
 }
 

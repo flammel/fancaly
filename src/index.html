@@ -9,26 +9,35 @@
 <body>
     <div id="container">
         <div id="nav">
+            <a href="./" class="title">Fancaly</a>
             <div>
-                <h1><a href="./">Fancaly</a></h1>
                 <select id="decSep">
                     <option value=".">.</option>
                     <option value=",">,</option>
                 </select>
-                <button id="saveButton">Save</button>
+                <button id="saveButton">
+                    Save
+                </button>
+                <button id="openButton">
+                    Open
+                </button>
                 <button id="clearButton">Clear</button>
-                <ul id="savedList"></ul>
+                <a href="#help" title="Help and Feature Overview">
+                    Help
+                </a>
             </div>
-            <p id="navFooter">
-                <a href="#help">Help</a><br>
-                <!--
-                <a href="/feedback">Feedback</a><br>
-                -->
-                <a href="https://github.com/flammel/fancaly" rel="noopener" target="_blank">Source at github</a>
+            <ul id="savedList"></ul>
+        </div>
+        <div id="calculator">
+            <textarea id="input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+            <div id="results"></div>
+        </div>
+        <div id="footer">
+            <p>
+                Built by <a href="https://florianlammel.com" rel="noopener" target="_blank">Florian Lammel</a>.
+                Source Code on <a href="https://github.com/flammel/fancaly" rel="noopener" target="_blank" title="Source Code at GitHub">GitHub</a>.
             </p>
         </div>
-        <textarea id="input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
-        <div id="results"></div>
     </div>
     <script src="./index.ts"></script>
 </body>
