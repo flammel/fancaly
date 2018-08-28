@@ -248,11 +248,11 @@ function makeConversionOperator(symbol: string): Operator {
   return {
     associativity: "left",
     operation: (stack) => {
-      const unit = stack.pop();
+      const unit = firstNonEmpty(stack);
       if (!isUnit(unit)) {
         return new ErrorValue(`Operand of "${symbol}" must be a unit but is ${unit.typeName}.`);
       }
-      const operand = stack.pop();
+      const operand = firstNonEmpty(stack);
       if (!isNumeric(operand)) {
         return new ErrorValue(
           `Operand of "${symbol}" must be a numeric value but is ${operand.typeName}.`,
