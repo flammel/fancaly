@@ -1,9 +1,9 @@
-import { defaultConfig } from "./defaultConfig";
 import { Lexer, LexerResult, Token } from "./lexer";
 import { List } from "./list";
 import { NumberFormat } from "./numberFormat";
+import { testConfig } from "./testConfig";
 
-const config = defaultConfig();
+const config = testConfig();
 const lexer = new Lexer(
   config.getOperators().getNames(),
   config.getUnits().getNames(),

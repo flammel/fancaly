@@ -3,3 +3,4 @@ dist
 .cache
 coverage
 .notes.md
+cron.php

@@ -1,10 +1,10 @@
 import { BigNumber } from "bignumber.js";
-import { defaultConfig } from "./defaultConfig";
 import { Environment } from "./environment";
 import { Token } from "./lexer";
 import { List } from "./list";
 import { Operator } from "./operator";
 import { Parser, ParserResult, RPNItem } from "./parser";
+import { testConfig } from "./testConfig";
 import { Unit } from "./unit";
 import { EmptyValue, Value } from "./value";
 import { ValueGenerator, VariableReader } from "./valueGenerator";
@@ -22,7 +22,7 @@ function withoutOperations(result: ParserResult): ParserResult {
   return result;
 }
 
-const config = defaultConfig();
+const config = testConfig();
 const operators = config.getOperators();
 const units = config.getUnits();
 const valueGenerators = config.getValueGenerators();

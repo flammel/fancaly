@@ -1,15 +1,15 @@
 import { BigNumber } from "bignumber.js";
-import { defaultConfig } from "./defaultConfig";
 import { Environment } from "./environment";
 import { Evaluator } from "./evaluator";
 import { List } from "./list";
 import { Operator } from "./operator";
 import { RPNItem } from "./parser";
+import { testConfig } from "./testConfig";
 import { Unit } from "./unit";
 import { EmptyValue, ErrorValue, UnitfulNumericValue, UnitlessNumericValue, Value } from "./value";
 import { ValueGenerator, VariableReader } from "./valueGenerator";
 
-const config = defaultConfig();
+const config = testConfig();
 const operators = config.getOperators();
 const units = config.getUnits();
 const valueGenerators = config.getValueGenerators();

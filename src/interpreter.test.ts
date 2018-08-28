@@ -1,6 +1,6 @@
-import { defaultConfig } from "./defaultConfig";
 import { Environment } from "./environment";
 import { Interpreter } from "./interpreter";
+import { testConfig } from "./testConfig";
 
 function runTest(data: string) {
   // data.trim() removes leading and trailing newline from multiline string which is contained in
@@ -16,7 +16,7 @@ function runTest(data: string) {
     );
 
   test(data, () => {
-    const interpreter = new Interpreter(defaultConfig());
+    const interpreter = new Interpreter(testConfig());
     const env = new Environment();
     for (const inOut of inputsOutputs) {
       expect(interpreter.evaluateLine(env, inOut[0])).toEqual(inOut[1] ? inOut[1] : "");
@@ -243,7 +243,7 @@ runTest(`
 `);
 
 test("1,67823 + 30", () => {
-  const interpreter = new Interpreter(defaultConfig(","));
+  const interpreter = new Interpreter(testConfig(","));
   const env = new Environment();
   expect(interpreter.evaluateLine(env, "1,67823 + 30")).toEqual("31,6782");
 });
