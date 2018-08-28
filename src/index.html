@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="author" content="Florian Lammel">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <meta name="theme-color" content="#008f95">
     <title>Fancaly</title>
 </head>
 <body>
@@ -26,7 +28,12 @@
                     Help
                 </a>
             </div>
-            <ul id="savedList"></ul>
+            <ul id="savedList" class="navSlideIn"></ul>
+            <ul id="addToHomeScreen" class="navSlideIn">
+                <li class="text">
+                    Add to homescreen?
+                </li>
+            </ul>
         </div>
         <div id="calculator">
             <textarea id="input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>

@@ -100,7 +100,7 @@ function loadSavedList() {
   if (Object.keys(loaded).length === 0) {
     const item = document.createElement("li");
     item.innerHTML = "You have no saved calculations.";
-    item.classList.add("empty");
+    item.classList.add("text");
     savedListEl.appendChild(item);
   }
 
@@ -133,3 +133,33 @@ function loadSavedList() {
   });
 }
 loadSavedList();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./serviceWorker.ts").then();
+  });
+}
+
+const addToHomeScreenEl = document.getElementById("addToHomeScreen") as HTMLElement;
+let deferredPrompt: Event | null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  // Prevent Chrome 67 and earlier from automatically showing the prompt
+  e.preventDefault();
+  // Stash the event so it can be triggered later.
+  deferredPrompt = e;
+  // Update UI notify the user they can add to home screen
+  addToHomeScreenEl.classList.add("visible");
+});
+
+addToHomeScreenEl.addEventListener("click", (e) => {
+  // hide our user interface that shows our A2HS button
+  addToHomeScreenEl.style.display = "none";
+  // Show the prompt
+  // @ts-ignore
+  deferredPrompt.prompt();
+  // Wait for the user to respond to the prompt
+  // @ts-ignore
+  deferredPrompt.userChoice.then((choiceResult) => {
+    deferredPrompt = null;
+  });
+});
