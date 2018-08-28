@@ -11,6 +11,7 @@ const decSepEl = document.getElementById("decSep") as HTMLSelectElement;
 const resultsEl = document.getElementById("results") as HTMLDivElement;
 const saveButtonEl = document.getElementById("saveButton") as HTMLButtonElement;
 const clearButtonEl = document.getElementById("clearButton") as HTMLButtonElement;
+const openButtonEl = document.getElementById("openButton") as HTMLButtonElement;
 const savedListEl = document.getElementById("savedList") as HTMLUListElement;
 
 let interpreter = new Interpreter(defaultConfig(decSepEl.value));
@@ -58,6 +59,7 @@ function getLines(textarea: HTMLTextAreaElement) {
 }
 
 function handleChange() {
+  savedListEl.classList.remove("visible");
   resultsEl.innerHTML = "";
   const env = new Environment();
   getLines(inputEl)
@@ -87,9 +89,21 @@ clearButtonEl.addEventListener("click", () => {
   isSaved = true;
 });
 
+openButtonEl.addEventListener("click", () => {
+  savedListEl.classList.toggle("visible");
+});
+
 function loadSavedList() {
   const loaded = storage.load();
   savedListEl.innerHTML = "";
+
+  if (Object.keys(loaded).length === 0) {
+    const item = document.createElement("li");
+    item.innerHTML = "You have no saved calculations.";
+    item.classList.add("empty");
+    savedListEl.appendChild(item);
+  }
+
   Object.keys(loaded).forEach((key) => {
     const item = document.createElement("li");
     const loadLink = document.createElement("a");
@@ -104,18 +118,17 @@ function loadSavedList() {
         }
       }
       inputEl.value = storage.loadSingle(key);
+      window.scrollTo(0, 0);
       handleChange();
     });
-    const removeLink = document.createElement("a");
-    removeLink.innerHTML = "del";
-    removeLink.addEventListener("click", () => {
+    const removeButton = document.createElement("button");
+    removeButton.innerHTML = "Delete";
+    removeButton.addEventListener("click", () => {
       storage.remove(key);
       loadSavedList();
     });
     item.appendChild(loadLink);
-    item.appendChild(document.createTextNode(" ("));
-    item.appendChild(removeLink);
-    item.appendChild(document.createTextNode(")"));
+    item.appendChild(removeButton);
     savedListEl.appendChild(item);
   });
 }
