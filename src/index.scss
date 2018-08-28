@@ -80,7 +80,7 @@ body {
     margin: $nav-padding;
   }
 
-  #savedList {
+  .navSlideIn {
     display: none;
     position: absolute;
     left: 0;
@@ -124,7 +124,7 @@ body {
         background: lighten($color-nav, 5%);
       }
 
-      &.empty {
+      &.text {
         font-size: 0.8rem;
         color: $font-color;
         font-family: $font-family;
