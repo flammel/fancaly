@@ -30,6 +30,15 @@ body {
   position: relative;
 }
 
+button {
+  border: none;
+  color: $font-color;
+  font-family: $font-family;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
 #nav {
   position: fixed;
   width: 100%;
@@ -41,6 +50,7 @@ body {
   height: $nav-height;
   top: 0;
   justify-content: space-between;
+  z-index: 1000;
 
   a,
   button {
@@ -48,12 +58,12 @@ body {
     line-height: $nav-height - 2 * $nav-padding;
     font-size: 0.8rem;
     color: $font-color;
-    font-family: $font-family;
     padding: 0 5px;
     display: inline-block;
-    border: none;
-    background: transparent;
-    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
 
     @media only screen and (min-width: 500px) {
       padding: 0 10px;
@@ -69,67 +79,66 @@ body {
       font-size: 1.2rem;
     }
   }
+}
 
-  a:hover,
-  button:hover {
-    text-decoration: underline;
+.navSlideIn {
+  transform: translateY(-100%);
+  transition: 0.3s ease-in-out;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: $nav-height;
+  background: #ffffff;
+  margin: 0;
+  border-bottom: 1px solid $color-nav;
+  list-style: none;
+  padding: 0;
+  display: block;
+  z-index: 500;
+
+  &.visible {
+    transform: translateY(0%);
   }
 
-  .navSlideIn {
-    display: none;
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 40px;
-    background: #ffffff;
+  li {
+    width: 100%;
+    display: flex;
     margin: 0;
-    border-bottom: 1px solid $color-nav;
-    list-style: none;
-    padding: 0;
+    box-sizing: border-box;
 
-    &.visible {
-      display: block;
+    @media only screen and (min-width: $max-container-width) {
+      border-left: 1px solid $color-nav;
+      border-right: 1px solid $color-nav;
     }
 
-    li {
-      width: 100%;
-      display: flex;
-      margin: 0;
+    a {
+      display: block;
+      flex-grow: 1;
+      padding: 10px;
       box-sizing: border-box;
+      font-size: 0.8rem;
+      // Necessary because the links have no href attribute
+      cursor: pointer;
+    }
 
-      @media only screen and (min-width: $max-container-width) {
-        border-left: 1px solid $color-nav;
-        border-right: 1px solid $color-nav;
-      }
+    button {
+      padding: 10px;
+    }
 
-      a {
-        display: block;
-        flex-grow: 1;
-        padding: 10px;
-        box-sizing: border-box;
-        // Necessary because the links have no href attribute
-        cursor: pointer;
-      }
+    &:hover {
+      background: lighten($color-nav, 5%);
+    }
 
-      button {
-        padding: 10px;
-      }
-
+    &.text {
+      font-size: 0.8rem;
+      color: $font-color;
+      font-family: $font-family;
+      text-align: center;
+      padding: 10px;
+      justify-content: center;
+      align-items: center;
       &:hover {
-        background: lighten($color-nav, 5%);
-      }
-
-      &.text {
-        font-size: 0.8rem;
-        color: $font-color;
-        font-family: $font-family;
-        text-align: center;
-        padding: 10px;
-        justify-content: center;
-        align-items: center;
-        &:hover {
-          background: transparent;
-        }
+        background: transparent;
       }
     }
   }
