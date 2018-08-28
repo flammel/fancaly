@@ -26,10 +26,10 @@ const config = defaultConfig();
 const operators = config.getOperators();
 const units = config.getUnits();
 const valueGenerators = config.getValueGenerators();
+const parser = new Parser(operators, units, valueGenerators, config.getNumberFormat());
 
 function runTest(name: string, tokens: Token[], output: ParserResult) {
   test(name, () => {
-    const parser = new Parser(operators, units, valueGenerators, config.getNumberFormat());
     const received = parser.parse(new List(tokens));
     expect(withoutOperations(received)).toEqual(withoutOperations(output));
   });
@@ -523,6 +523,29 @@ runTest(
       { type: "number", value: new BigNumber("3") },
       { type: "valueGenerator", generator: new VariableReader("personen") },
       { type: "operator", operator: operators.getOperator("*") as Operator },
+    ]),
+  },
+);
+
+runTest(
+  "30 € for the train ticket",
+  [
+    { type: "number", value: "30" },
+    { type: "unit", value: "€" },
+    { type: "identifier", value: "for" },
+    { type: "identifier", value: "the" },
+    { type: "identifier", value: "train" },
+    { type: "identifier", value: "ticket" },
+  ],
+  {
+    type: "success",
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("30") },
+      { type: "unit", unit: units.getUnit("€") as Unit },
+      { type: "valueGenerator", generator: new VariableReader("for") },
+      { type: "valueGenerator", generator: new VariableReader("the") },
+      { type: "valueGenerator", generator: new VariableReader("train") },
+      { type: "valueGenerator", generator: new VariableReader("ticket") },
     ]),
   },
 );

@@ -18,4 +18,12 @@ export class Stack<T> {
   public peek(): T {
     return this.arr[this.arr.length - 1] || this.fallback;
   }
+
+  public popUntil(predicate: (_: T) => boolean): T {
+    let stackTop = this.arr.pop();
+    while (stackTop !== undefined && !predicate(stackTop)) {
+      stackTop = this.arr.pop();
+    }
+    return stackTop || this.fallback;
+  }
 }

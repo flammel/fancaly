@@ -13,10 +13,10 @@ const inputsOutputs = helpTextForTest()
       .map((linePart) => linePart.trim()),
   );
 
-test("help", () => {
-  const interpreter = new Interpreter(defaultConfig());
-  const env = new Environment();
-  for (const inOut of inputsOutputs) {
+const interpreter = new Interpreter(defaultConfig());
+const env = new Environment();
+for (const inOut of inputsOutputs) {
+  test("help line '" + inOut + "'", () => {
     expect(interpreter.evaluateLine(env, inOut[0])).toEqual(inOut[1] ? inOut[1] : "");
-  }
-});
+  });
+}

@@ -26,6 +26,38 @@ function runTest(
   });
 }
 
+function runConvertTest(
+  value: string,
+  from: string,
+  to: string,
+  expected: string,
+  error: boolean = false,
+) {
+  runTest(
+    value + " " + from + " to " + to,
+    [
+      { type: "number", value: new BigNumber(value) },
+      { type: "unit", unit: units.getUnit(from) as Unit },
+      { type: "unit", unit: units.getUnit(to) as Unit },
+      { type: "operator", operator: operators.getOperator("to") as Operator },
+    ],
+    error ? new ErrorValue(expected) : new UnitfulNumericValue(expected, units.getUnit(to) as Unit),
+  );
+}
+
+runConvertTest("1", "mm", "m", "0.001");
+runConvertTest("1", "cm", "m", "0.01");
+runConvertTest("1", "m", "mm", "1000");
+runConvertTest("1", "m", "cm", "100");
+runConvertTest("1", "in", "cm", "2.54");
+runConvertTest("1", "inch", "mm", "25.4");
+runConvertTest("1", "foot", "mm", "304.8");
+runConvertTest("2", "feet", "mm", "609.6");
+runConvertTest("1000", "ft", "mm", "304800");
+runConvertTest("1", "mm", "g", "Cannot convert unit mm to g.", true);
+runConvertTest("1", "mile", "m", "1609.34");
+runConvertTest("1", "fl oz", "ml", "29.5735");
+
 runTest("", [], new EmptyValue());
 
 runTest(
@@ -224,34 +256,15 @@ runTest(
   new UnitfulNumericValue("999", units.getUnit("$") as Unit),
 );
 
-function runConvertTest(
-  value: string,
-  from: string,
-  to: string,
-  expected: string,
-  error: boolean = false,
-) {
-  runTest(
-    value + " " + from + " to " + to,
-    [
-      { type: "number", value: new BigNumber(value) },
-      { type: "unit", unit: units.getUnit(from) as Unit },
-      { type: "unit", unit: units.getUnit(to) as Unit },
-      { type: "operator", operator: operators.getOperator("to") as Operator },
-    ],
-    error ? new ErrorValue(expected) : new UnitfulNumericValue(expected, units.getUnit(to) as Unit),
-  );
-}
-
-runConvertTest("1", "mm", "m", "0.001");
-runConvertTest("1", "cm", "m", "0.01");
-runConvertTest("1", "m", "mm", "1000");
-runConvertTest("1", "m", "cm", "100");
-runConvertTest("1", "in", "cm", "2.54");
-runConvertTest("1", "inch", "mm", "25.4");
-runConvertTest("1", "foot", "mm", "304.8");
-runConvertTest("2", "feet", "mm", "609.6");
-runConvertTest("1000", "ft", "mm", "304800");
-runConvertTest("1", "mm", "g", "Cannot convert unit mm to g.", true);
-runConvertTest("1", "mile", "m", "1609.34");
-runConvertTest("1", "fl oz", "ml", "29.5735");
+runTest(
+  "30 € for the train ticket",
+  [
+    { type: "number", value: new BigNumber("30") },
+    { type: "unit", unit: units.getUnit("€") as Unit },
+    { type: "valueGenerator", generator: new VariableReader("for") },
+    { type: "valueGenerator", generator: new VariableReader("the") },
+    { type: "valueGenerator", generator: new VariableReader("train") },
+    { type: "valueGenerator", generator: new VariableReader("ticket") },
+  ],
+  new UnitfulNumericValue("30", units.getUnit("€") as Unit),
+);
