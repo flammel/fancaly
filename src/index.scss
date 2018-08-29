@@ -58,7 +58,7 @@ button {
   top: 0;
   justify-content: space-between;
   z-index: $nav-z-index;
-  box-shadow: 0 3px 4px -4px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
 
   a,
   button {
@@ -207,6 +207,8 @@ button {
   max-width: $max-container-width;
   margin: 0 auto;
   flex-grow: 1;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid $color-grey-light;
 
   #input {
     flex-grow: 1;
@@ -247,23 +249,17 @@ button {
     font-size: 1rem;
     white-space: pre;
     overflow-wrap: normal;
-    overflow-x: scroll;
+    overflow-x: auto;
   }
 }
 
 #footer {
   $footer-font-color: lighten($font-color, 30%);
-  height: $footer-height;
   text-align: center;
   color: $footer-font-color;
-  font-size: 0.7rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: absolute;
-  bottom: 0;
-  left: 10px;
-  right: 10px;
+  font-size: 0.68rem;
+  text-align: center;
+  line-height: 1.5;
 
   a {
     color: $footer-font-color;
