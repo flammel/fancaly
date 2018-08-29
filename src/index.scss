@@ -125,6 +125,11 @@ button {
       padding: 10px;
     }
 
+    a:hover,
+    button:hover {
+      text-decoration: underline;
+    }
+
     &:hover {
       background: lighten($color-nav, 5%);
     }
