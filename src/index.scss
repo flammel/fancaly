@@ -210,6 +210,10 @@ button {
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
   border-bottom: 1px solid $color-grey-light;
 
+  @media only screen and (max-height: 920px) {
+    min-height: calc(100vh - 40px);
+  }
+
   #input {
     flex-grow: 1;
     box-sizing: border-box;
