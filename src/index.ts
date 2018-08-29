@@ -13,6 +13,8 @@ const saveButtonEl = document.getElementById("saveButton") as HTMLButtonElement;
 const clearButtonEl = document.getElementById("clearButton") as HTMLButtonElement;
 const openButtonEl = document.getElementById("openButton") as HTMLButtonElement;
 const savedListEl = document.getElementById("savedList") as HTMLUListElement;
+const calculatorEl = document.getElementById("calculator") as HTMLDivElement;
+const containerEl = document.getElementById("container") as HTMLDivElement;
 
 let interpreter = new Interpreter(defaultConfig(decSepEl.value));
 
@@ -134,32 +136,85 @@ function loadSavedList() {
 }
 loadSavedList();
 
+//
+// Banners
+//
+
+interface BannerAction {
+  label: string;
+  action?: () => any;
+}
+
+function showBanner(text: string, actions: BannerAction[]) {
+  const bannerEl = document.createElement("div");
+  bannerEl.classList.add("banner");
+
+  const bannerTextEl = document.createElement("div");
+  bannerTextEl.classList.add("banner__text");
+  bannerTextEl.innerHTML = text;
+  bannerEl.appendChild(bannerTextEl);
+
+  const bannerActionsEl = document.createElement("div");
+  bannerActionsEl.classList.add("banner__actions");
+
+  for (const action of actions) {
+    const bannerActionEl = document.createElement("button");
+    bannerActionEl.classList.add("banner__action");
+    bannerActionEl.innerHTML = action.label;
+    bannerActionEl.addEventListener("click", () => {
+      const actionHandler = action.action;
+      if (actionHandler) {
+        actionHandler();
+      }
+      bannerEl.classList.remove("banner--visible");
+    });
+    bannerActionsEl.appendChild(bannerActionEl);
+  }
+
+  bannerEl.appendChild(bannerActionsEl);
+
+  const inserted = containerEl.insertBefore(bannerEl, calculatorEl);
+  // Trigger a reflow, see https://stackoverflow.com/a/24195559.
+  // Without this, adding the --visible class will not trigger the CSS animation.
+  // tslint:disable-next-line
+  inserted.offsetWidth;
+  // Show the banner with animation
+  bannerEl.classList.add("banner--visible");
+}
+
+//
+// Add to home screen banner
+//
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./serviceWorker.ts").then();
   });
 }
 
-const addToHomeScreenEl = document.getElementById("addToHomeScreen") as HTMLElement;
-let deferredPrompt: Event | null;
 window.addEventListener("beforeinstallprompt", (e) => {
   // Prevent Chrome 67 and earlier from automatically showing the prompt
   e.preventDefault();
   // Stash the event so it can be triggered later.
-  deferredPrompt = e;
+  const deferredPrompt: any = e;
   // Update UI notify the user they can add to home screen
-  addToHomeScreenEl.classList.add("visible");
-});
-
-addToHomeScreenEl.addEventListener("click", (e) => {
-  // hide our user interface that shows our A2HS button
-  addToHomeScreenEl.style.display = "none";
-  // Show the prompt
-  // @ts-ignore
-  deferredPrompt.prompt();
-  // Wait for the user to respond to the prompt
-  // @ts-ignore
-  deferredPrompt.userChoice.then((choiceResult) => {
-    deferredPrompt = null;
-  });
+  const localStorageKey = "addToHomeScreenDismissed";
+  const localStorageValue = "1";
+  if (localStorage.getItem(localStorageKey) !== localStorageValue) {
+    showBanner("Do you want to add Fancaly to your home screen?", [
+      {
+        label: "Yes please!",
+        action: () => {
+          localStorage.setItem(localStorageKey, localStorageValue);
+          deferredPrompt.prompt();
+        },
+      },
+      {
+        label: "No thanks",
+        action: () => {
+          localStorage.setItem(localStorageKey, localStorageValue);
+        },
+      },
+    ]);
+  }
 });

@@ -7,10 +7,13 @@ $nav-padding: 5px;
 $footer-height: 30px;
 $max-container-width: 940px;
 $input-padding: 8px;
+$nav-z-index: 1000;
+$banner-z-index: 900;
 
 html {
   font-family: $font-family;
   height: 100%;
+  color: $font-color;
 }
 
 body {
@@ -37,6 +40,10 @@ button {
   background: transparent;
   cursor: pointer;
   font-size: 0.8rem;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 #nav {
@@ -50,7 +57,8 @@ button {
   height: $nav-height;
   top: 0;
   justify-content: space-between;
-  z-index: 1000;
+  z-index: $nav-z-index;
+  box-shadow: 0 3px 4px -4px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.3);
 
   a,
   button {
@@ -81,6 +89,49 @@ button {
   }
 }
 
+.banner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: $nav-height;
+
+  display: flex;
+  flex-wrap: wrap;
+
+  transform: translateY(-100%);
+  transition: 0.3s ease-in-out;
+
+  background: #ffffff;
+  border: 1px solid $color-nav;
+
+  z-index: $banner-z-index;
+
+  font-size: 0.8rem;
+
+  &--visible {
+    transform: translateY(0%);
+  }
+
+  &__text {
+    flex-grow: 2;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-grow: 1;
+  }
+
+  &__action {
+    margin: 0 10px;
+  }
+
+  &__text,
+  &__action {
+    padding: 20px 10px;
+  }
+}
+
 .navSlideIn {
   transform: translateY(-100%);
   transition: 0.3s ease-in-out;
@@ -94,7 +145,7 @@ button {
   list-style: none;
   padding: 0;
   display: block;
-  z-index: 500;
+  z-index: $nav-z-index - 100;
 
   &.visible {
     transform: translateY(0%);
