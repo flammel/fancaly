@@ -4,7 +4,7 @@ import { Environment } from "./environment";
 import { NumberFormat } from "./numberFormat";
 import { Operation, Operator } from "./operator";
 import { Stack } from "./stack";
-import { UnitName } from "./unit";
+import { Unit, UnitName } from "./unit";
 import {
   ErrorValue,
   isEmpty,
@@ -12,6 +12,7 @@ import {
   isUnit,
   isUnitful,
   NumericValue,
+  UnitfulNumericValue,
   UnitlessNumericValue,
   Value,
 } from "./value";
@@ -30,14 +31,6 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
   });
 
   const config = new Config(new NumberFormat(decimalSeparator));
-
-  config.getOperators().addOperator(addition);
-  config.getOperators().addOperator(subtraction);
-  config.getOperators().addOperator(multiplication);
-  config.getOperators().addOperator(division);
-  config.getOperators().addOperator(unaryMinus);
-  config.getOperators().addOperator(makeConversionOperator("to"));
-  config.getOperators().addOperator(makeConversionOperator("as"));
 
   addUnit(config, "%", "1", "%");
   addUnit(config, "mm", "1", "mm");
@@ -59,6 +52,23 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
   addUnit(config, "ml", "1000", "l");
   addUnit(config, "ml", "1000", "l");
   addUnit(config, "ml", "29.5735", "fl oz");
+
+  config.getOperators().addOperator(addition);
+  config.getOperators().addOperator(subtraction);
+  config.getOperators().addOperator(multiplication);
+  config.getOperators().addOperator(division);
+  config.getOperators().addOperator(unaryMinus);
+  config.getOperators().addOperator(asAPercentageOff(config.getUnits().getUnit("%") as Unit));
+  config.getOperators().addOperator(asAPercentageOf(config.getUnits().getUnit("%") as Unit));
+  config.getOperators().addOperator(asAPercentageOn(config.getUnits().getUnit("%") as Unit));
+  config.getOperators().addOperator(percentOnWhat);
+  config.getOperators().addOperator(percentOfWhat);
+  config.getOperators().addOperator(percentOffWhat);
+  config.getOperators().addOperator(percentOn);
+  config.getOperators().addOperator(percentOf);
+  config.getOperators().addOperator(percentOff);
+  config.getOperators().addOperator(makeConversionOperator("to"));
+  config.getOperators().addOperator(makeConversionOperator("as"));
 
   const currencies = (window as any).currencies;
   if (currencies && currencies.hasOwnProperty("rates") && currencies.hasOwnProperty("base")) {
@@ -171,14 +181,14 @@ const addition = makeBinaryOperator(
   "+",
   13,
   (a, b) => a.plus(b),
-  (a, b) => a.dividedBy(100).multipliedBy(b.plus(new BigNumber(100))),
+  (a, b) => a.dividedBy(100).multipliedBy(b.plus(bn100)),
 );
 
 const subtraction = makeBinaryOperator(
   "-",
   13,
   (a, b) => a.minus(b),
-  (a, b) => a.dividedBy(100).multipliedBy(new BigNumber(100).minus(b)),
+  (a, b) => a.dividedBy(100).multipliedBy(bn100.minus(b)),
 );
 
 const division = makeBinaryOperator(
@@ -243,9 +253,117 @@ function binaryOperation(
   };
 }
 
-function firstNonEmpty(stack: Stack<Value>): Value {
-  return stack.popUntil((val) => !isEmpty(val));
+//
+// percentage operations
+//
+
+const percentOnWhat = percentageOperation("on what is", (a, b) =>
+  b.dividedBy(a.plus(bn100)).multipliedBy(bn100),
+);
+const percentOffWhat = percentageOperation("off what is", (a, b) =>
+  b.dividedBy(bn100.minus(a)).multipliedBy(bn100),
+);
+const percentOfWhat = percentageOperation("of what is", (a, b) =>
+  b.dividedBy(a).multipliedBy(bn100),
+);
+const percentOn = percentageOperation("on", (a, b) =>
+  b.dividedBy(bn100).multipliedBy(a.plus(bn100)),
+);
+const percentOf = percentageOperation("of", (a, b) => b.dividedBy(bn100).multipliedBy(a));
+const percentOff = percentageOperation("off", (a, b) =>
+  b.dividedBy(bn100).multipliedBy(bn100.minus(a)),
+);
+
+function percentageOperation(name: string, operation: BinaryOperation): Operator {
+  return {
+    associativity: "left",
+    operation: (stack) => {
+      const rgtOperand = firstNonEmpty(stack);
+      const lftOperand = firstNonEmpty(stack);
+      if (!isNumeric(lftOperand) || !isNumeric(rgtOperand)) {
+        return new ErrorValue(
+          `Operands of "${name}" must be numeric values but are ${lftOperand.typeName} and ${
+            rgtOperand.typeName
+          }.`,
+        );
+      }
+
+      if (!isUnitful(lftOperand) || lftOperand.unit.name !== "%") {
+        return new ErrorValue(
+          `Left operand of "${name}" must be a percentage but is ${lftOperand.typeName}`,
+        );
+      }
+
+      if (isUnitful(rgtOperand) && rgtOperand.unit.name === "%") {
+        return new ErrorValue(`Right operand of "${name}" must not be a percentage`);
+      }
+
+      return rgtOperand.changeValue(operation(lftOperand.value, rgtOperand.value));
+    },
+    operator: name,
+    precedence: 10,
+  };
 }
+
+//
+// "as a %" operations
+//
+
+const asAPercentageOf = (percentageUnit: Unit) =>
+  asAPercentage("as a % of", (a, b) => a.dividedBy(b).multipliedBy(bn100), percentageUnit);
+
+const asAPercentageOn = (percentageUnit: Unit) =>
+  asAPercentage(
+    "as a % on",
+    (a, b) =>
+      a
+        .minus(b)
+        .dividedBy(b)
+        .multipliedBy(bn100),
+    percentageUnit,
+  );
+
+const asAPercentageOff = (percentageUnit: Unit) =>
+  asAPercentage(
+    "as a % off",
+    (a, b) =>
+      b
+        .minus(a)
+        .dividedBy(b)
+        .multipliedBy(bn100),
+    percentageUnit,
+  );
+
+const asAPercentage = (
+  name: string,
+  operation: BinaryOperation,
+  percentageUnit: Unit,
+): Operator => ({
+  associativity: "left",
+  operation: (stack) => {
+    const rgtOperand = firstNonEmpty(stack);
+    const lftOperand = firstNonEmpty(stack);
+    if (!isNumeric(lftOperand) || !isNumeric(rgtOperand)) {
+      return new ErrorValue(
+        `Operands of "${name}" must be numeric values but are ${lftOperand.typeName} and ${
+          rgtOperand.typeName
+        }.`,
+      );
+    }
+
+    if (isUnitful(lftOperand) && lftOperand.unit.name === "%") {
+      return new ErrorValue(`Left operand of "${name}" must not be a percentage`);
+    }
+
+    if (isUnitful(rgtOperand) && rgtOperand.unit.name === "%") {
+      return new ErrorValue(`Right operand of "${name}" must not be a percentage`);
+    }
+
+    return new UnitfulNumericValue(operation(lftOperand.value, rgtOperand.value), percentageUnit);
+  },
+  operator: name,
+  precedence: 10,
+});
 
 //
 // conversion
@@ -271,3 +389,13 @@ function makeConversionOperator(symbol: string): Operator {
     precedence: 16,
   };
 }
+
+//
+// utilities
+//
+
+function firstNonEmpty(stack: Stack<Value>): Value {
+  return stack.popUntil((val) => !isEmpty(val));
+}
+
+const bn100 = new BigNumber(100);

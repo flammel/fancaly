@@ -85,7 +85,7 @@ export function helpTextForTest(): string {
     #
 
     A line that contains only the word "sum" or "average"
-    will calculate the sum or average of all lines above      0
+    will calculate the sum or average of all lines above
     up to the next empty line. Units will be converted
     automatically.
 
