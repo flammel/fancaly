@@ -242,6 +242,42 @@ runTest(`
   total sum for the holiday     90 EUR
 `);
 
+runTest(`
+  10 % of 111           11.1
+`);
+
+runTest(`
+  10 % off 111           99.9
+`);
+
+runTest(`
+  10 % on 111           122.1
+`);
+
+runTest(`
+  40 as a % of 100      40 %
+`);
+
+runTest(`
+  15 as a % on 10       50 %
+`);
+
+runTest(`
+  40 as a % off 100      60 %
+`);
+
+runTest(`
+  10 % of what is 20      200
+`);
+
+runTest(`
+  10 % off what is 90     100
+`);
+
+runTest(`
+  10 % on what is 110     100
+`);
+
 test("1,67823 + 30", () => {
   const interpreter = new Interpreter(testConfig(","));
   const env = new Environment();
