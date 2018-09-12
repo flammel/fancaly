@@ -110,6 +110,15 @@ export function helpTextForTest(): string {
     100 € + 20 %              120 EUR
     100 $ - 20 %              80 USD
     100 * 20 %                20
+    10 % on what is 110       100
+    10 % off what is 90       100
+    10 % of what is 20        200
+    40 as a % off 100         60 %
+    15 as a % on 10           50 %
+    40 as a % of 100          40 %
+    10 % on 111               122.1
+    10 % off 111              99.9
+    10 % of 111               11.1
 
     #
     # Comments
