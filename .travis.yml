@@ -4,3 +4,5 @@ node_js:
 after_success:
   - npm run coverage
   - codecov
+notifications:
+  email: false
