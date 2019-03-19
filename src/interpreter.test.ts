@@ -286,6 +286,10 @@ runTest(`
   12 g as mm              12 mm
 `);
 
+runTest(`
+  10 mm as a % of 10 cm     10 %
+`);
+
 test("1,67823 + 30", () => {
   const interpreter = new Interpreter(testConfig(","));
   const env = new Environment();
