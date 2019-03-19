@@ -50,7 +50,7 @@ export class UnitlessNumericValue implements Value {
     return numberFormatter(this.value);
   }
 
-  public convert(other: Value): Value {
+  public convert(other: Value): NumericValue {
     if (hasUnit(other)) {
       return new UnitfulNumericValue(this.value, other.unit);
     } else {
@@ -58,7 +58,7 @@ export class UnitlessNumericValue implements Value {
     }
   }
 
-  public changeValue(newValue: BigNumber): UnitlessNumericValue {
+  public withNewValue(newValue: BigNumber): UnitlessNumericValue {
     return new UnitlessNumericValue(newValue);
   }
 }
@@ -75,22 +75,18 @@ export class UnitfulNumericValue implements Value {
     return this.unit.format(numberFormatter(this.value));
   }
 
-  public convert(other: Value): Value {
-    if (hasUnit(other)) {
-      const to = other.unit;
-      if (this.unit.base !== to.base) {
-        return new ErrorValue("Cannot convert unit " + this.unit.name + " to " + to.name + ".");
-      }
+  public convert(other: Value): NumericValue {
+    if (hasUnit(other) && this.unit.base === other.unit.base) {
       return new UnitfulNumericValue(
-        this.value.times(this.unit.multiplier.dividedBy(to.multiplier)),
-        to,
+        this.value.times(this.unit.multiplier.dividedBy(other.unit.multiplier)),
+        other.unit,
       );
     } else {
       return new UnitlessNumericValue(this.value);
     }
   }
 
-  public changeValue(newValue: BigNumber): UnitfulNumericValue {
+  public withNewValue(newValue: BigNumber): UnitfulNumericValue {
     return new UnitfulNumericValue(newValue, this.unit);
   }
 }

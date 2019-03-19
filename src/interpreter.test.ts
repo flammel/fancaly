@@ -278,6 +278,14 @@ runTest(`
   10 % on what is 110     100
 `);
 
+runTest(`
+  10 mm * 12 g            120
+`);
+
+runTest(`
+  12 g as mm              12 mm
+`);
+
 test("1,67823 + 30", () => {
   const interpreter = new Interpreter(testConfig(","));
   const env = new Environment();

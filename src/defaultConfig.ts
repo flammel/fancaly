@@ -125,7 +125,7 @@ function sumAggregator(values: NumericValue[]): Value {
   return values.reduce((prev, cur) => {
     const converted = cur.convert(prev);
     if (isNumeric(converted)) {
-      return prev.changeValue(prev.value.plus(converted.value));
+      return prev.withNewValue(prev.value.plus(converted.value));
     }
     return prev;
   });
@@ -143,7 +143,7 @@ const average: ValueGenerator = {
     const values = getAggregatorValues(env);
     const summed = sumAggregator(values);
     if (isNumeric(summed) && values.length > 0) {
-      return summed.changeValue(summed.value.dividedBy(values.length));
+      return summed.withNewValue(summed.value.dividedBy(values.length));
     }
     return summed;
   },
@@ -169,7 +169,7 @@ function unaryOperation(operator: string, operation: (a: BigNumber) => BigNumber
         `Operand of "${operator}" must be a numeric value but is ${operand.typeName}.`,
       );
     }
-    return operand.changeValue(operation(operand.value));
+    return operand.withNewValue(operation(operand.value));
   };
 }
 
@@ -242,12 +242,12 @@ function binaryOperation(
       rgtOperand.unit.name === "%" &&
       (!isUnitful(lftOperand) || lftOperand.unit.name !== "%")
     ) {
-      return lftOperand.changeValue(operationPercent(lftOperand.value, rgtOperand.value));
+      return lftOperand.withNewValue(operationPercent(lftOperand.value, rgtOperand.value));
     }
 
     const convertedRgt = rgtOperand.convert(lftOperand);
     if (isNumeric(convertedRgt)) {
-      return lftOperand.changeValue(operation(lftOperand.value, convertedRgt.value));
+      return convertedRgt.withNewValue(operation(lftOperand.value, convertedRgt.value));
     }
     return convertedRgt;
   };
@@ -298,7 +298,7 @@ function percentageOperation(name: string, operation: BinaryOperation): Operator
         return new ErrorValue(`Right operand of "${name}" must not be a percentage`);
       }
 
-      return rgtOperand.changeValue(operation(lftOperand.value, rgtOperand.value));
+      return rgtOperand.withNewValue(operation(lftOperand.value, rgtOperand.value));
     },
     operator: name,
     precedence: 10,
@@ -383,7 +383,12 @@ function makeConversionOperator(symbol: string): Operator {
           `Operand of "${symbol}" must be a numeric value but is ${operand.typeName}.`,
         );
       }
-      return operand.convert(unit);
+      // If the operand cannot be converted to the unit, then the first call
+      // of convert will return a unitless value, which the second call to
+      // convert will transform into a value with the unit.
+      // If the first call to convert succeeds, then the second one will not
+      // change anything.
+      return operand.convert(unit).convert(unit);
     },
     operator: symbol,
     precedence: 16,

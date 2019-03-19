@@ -54,7 +54,7 @@ runConvertTest("1", "inch", "mm", "25.4");
 runConvertTest("1", "foot", "mm", "304.8");
 runConvertTest("2", "feet", "mm", "609.6");
 runConvertTest("1000", "ft", "mm", "304800");
-runConvertTest("1", "mm", "g", "Cannot convert unit mm to g.", true);
+runConvertTest("1", "mm", "g", "1");
 runConvertTest("1", "mile", "m", "1609.34");
 runConvertTest("1", "fl oz", "ml", "29.5735");
 
@@ -240,7 +240,7 @@ runTest(
     { type: "unit", unit: units.getUnit("mm") as Unit },
     { type: "operator", operator: operators.getOperator("as") as Operator },
   ],
-  new ErrorValue("Cannot convert unit GBP to mm."),
+  new UnitfulNumericValue("4", units.getUnit("mm") as Unit),
 );
 
 runTest(
