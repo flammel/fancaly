@@ -52,6 +52,12 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
   addUnit(config, "ml", "1000", "l");
   addUnit(config, "ml", "1000", "l");
   addUnit(config, "ml", "29.5735", "fl oz");
+  addUnit(config, "s", "0.000000001", "ns");
+  addUnit(config, "s", "0.001", "ms");
+  addUnit(config, "s", "1", "s");
+  addUnit(config, "s", "60", "minute", "minutes");
+  addUnit(config, "s", "3600", "h");
+  addUnit(config, "s", "86400", "day", "days");
 
   config.getOperators().addOperator(addition);
   config.getOperators().addOperator(subtraction);
