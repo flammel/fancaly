@@ -1,5 +1,6 @@
 import { BigNumber } from "bignumber.js";
-import { Operators, Units, ValueGenerators } from "./config";
+import { Functions, Operators, Units, ValueGenerators } from "./config";
+import { Func } from "./function";
 import { Token, Tokens } from "./lexer";
 import { List } from "./list";
 import { NumberFormat } from "./numberFormat";
@@ -15,6 +16,7 @@ export type ParserResult =
 
 export type RPNItem =
   | { type: "operator"; operator: Operator }
+  | { type: "function"; function: Func }
   | { type: "assignment"; variableName: string }
   | { type: "number"; value: BigNumber }
   | { type: "unit"; unit: Unit }
@@ -25,6 +27,7 @@ export type RPN = List<RPNItem>;
 type StackItem =
   | { type: "(" }
   | { type: "operator"; operator: Operator }
+  | { type: "function"; function: Func }
   | { type: "assignment"; variableName: string };
 
 interface ParserState {
@@ -38,17 +41,20 @@ type ErrorMessage = string;
 
 export class Parser {
   private operators: Operators;
+  private functions: Functions;
   private units: Units;
   private valueGenerators: ValueGenerators;
   private numberFormat: NumberFormat;
 
   constructor(
     operators: Operators,
+    functions: Functions,
     units: Units,
     valueGenerators: ValueGenerators,
     numberFormat: NumberFormat,
   ) {
     this.operators = operators;
+    this.functions = functions;
     this.units = units;
     this.valueGenerators = valueGenerators;
     this.numberFormat = numberFormat;
@@ -81,10 +87,14 @@ export class Parser {
         return this.parseNumber(state, currentToken.value);
       case "operator":
         return this.parseOperator(this.operators, state, currentToken.value);
+      case "function":
+        return this.parseFunction(this.functions, state, currentToken.value);
       case "(":
         return this.parseLeftBracket(state);
       case ")":
         return this.parseRightBracket(state);
+      case ";":
+        return this.parseSemicolon(state);
       case "identifier":
         return this.parseIdentifier(state, currentToken.value);
       case "unit":
@@ -127,10 +137,11 @@ export class Parser {
     let stackTop = state.stack.peek();
     while (
       stackTop !== undefined &&
-      stackTop.type === "operator" &&
-      (stackTop.operator.precedence > operator.precedence ||
-        (stackTop.operator.precedence === operator.precedence &&
-          stackTop.operator.associativity === "left"))
+      (stackTop.type === "function" ||
+        (stackTop.type === "operator" &&
+          (stackTop.operator.precedence > operator.precedence ||
+            (stackTop.operator.precedence === operator.precedence &&
+              stackTop.operator.associativity === "left"))))
     ) {
       state.stack.pop();
       state.queue.push(stackTop);
@@ -143,9 +154,38 @@ export class Parser {
     return null;
   }
 
+  private parseFunction(
+    functions: Functions,
+    state: ParserState,
+    value: string,
+  ): ErrorMessage | null {
+    const func = functions.getFunction(value);
+    if (func !== undefined) {
+      state.stack.push({
+        type: "function",
+        function: func,
+      });
+    }
+    return null;
+  }
+
   private parseLeftBracket(state: ParserState): ErrorMessage | null {
     state.nextMinus = "-u";
     state.stack.push({ type: "(" });
+    return null;
+  }
+
+  private parseSemicolon(state: ParserState): ErrorMessage | null {
+    state.nextMinus = "-u";
+    let stackTop = state.stack.peek();
+    while (stackTop && stackTop.type === "operator") {
+      state.queue.push(stackTop);
+      state.stack.pop();
+      stackTop = state.stack.peek();
+    }
+    if (stackTop === undefined || stackTop.type !== "(") {
+      return 'Unbalanced parens in ";" loop.';
+    }
     return null;
   }
 
@@ -225,7 +265,11 @@ export class Parser {
     let stackTop = state.stack.peek();
     while (stackTop !== undefined) {
       state.stack.pop();
-      if (stackTop.type === "operator" || stackTop.type === "assignment") {
+      if (
+        stackTop.type === "operator" ||
+        stackTop.type === "assignment" ||
+        stackTop.type === "function"
+      ) {
         state.queue.push(stackTop);
       } else {
         return {

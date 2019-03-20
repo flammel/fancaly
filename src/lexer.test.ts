@@ -6,6 +6,7 @@ import { testConfig } from "./testConfig";
 const config = testConfig();
 const lexer = new Lexer(
   config.getOperators().getNames(),
+  config.getFunctions().getNames(),
   config.getUnits().getNames(),
   config.getValueGenerators().getAggregatorNames(),
   new NumberFormat("."),
@@ -198,5 +199,66 @@ runTest("30 € for the train ticket", {
     { type: "identifier", value: "the" },
     { type: "identifier", value: "train" },
     { type: "identifier", value: "ticket" },
+  ]),
+});
+
+runTest("round(123.456789; 0)", {
+  type: "success",
+  tokens: new List<Token>([
+    { type: "function", value: "round" },
+    { type: "(", value: "(" },
+    { type: "number", value: "123.456789" },
+    { type: ";", value: ";" },
+    { type: "number", value: "0" },
+    { type: ")", value: ")" },
+  ]),
+});
+
+runTest("round(1.1 * 4.4; 2 * (1 - 0.5))", {
+  type: "success",
+  tokens: new List<Token>([
+    { type: "function", value: "round" },
+    { type: "(", value: "(" },
+    { type: "number", value: "1.1" },
+    { type: "operator", value: "*" },
+    { type: "number", value: "4.4" },
+    { type: ";", value: ";" },
+    { type: "number", value: "2" },
+    { type: "operator", value: "*" },
+    { type: "(", value: "(" },
+    { type: "number", value: "1" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "0.5" },
+    { type: ")", value: ")" },
+    { type: ")", value: ")" },
+  ]),
+});
+
+runTest("round(123.4 - 12; -2)", {
+  type: "success",
+  tokens: new List<Token>([
+    { type: "function", value: "round" },
+    { type: "(", value: "(" },
+    { type: "number", value: "123.4" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "12" },
+    { type: ";", value: ";" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "2" },
+    { type: ")", value: ")" },
+  ]),
+});
+
+runTest("floor(123.65; 0) + 2", {
+  type: "success",
+  tokens: new List<Token>([
+    { type: "function", value: "floor" },
+    { type: "(", value: "(" },
+    { type: "number", value: "123.65" },
+    { type: ";", value: ";" },
+    { type: "number", value: "0" },
+    { type: ")", value: ")" },
+    { type: "operator", value: "+" },
+    { type: "number", value: "2" },
   ]),
 });

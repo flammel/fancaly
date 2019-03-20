@@ -1,4 +1,5 @@
 import { BigNumber } from "bignumber.js";
+import { Func } from "./function";
 import { NumberFormat } from "./numberFormat";
 import { Operator } from "./operator";
 import { Formatter, Unit, UnitName } from "./unit";
@@ -17,6 +18,22 @@ export class Operators {
 
   public getOperator(name: string): Operator | undefined {
     return this.operators[name];
+  }
+}
+
+export class Functions {
+  private functions: { [k: string]: Func } = {};
+
+  public addFunction(func: Func) {
+    this.functions[func.name] = func;
+  }
+
+  public getNames(): string[] {
+    return Object.keys(this.functions);
+  }
+
+  public getFunction(name: string): Func | undefined {
+    return this.functions[name];
   }
 }
 
@@ -61,6 +78,7 @@ export class Units {
 
 export class Config {
   private operators: Operators;
+  private functions: Functions;
   private units: Units;
   private valueGenerators: ValueGenerators;
   private numberFormat: NumberFormat;
@@ -68,12 +86,17 @@ export class Config {
   constructor(numberFormat: NumberFormat) {
     this.numberFormat = numberFormat;
     this.operators = new Operators();
+    this.functions = new Functions();
     this.units = new Units();
     this.valueGenerators = new ValueGenerators();
   }
 
   public getOperators(): Operators {
     return this.operators;
+  }
+
+  public getFunctions(): Functions {
+    return this.functions;
   }
 
   public getUnits(): Units {

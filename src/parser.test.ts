@@ -1,5 +1,6 @@
 import { BigNumber } from "bignumber.js";
 import { Environment } from "./environment";
+import { Func } from "./function";
 import { Token } from "./lexer";
 import { List } from "./list";
 import { Operator } from "./operator";
@@ -24,9 +25,10 @@ function withoutOperations(result: ParserResult): ParserResult {
 
 const config = testConfig();
 const operators = config.getOperators();
+const functions = config.getFunctions();
 const units = config.getUnits();
 const valueGenerators = config.getValueGenerators();
-const parser = new Parser(operators, units, valueGenerators, config.getNumberFormat());
+const parser = new Parser(operators, functions, units, valueGenerators, config.getNumberFormat());
 
 function runTest(name: string, tokens: Token[], output: ParserResult) {
   test(name, () => {
@@ -546,6 +548,142 @@ runTest(
       { type: "valueGenerator", generator: new VariableReader("the") },
       { type: "valueGenerator", generator: new VariableReader("train") },
       { type: "valueGenerator", generator: new VariableReader("ticket") },
+    ]),
+  },
+);
+
+runTest(
+  "round(123.456789; 0)",
+  [
+    { type: "function", value: "round" },
+    { type: "(", value: "(" },
+    { type: "number", value: "123.456789" },
+    { type: ";", value: ";" },
+    { type: "number", value: "0" },
+    { type: ")", value: ")" },
+  ],
+  {
+    type: "success",
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("123.456789") },
+      { type: "number", value: new BigNumber("0") },
+      { type: "function", function: functions.getFunction("round") as Func },
+    ]),
+  },
+);
+
+runTest(
+  "round(1.1 * 4.4; 2 * (1 - 0.5))",
+  [
+    { type: "function", value: "round" },
+    { type: "(", value: "(" },
+    { type: "number", value: "1.1" },
+    { type: "operator", value: "*" },
+    { type: "number", value: "4.4" },
+    { type: ";", value: ";" },
+    { type: "number", value: "2" },
+    { type: "operator", value: "*" },
+    { type: "(", value: "(" },
+    { type: "number", value: "1" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "0.5" },
+    { type: ")", value: ")" },
+    { type: ")", value: ")" },
+  ],
+  {
+    type: "success",
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("1.1") },
+      { type: "number", value: new BigNumber("4.4") },
+      { type: "operator", operator: operators.getOperator("*") as Operator },
+      { type: "number", value: new BigNumber("2") },
+      { type: "number", value: new BigNumber("1") },
+      { type: "number", value: new BigNumber("0.5") },
+      { type: "operator", operator: operators.getOperator("-") as Operator },
+      { type: "operator", operator: operators.getOperator("*") as Operator },
+      { type: "function", function: functions.getFunction("round") as Func },
+    ]),
+  },
+);
+
+runTest(
+  "round(123.4 - 12; -2)",
+  [
+    { type: "function", value: "round" },
+    { type: "(", value: "(" },
+    { type: "number", value: "123.4" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "12" },
+    { type: ";", value: ";" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "2" },
+    { type: ")", value: ")" },
+  ],
+  {
+    type: "success",
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("123.4") },
+      { type: "number", value: new BigNumber("12") },
+      { type: "operator", operator: operators.getOperator("-") as Operator },
+      { type: "number", value: new BigNumber("2") },
+      { type: "operator", operator: operators.getOperator("-u") as Operator },
+      { type: "function", function: functions.getFunction("round") as Func },
+    ]),
+  },
+);
+
+runTest(
+  "round((123.4 - 12) * 3; -2)",
+  [
+    { type: "function", value: "round" },
+    { type: "(", value: "(" },
+    { type: "(", value: "(" },
+    { type: "number", value: "123.4" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "12" },
+    { type: ")", value: ")" },
+    { type: "operator", value: "*" },
+    { type: "number", value: "3" },
+    { type: ";", value: ";" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "2" },
+    { type: ")", value: ")" },
+  ],
+  {
+    type: "success",
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("123.4") },
+      { type: "number", value: new BigNumber("12") },
+      { type: "operator", operator: operators.getOperator("-") as Operator },
+      { type: "number", value: new BigNumber("3") },
+      { type: "operator", operator: operators.getOperator("*") as Operator },
+      { type: "number", value: new BigNumber("2") },
+      { type: "operator", operator: operators.getOperator("-u") as Operator },
+      { type: "function", function: functions.getFunction("round") as Func },
+    ]),
+  },
+);
+
+runTest(
+  "floor(123.65; 0) + 2",
+  [
+    { type: "function", value: "floor" },
+    { type: "(", value: "(" },
+    { type: "number", value: "123.65" },
+    { type: ";", value: ";" },
+    { type: "number", value: "0" },
+    { type: ")", value: ")" },
+    { type: "operator", value: "+" },
+    { type: "number", value: "2" },
+  ],
+  {
+    type: "success",
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("123.65") },
+      { type: "number", value: new BigNumber("0") },
+      { type: "function", function: functions.getFunction("floor") as Func },
+      { type: "number", value: new BigNumber("2") },
+      { type: "operator", operator: operators.getOperator("+") as Operator },
     ]),
   },
 );

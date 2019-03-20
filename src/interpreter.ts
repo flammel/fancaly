@@ -14,12 +14,14 @@ export class Interpreter {
   constructor(config: Config) {
     this.lexer = new Lexer(
       config.getOperators().getNames(),
+      config.getFunctions().getNames(),
       config.getUnits().getNames(),
       config.getValueGenerators().getAggregatorNames(),
       config.getNumberFormat(),
     );
     this.parser = new Parser(
       config.getOperators(),
+      config.getFunctions(),
       config.getUnits(),
       config.getValueGenerators(),
       config.getNumberFormat(),

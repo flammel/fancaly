@@ -1,6 +1,7 @@
 import { BigNumber } from "bignumber.js";
 import { Environment } from "./environment";
 import { Evaluator } from "./evaluator";
+import { Func } from "./function";
 import { List } from "./list";
 import { Operator } from "./operator";
 import { RPNItem } from "./parser";
@@ -11,6 +12,7 @@ import { ValueGenerator, VariableReader } from "./valueGenerator";
 
 const config = testConfig();
 const operators = config.getOperators();
+const functions = config.getFunctions();
 const units = config.getUnits();
 const valueGenerators = config.getValueGenerators();
 
@@ -267,4 +269,90 @@ runTest(
     { type: "valueGenerator", generator: new VariableReader("ticket") },
   ],
   new UnitfulNumericValue("30", units.getUnit("€") as Unit),
+);
+
+runTest(
+  "round(123.456789; 0)",
+  [
+    { type: "number", value: new BigNumber("123.456789") },
+    { type: "number", value: new BigNumber("0") },
+    { type: "function", function: functions.getFunction("round") as Func },
+  ],
+  new UnitlessNumericValue("123"),
+);
+
+runTest(
+  "round(1.1 * 4.4; 2 * (1 - 0.5))",
+  [
+    { type: "number", value: new BigNumber("1.1") },
+    { type: "number", value: new BigNumber("4.4") },
+    { type: "operator", operator: operators.getOperator("*") as Operator },
+    { type: "number", value: new BigNumber("2") },
+    { type: "number", value: new BigNumber("1") },
+    { type: "number", value: new BigNumber("0.5") },
+    { type: "operator", operator: operators.getOperator("-") as Operator },
+    { type: "operator", operator: operators.getOperator("*") as Operator },
+    { type: "function", function: functions.getFunction("round") as Func },
+  ],
+  new UnitlessNumericValue("4.8"),
+);
+
+runTest(
+  "round(123.4 - 12; -2)",
+  [
+    { type: "number", value: new BigNumber("123.4") },
+    { type: "number", value: new BigNumber("12") },
+    { type: "operator", operator: operators.getOperator("-") as Operator },
+    { type: "number", value: new BigNumber("2") },
+    { type: "operator", operator: operators.getOperator("-u") as Operator },
+    { type: "function", function: functions.getFunction("round") as Func },
+  ],
+  new UnitlessNumericValue("100"),
+);
+
+runTest(
+  "round((123.4 - 12) * 3; -1)",
+  [
+    { type: "number", value: new BigNumber("123.4") },
+    { type: "number", value: new BigNumber("12") },
+    { type: "operator", operator: operators.getOperator("-") as Operator },
+    { type: "number", value: new BigNumber("3") },
+    { type: "operator", operator: operators.getOperator("*") as Operator },
+    { type: "number", value: new BigNumber("1") },
+    { type: "operator", operator: operators.getOperator("-u") as Operator },
+    { type: "function", function: functions.getFunction("round") as Func },
+  ],
+  new UnitlessNumericValue("330"),
+);
+
+runTest(
+  "ceil(1.4; 0)",
+  [
+    { type: "number", value: new BigNumber("1.4") },
+    { type: "number", value: new BigNumber("0") },
+    { type: "function", function: functions.getFunction("ceil") as Func },
+  ],
+  new UnitlessNumericValue("2"),
+);
+
+runTest(
+  "floor(1.5; 0)",
+  [
+    { type: "number", value: new BigNumber("1.5") },
+    { type: "number", value: new BigNumber("0") },
+    { type: "function", function: functions.getFunction("floor") as Func },
+  ],
+  new UnitlessNumericValue("1"),
+);
+
+runTest(
+  "floor(123.65; 0) + 2      125",
+  [
+    { type: "number", value: new BigNumber("123.65") },
+    { type: "number", value: new BigNumber("0") },
+    { type: "function", function: functions.getFunction("floor") as Func },
+    { type: "number", value: new BigNumber("2") },
+    { type: "operator", operator: operators.getOperator("+") as Operator },
+  ],
+  new UnitlessNumericValue("125"),
 );

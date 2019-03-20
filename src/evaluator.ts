@@ -1,5 +1,6 @@
 import { BigNumber } from "bignumber.js";
 import { Environment } from "./environment";
+import { Func } from "./function";
 import { Operator } from "./operator";
 import { RPN, RPNItem } from "./parser";
 import { Stack } from "./stack";
@@ -44,6 +45,15 @@ export class Evaluator {
 
   private evaluateOperator(stack: Stack<Value>, operator: Operator): ErrorMessage | null {
     const result = operator.operation(stack);
+    if (isError(result)) {
+      return result.description;
+    }
+    stack.push(result);
+    return null;
+  }
+
+  private evaluateFunction(stack: Stack<Value>, func: Func): ErrorMessage | null {
+    const result = func.operation(stack);
     if (isError(result)) {
       return result.description;
     }
@@ -102,6 +112,8 @@ export class Evaluator {
     switch (currentItem.type) {
       case "operator":
         return this.evaluateOperator(stack, currentItem.operator);
+      case "function":
+        return this.evaluateFunction(stack, currentItem.function);
       case "assignment":
         return this.evaluateAssignment(stack, env, currentItem.variableName);
       case "valueGenerator":

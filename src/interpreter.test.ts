@@ -290,6 +290,24 @@ runTest(`
   10 mm as a % of 10 cm     10 %
 `);
 
+runTest(`
+  round(123.45; 1) + 2      125.5
+`);
+
+runTest(`
+  ceil(123.45; -1) + 2      132
+`);
+
+runTest(`
+  floor(123.65; 0) + 2      125
+`);
+
+runTest(`
+  x = 123.65                123.65
+  y = 1                     1
+  floor(x; y)               123.6
+`);
+
 test("1,67823 + 30", () => {
   const interpreter = new Interpreter(testConfig(","));
   const env = new Environment();

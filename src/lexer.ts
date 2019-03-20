@@ -5,9 +5,11 @@ type TokenType =
   | "identifier"
   | "number"
   | "operator"
+  | "function"
   | "unit"
   | "("
   | ")"
+  | ";"
   | "assignment"
   | "comment"
   | "aggregator";
@@ -58,19 +60,23 @@ export class Lexer {
 
   constructor(
     operatorNames: string[],
+    functionNames: string[],
     unitNames: string[],
     aggregatorNames: string[],
     numberFormat: NumberFormat,
   ) {
+    const nameCondition = startsWith([" ", ";", ")", "(", ...operatorNames]);
     this.scanners = [
       regexScanner(/^(#.*)(.*)$/, "comment"),
       regexScanner(/^([:=])\s*(.*)$/, "assignment"),
       regexScanner(/^([\(])\s*(.*)$/, "("),
       regexScanner(/^([\)])\s*(.*)$/, ")"),
+      regexScanner(/^([;])\s*(.*)$/, ";"),
       regexScanner(numberFormat.getRegExp(), "number"),
-      nameScanner(operatorNames, "operator", startsWith(operatorNames)),
-      nameScanner(aggregatorNames, "aggregator", startsWith(operatorNames)),
-      nameScanner(unitNames, "unit", startsWith(operatorNames)),
+      nameScanner(operatorNames, "operator", nameCondition),
+      nameScanner(functionNames, "function", nameCondition),
+      nameScanner(aggregatorNames, "aggregator", nameCondition),
+      nameScanner(unitNames, "unit", nameCondition),
       // https://stackoverflow.com/questions/20690499
       regexScanner(/^([a-zA-Z\u00C0-\u024F_]+)\s*(.*)$/, "identifier"),
     ];
@@ -116,12 +122,7 @@ function startsWith(separators: string[]): (name: string, input: string) => bool
     }
     if (needle.match(/^[a-z]+$/i)) {
       const remaining = haytack.substr(needle.length);
-      return (
-        remaining === "" ||
-        remaining[0] === " " ||
-        remaining[0] === ")" ||
-        separators.indexOf(remaining[0]) !== -1
-      );
+      return remaining === "" || separators.indexOf(remaining[0]) !== -1;
     }
     return true;
   };

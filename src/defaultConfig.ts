@@ -12,8 +12,17 @@ import {
   rightPercentageBinaryOperation,
   unaryOperator,
 } from "./operator";
+import { Stack } from "./stack";
 import { Unit, UnitName } from "./unit";
-import { isNumeric, NumericValue, UnitlessNumericValue, Value } from "./value";
+import {
+  EmptyValue,
+  ErrorValue,
+  isEmpty,
+  isNumeric,
+  NumericValue,
+  UnitlessNumericValue,
+  Value,
+} from "./value";
 import { ValueGenerator } from "./valueGenerator";
 
 export function defaultConfig(decimalSeparator: string = "."): Config {
@@ -73,6 +82,9 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
   config.getOperators().addOperator(percentOff);
   config.getOperators().addOperator(convertTo);
   config.getOperators().addOperator(convertAs);
+  config.getFunctions().addFunction(roundFunction("round", BigNumber.ROUND_HALF_UP));
+  config.getFunctions().addFunction(roundFunction("ceil", BigNumber.ROUND_CEIL));
+  config.getFunctions().addFunction(roundFunction("floor", BigNumber.ROUND_FLOOR));
 
   const currencies = (window as any).currencies;
   if (currencies && currencies.hasOwnProperty("rates") && currencies.hasOwnProperty("base")) {
@@ -245,3 +257,31 @@ const asAPercentageOff = (percentageUnit: Unit) =>
 const convertTo = binaryOperator("to", "left", 16, [conversionOperation()]);
 
 const convertAs = binaryOperator("as", "left", 16, [conversionOperation()]);
+
+//
+// rounding
+//
+
+const roundFunction = (name: string, roundingMode: BigNumber.RoundingMode) => ({
+  operation: (stack: Stack<Value>) => {
+    const rgt = stack.popUntil((val) => !isEmpty(val));
+    const lft = stack.popUntil((val) => !isEmpty(val));
+
+    if (!isNumeric(lft) || !isNumeric(rgt)) {
+      return new ErrorValue(`The function "${name}" must be applied to two numeric values`);
+    }
+
+    if (rgt.value.isNegative()) {
+      const multiplier = new BigNumber(10).pow(rgt.value.abs().toNumber());
+      return lft.withNewValue(
+        lft.value
+          .dividedBy(multiplier)
+          .decimalPlaces(0, roundingMode)
+          .multipliedBy(multiplier),
+      );
+    } else {
+      return lft.withNewValue(lft.value.decimalPlaces(rgt.value.toNumber(), roundingMode));
+    }
+  },
+  name,
+});
