@@ -117,7 +117,7 @@ export class Lexer {
   }
 }
 
-function startsWith(separators: string[]): (name: string, input: string) => boolean {
+function startsWith(separators: string[]): (input: string, name: string) => boolean {
   return (haytack: string, needle: string) => {
     if (haytack.toLowerCase().indexOf(needle.toLowerCase()) !== 0) {
       return false;
@@ -133,7 +133,7 @@ function startsWith(separators: string[]): (name: string, input: string) => bool
 function nameScanner(
   names: string[],
   type: TokenType,
-  condition: (name: string, input: string) => boolean,
+  condition: (input: string, name: string) => boolean,
 ): Scanner {
   return (input: string) => {
     for (const name of names) {
