@@ -21,10 +21,6 @@ export function isDateTime(obj: any): obj is DateTimeValue {
   return obj instanceof DateTimeValue;
 }
 
-export function isResult(obj: any): boolean {
-  return isNumeric(obj) || isDateTime(obj);
-}
-
 export type Value = DateTimeValue | NumericValue | ErrorValue | EmptyValue | UnitValue;
 
 export class DateTimeValue {
