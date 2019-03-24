@@ -6,7 +6,21 @@ export interface Unit {
   base: UnitName;
   name: UnitName;
   multiplier: BigNumber;
-  format: Formatter;
+  format: UnitFormatter;
 }
 
-export type Formatter = (formattedNumber: string) => string;
+export const unitless: Unit = {
+  base: "",
+  name: "",
+  multiplier: new BigNumber(1),
+  format: (str) => str,
+};
+
+export const percentage: Unit = {
+  base: "%",
+  name: "%",
+  multiplier: new BigNumber(1),
+  format: (str) => str,
+};
+
+export type UnitFormatter = (formattedNumber: string) => string;

@@ -1,5 +1,5 @@
+import { Formatter } from "./formatter";
 import { List } from "./list";
-import { NumberFormat } from "./numberFormat";
 
 type TokenType =
   | "identifier"
@@ -12,7 +12,8 @@ type TokenType =
   | ";"
   | "assignment"
   | "comment"
-  | "aggregator";
+  | "aggregator"
+  | "date";
 
 export interface Token {
   type: TokenType;
@@ -63,7 +64,7 @@ export class Lexer {
     functionNames: string[],
     unitNames: string[],
     aggregatorNames: string[],
-    numberFormat: NumberFormat,
+    formatter: Formatter,
   ) {
     const nameCondition = startsWith([" ", ";", ")", "(", ...operatorNames]);
     this.scanners = [
@@ -72,7 +73,8 @@ export class Lexer {
       regexScanner(/^([\(])\s*(.*)$/, "("),
       regexScanner(/^([\)])\s*(.*)$/, ")"),
       regexScanner(/^([;])\s*(.*)$/, ";"),
-      regexScanner(numberFormat.getRegExp(), "number"),
+      regexScanner(formatter.getDateRegExp(), "date"),
+      regexScanner(formatter.getNumberRegExp(), "number"),
       nameScanner(operatorNames, "operator", nameCondition),
       nameScanner(functionNames, "function", nameCondition),
       nameScanner(aggregatorNames, "aggregator", nameCondition),

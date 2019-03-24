@@ -1,6 +1,6 @@
+import { Formatter } from "./formatter";
 import { Lexer, LexerResult, Token } from "./lexer";
 import { List } from "./list";
-import { NumberFormat } from "./numberFormat";
 import { testConfig } from "./testConfig";
 
 const config = testConfig();
@@ -9,7 +9,7 @@ const lexer = new Lexer(
   config.getFunctions().getNames(),
   config.getUnits().getNames(),
   config.getValueGenerators().getAggregatorNames(),
-  new NumberFormat("."),
+  new Formatter("."),
 );
 
 function runTest(input: string, output: LexerResult) {
@@ -260,5 +260,32 @@ runTest("floor(123.65; 0) + 2", {
     { type: ")", value: ")" },
     { type: "operator", value: "+" },
     { type: "number", value: "2" },
+  ]),
+});
+
+runTest("1992-06-22", {
+  type: "success",
+  tokens: new List<Token>([{ type: "date", value: "1992-06-22" }]),
+});
+
+runTest("1992 -06-22", {
+  type: "success",
+  tokens: new List<Token>([
+    { type: "number", value: "1992" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "06" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "22" },
+  ]),
+});
+
+runTest("1992-06- 22", {
+  type: "success",
+  tokens: new List<Token>([
+    { type: "number", value: "1992" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "06" },
+    { type: "operator", value: "-" },
+    { type: "number", value: "22" },
   ]),
 });

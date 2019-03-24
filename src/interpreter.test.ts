@@ -1,6 +1,9 @@
+import { advanceTo } from "jest-date-mock";
 import { Environment } from "./environment";
 import { Interpreter } from "./interpreter";
 import { testConfig } from "./testConfig";
+
+advanceTo(new Date(2018, 5, 27, 12, 42, 36, 134));
 
 function runTest(data: string) {
   // data.trim() removes leading and trailing newline from multiline string which is contained in
@@ -306,6 +309,42 @@ runTest(`
   x = 123.65                123.65
   y = 1                     1
   floor(x; y)               123.6
+`);
+
+runTest(`
+  10 days from today          2018-07-07
+`);
+
+runTest(`
+  10 days from now            2018-07-07T10:42:36.134Z
+`);
+
+runTest(`
+  10 days + now               2018-07-07T10:42:36.134Z
+`);
+
+runTest(`
+  now + 10 days               2018-07-07T10:42:36.134Z
+`);
+
+runTest(`
+  10 days + today             2018-07-07
+`);
+
+runTest(`
+  2019-05-01 + 10 days        2019-05-11
+`);
+
+runTest(`
+  today                       2018-06-27
+`);
+
+runTest(`
+  now                         2018-06-27T10:42:36.134Z
+`);
+
+runTest(`
+  1965-08-30                  1965-08-30
 `);
 
 test("1,67823 + 30", () => {

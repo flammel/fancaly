@@ -1,28 +1,22 @@
 import { BigNumber } from "bignumber.js";
 import { Config } from "./config";
 import { Environment } from "./environment";
-import { NumberFormat } from "./numberFormat";
+import { Formatter } from "./formatter";
 import {
   binaryOperator,
   conversionOperation,
   leftPercentageBinaryOperation,
   noPercentageBinaryOperation,
   numericBinaryOperation,
+  oneDateTimeBinaryOperation,
   Operator,
+  rightDateTimeBinaryOperation,
   rightPercentageBinaryOperation,
   unaryOperator,
 } from "./operator";
 import { Stack } from "./stack";
-import { Unit, UnitName } from "./unit";
-import {
-  EmptyValue,
-  ErrorValue,
-  isEmpty,
-  isNumeric,
-  NumericValue,
-  UnitlessNumericValue,
-  Value,
-} from "./value";
+import { percentage, unitless, UnitName } from "./unit";
+import { DateTimeValue, ErrorValue, isEmpty, isNumeric, NumericValue, Value } from "./value";
 import { ValueGenerator } from "./valueGenerator";
 
 export function defaultConfig(decimalSeparator: string = "."): Config {
@@ -37,9 +31,8 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
     },
   });
 
-  const config = new Config(new NumberFormat(decimalSeparator));
+  const config = new Config(new Formatter(decimalSeparator));
 
-  addUnit(config, "%", "1", "%");
   addUnit(config, "mm", "1", "mm");
   addUnit(config, "mm", "10", "cm");
   addUnit(config, "mm", "100", "dm");
@@ -71,9 +64,9 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
   config.getOperators().addOperator(multiplication);
   config.getOperators().addOperator(division);
   config.getOperators().addOperator(unaryMinus);
-  config.getOperators().addOperator(asAPercentageOff(config.getUnits().getUnit("%") as Unit));
-  config.getOperators().addOperator(asAPercentageOf(config.getUnits().getUnit("%") as Unit));
-  config.getOperators().addOperator(asAPercentageOn(config.getUnits().getUnit("%") as Unit));
+  config.getOperators().addOperator(asAPercentageOff);
+  config.getOperators().addOperator(asAPercentageOf);
+  config.getOperators().addOperator(asAPercentageOn);
   config.getOperators().addOperator(percentOnWhat);
   config.getOperators().addOperator(percentOfWhat);
   config.getOperators().addOperator(percentOffWhat);
@@ -82,9 +75,22 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
   config.getOperators().addOperator(percentOff);
   config.getOperators().addOperator(convertTo);
   config.getOperators().addOperator(convertAs);
+  config
+    .getOperators()
+    .addOperator(binaryOperator("from", "left", 13, [rightDateTimeBinaryOperation(addTimeToDate)]));
   config.getFunctions().addFunction(roundFunction("round", BigNumber.ROUND_HALF_UP));
   config.getFunctions().addFunction(roundFunction("ceil", BigNumber.ROUND_CEIL));
   config.getFunctions().addFunction(roundFunction("floor", BigNumber.ROUND_FLOOR));
+  config.getValueGenerators().addAggregator(sum);
+  config.getValueGenerators().addAggregator(average);
+  config.getValueGenerators().addAggregator({
+    operation: (env) => new DateTimeValue(new Date(), true),
+    name: "now",
+  });
+  config.getValueGenerators().addAggregator({
+    operation: (env) => new DateTimeValue(new Date(), false),
+    name: "today",
+  });
 
   const currencies = (window as any).currencies;
   if (currencies && currencies.hasOwnProperty("rates") && currencies.hasOwnProperty("base")) {
@@ -99,9 +105,6 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
       addUnit(config, currencies.base, currencies.rates[key], key, ...names);
     });
   }
-
-  config.getValueGenerators().addAggregator(sum);
-  config.getValueGenerators().addAggregator(average);
 
   return config;
 }
@@ -118,6 +121,13 @@ function addUnit(config: Config, base: UnitName, multiplier: string, ...names: U
 }
 
 const bn100 = new BigNumber(100);
+const addTimeToDate = (date: Date, value: NumericValue) => {
+  const ms = getMilliseconds(value);
+  if (ms) {
+    return new Date(date.valueOf() + ms);
+  }
+  return undefined;
+};
 
 //
 // ValueGenerator
@@ -138,14 +148,10 @@ function getAggregatorValues(env: Environment): NumericValue[] {
 
 function sumAggregator(values: NumericValue[]): Value {
   if (values.length === 0) {
-    return new UnitlessNumericValue("0");
+    return new NumericValue("0", unitless);
   }
   return values.reduce((prev, cur) => {
-    const converted = cur.convert(prev);
-    if (isNumeric(converted)) {
-      return prev.withNewValue(prev.value.plus(converted.value));
-    }
-    return prev;
+    return prev.withNewValue(prev.value.plus(cur.withNewUnit(prev.unit).value));
   });
 }
 
@@ -178,7 +184,15 @@ const unaryMinus: Operator = unaryOperator("-u", "right", 20, (a) => a.negated()
 // binary
 //
 
+function getMilliseconds(value: NumericValue): number | undefined {
+  if (value.unit.base === "s") {
+    return value.value.toNumber() * value.unit.multiplier.toNumber() * 1000;
+  }
+  return undefined;
+}
+
 const addition = binaryOperator("+", "left", 13, [
+  oneDateTimeBinaryOperation(addTimeToDate),
   rightPercentageBinaryOperation((a, b) => a.dividedBy(100).multipliedBy(b.plus(bn100))),
   numericBinaryOperation((a, b) => a.plus(b)),
 ]);
@@ -205,18 +219,23 @@ const multiplication = binaryOperator("*", "left", 14, [
 const percentOnWhat = binaryOperator("on what is", "left", 10, [
   leftPercentageBinaryOperation((a, b) => b.dividedBy(a.plus(bn100)).multipliedBy(bn100)),
 ]);
+
 const percentOffWhat = binaryOperator("off what is", "left", 10, [
   leftPercentageBinaryOperation((a, b) => b.dividedBy(bn100.minus(a)).multipliedBy(bn100)),
 ]);
+
 const percentOfWhat = binaryOperator("of what is", "left", 10, [
   leftPercentageBinaryOperation((a, b) => b.dividedBy(a).multipliedBy(bn100)),
 ]);
+
 const percentOn = binaryOperator("on", "left", 10, [
   leftPercentageBinaryOperation((a, b) => b.dividedBy(bn100).multipliedBy(a.plus(bn100))),
 ]);
+
 const percentOf = binaryOperator("of", "left", 10, [
   leftPercentageBinaryOperation((a, b) => b.dividedBy(bn100).multipliedBy(a)),
 ]);
+
 const percentOff = binaryOperator("off", "left", 10, [
   leftPercentageBinaryOperation((a, b) => b.dividedBy(bn100).multipliedBy(bn100.minus(a))),
 ]);
@@ -225,30 +244,27 @@ const percentOff = binaryOperator("off", "left", 10, [
 // "as a %" operations
 //
 
-const asAPercentageOf = (percentageUnit: Unit) =>
-  binaryOperator("as a % of", "left", 10, [
-    noPercentageBinaryOperation(percentageUnit, (a, b) => a.dividedBy(b).multipliedBy(bn100)),
-  ]);
+const asAPercentageOf = binaryOperator("as a % of", "left", 10, [
+  noPercentageBinaryOperation(percentage, (a, b) => a.dividedBy(b).multipliedBy(bn100)),
+]);
 
-const asAPercentageOn = (percentageUnit: Unit) =>
-  binaryOperator("as a % on", "left", 10, [
-    noPercentageBinaryOperation(percentageUnit, (a, b) =>
-      a
-        .minus(b)
-        .dividedBy(b)
-        .multipliedBy(bn100),
-    ),
-  ]);
+const asAPercentageOn = binaryOperator("as a % on", "left", 10, [
+  noPercentageBinaryOperation(percentage, (a, b) =>
+    a
+      .minus(b)
+      .dividedBy(b)
+      .multipliedBy(bn100),
+  ),
+]);
 
-const asAPercentageOff = (percentageUnit: Unit) =>
-  binaryOperator("as a % off", "left", 10, [
-    noPercentageBinaryOperation(percentageUnit, (a, b) =>
-      b
-        .minus(a)
-        .dividedBy(b)
-        .multipliedBy(bn100),
-    ),
-  ]);
+const asAPercentageOff = binaryOperator("as a % off", "left", 10, [
+  noPercentageBinaryOperation(percentage, (a, b) =>
+    b
+      .minus(a)
+      .dividedBy(b)
+      .multipliedBy(bn100),
+  ),
+]);
 
 //
 // conversion

@@ -1,15 +1,15 @@
 import { Config } from "./config";
 import { Environment } from "./environment";
 import { Evaluator } from "./evaluator";
+import { Formatter } from "./formatter";
 import { Lexer } from "./lexer";
-import { NumberFormat } from "./numberFormat";
 import { Parser } from "./parser";
 
 export class Interpreter {
   private lexer: Lexer;
   private parser: Parser;
   private evaluator: Evaluator;
-  private numberFormat: NumberFormat;
+  private formatter: Formatter;
 
   constructor(config: Config) {
     this.lexer = new Lexer(
@@ -17,17 +17,17 @@ export class Interpreter {
       config.getFunctions().getNames(),
       config.getUnits().getNames(),
       config.getValueGenerators().getAggregatorNames(),
-      config.getNumberFormat(),
+      config.getFormatter(),
     );
     this.parser = new Parser(
       config.getOperators(),
       config.getFunctions(),
       config.getUnits(),
       config.getValueGenerators(),
-      config.getNumberFormat(),
+      config.getFormatter(),
     );
     this.evaluator = new Evaluator();
-    this.numberFormat = config.getNumberFormat();
+    this.formatter = config.getFormatter();
   }
 
   public evaluateLine(env: Environment, line: string): string {
@@ -39,7 +39,7 @@ export class Interpreter {
     if (parsed.type === "error") {
       return "";
     }
-    const evaluated = this.evaluator.evaluate(parsed.rpn, env);
-    return evaluated.toString(this.numberFormat.getFormatter());
+    const value = this.evaluator.evaluate(parsed.rpn, env);
+    return this.formatter.format(value);
   }
 }

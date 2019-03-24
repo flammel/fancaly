@@ -1,9 +1,9 @@
 import { BigNumber } from "bignumber.js";
 import { Functions, Operators, Units, ValueGenerators } from "./config";
+import { Formatter } from "./formatter";
 import { Func } from "./function";
 import { Token, Tokens } from "./lexer";
 import { List } from "./list";
-import { NumberFormat } from "./numberFormat";
 import { Operator } from "./operator";
 import { Stack } from "./stack";
 import { Unit } from "./unit";
@@ -20,6 +20,7 @@ export type RPNItem =
   | { type: "assignment"; variableName: string }
   | { type: "number"; value: BigNumber }
   | { type: "unit"; unit: Unit }
+  | { type: "date"; date: Date }
   | { type: "valueGenerator"; generator: ValueGenerator };
 
 export type RPN = List<RPNItem>;
@@ -44,20 +45,20 @@ export class Parser {
   private functions: Functions;
   private units: Units;
   private valueGenerators: ValueGenerators;
-  private numberFormat: NumberFormat;
+  private formatter: Formatter;
 
   constructor(
     operators: Operators,
     functions: Functions,
     units: Units,
     valueGenerators: ValueGenerators,
-    numberFormat: NumberFormat,
+    formatter: Formatter,
   ) {
     this.operators = operators;
     this.functions = functions;
     this.units = units;
     this.valueGenerators = valueGenerators;
-    this.numberFormat = numberFormat;
+    this.formatter = formatter;
   }
 
   public parse(tokens: Tokens): ParserResult {
@@ -105,6 +106,8 @@ export class Parser {
         return this.parseComment();
       case "aggregator":
         return this.parseAggregator(this.valueGenerators, state, currentToken.value);
+      case "date":
+        return this.parseDate(state, currentToken.value);
       default:
         assertNever(currentToken.type);
         return null;
@@ -115,7 +118,16 @@ export class Parser {
     state.nextMinus = "-";
     state.queue.push({
       type: "number",
-      value: new BigNumber(this.numberFormat.parse(value)),
+      value: new BigNumber(this.formatter.parseNumber(value)),
+    });
+    return null;
+  }
+
+  private parseDate(state: ParserState, value: string): ErrorMessage | null {
+    state.nextMinus = "-";
+    state.queue.push({
+      type: "date",
+      date: new Date(value),
     });
     return null;
   }

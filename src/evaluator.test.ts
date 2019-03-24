@@ -1,4 +1,5 @@
 import { BigNumber } from "bignumber.js";
+import { advanceTo } from "jest-date-mock";
 import { Environment } from "./environment";
 import { Evaluator } from "./evaluator";
 import { Func } from "./function";
@@ -6,9 +7,11 @@ import { List } from "./list";
 import { Operator } from "./operator";
 import { RPNItem } from "./parser";
 import { testConfig } from "./testConfig";
-import { Unit } from "./unit";
-import { EmptyValue, ErrorValue, UnitfulNumericValue, UnitlessNumericValue, Value } from "./value";
+import { percentage, Unit, unitless } from "./unit";
+import { DateTimeValue, EmptyValue, ErrorValue, NumericValue, Value } from "./value";
 import { ValueGenerator, VariableReader } from "./valueGenerator";
+
+advanceTo(new Date(2018, 5, 27, 0, 0, 0));
 
 const config = testConfig();
 const operators = config.getOperators();
@@ -43,7 +46,7 @@ function runConvertTest(
       { type: "unit", unit: units.getUnit(to) as Unit },
       { type: "operator", operator: operators.getOperator("to") as Operator },
     ],
-    error ? new ErrorValue(expected) : new UnitfulNumericValue(expected, units.getUnit(to) as Unit),
+    error ? new ErrorValue(expected) : new NumericValue(expected, units.getUnit(to) as Unit),
   );
 }
 
@@ -69,7 +72,7 @@ runTest(
     { type: "number", value: new BigNumber("2") },
     { type: "operator", operator: operators.getOperator("+") as Operator },
   ],
-  new UnitlessNumericValue("3"),
+  new NumericValue("3", unitless),
 );
 
 runTest(
@@ -80,7 +83,7 @@ runTest(
     { type: "operator", operator: operators.getOperator("/") as Operator },
     { type: "assignment", variableName: "a" },
   ],
-  new UnitlessNumericValue("5"),
+  new NumericValue("5", unitless),
 );
 
 runTest(
@@ -91,38 +94,38 @@ runTest(
     { type: "operator", operator: operators.getOperator("*") as Operator },
     { type: "assignment", variableName: "b" },
   ],
-  new UnitlessNumericValue("110"),
+  new NumericValue("110", unitless),
   (() => {
     const env = new Environment();
-    env.variables.a = new UnitlessNumericValue("10");
+    env.variables.a = new NumericValue("10", unitless);
     return env;
   })(),
 );
 
 const aggregatorEnv = () => {
   const env = new Environment();
-  env.lines.push(new UnitlessNumericValue("10"));
-  env.lines.push(new UnitlessNumericValue("118"));
+  env.lines.push(new NumericValue("10", unitless));
+  env.lines.push(new NumericValue("118", unitless));
   return env;
 };
 
 runTest(
   "sum",
   [{ type: "valueGenerator", generator: valueGenerators.getAggregator("sum") as ValueGenerator }],
-  new UnitlessNumericValue("128"),
+  new NumericValue("128", unitless),
   aggregatorEnv(),
 );
 
 runTest(
   "sum",
   [{ type: "valueGenerator", generator: valueGenerators.getAggregator("sum") as ValueGenerator }],
-  new UnitlessNumericValue("129"),
+  new NumericValue("129", unitless),
   (() => {
     const env = new Environment();
-    env.lines.push(new UnitlessNumericValue("10"));
+    env.lines.push(new NumericValue("10", unitless));
     env.lines.push(new EmptyValue());
-    env.lines.push(new UnitlessNumericValue("10"));
-    env.lines.push(new UnitlessNumericValue("119"));
+    env.lines.push(new NumericValue("10", unitless));
+    env.lines.push(new NumericValue("119", unitless));
     return env;
   })(),
 );
@@ -135,17 +138,14 @@ runTest(
       generator: valueGenerators.getAggregator("average") as ValueGenerator,
     },
   ],
-  new UnitlessNumericValue("64"),
+  new NumericValue("64", unitless),
   aggregatorEnv(),
 );
 
 runTest(
   "10 %",
-  [
-    { type: "number", value: new BigNumber("10") },
-    { type: "unit", unit: units.getUnit("%") as Unit },
-  ],
-  new UnitfulNumericValue("10", units.getUnit("%") as Unit),
+  [{ type: "number", value: new BigNumber("10") }, { type: "unit", unit: percentage }],
+  new NumericValue("10", percentage),
 );
 
 runTest(
@@ -153,10 +153,10 @@ runTest(
   [
     { type: "number", value: new BigNumber("120") },
     { type: "number", value: new BigNumber("10") },
-    { type: "unit", unit: units.getUnit("%") as Unit },
+    { type: "unit", unit: percentage },
     { type: "operator", operator: operators.getOperator("-") as Operator },
   ],
-  new UnitlessNumericValue("108"),
+  new NumericValue("108", unitless),
 );
 
 runTest(
@@ -165,7 +165,7 @@ runTest(
     { type: "number", value: new BigNumber("50.5") },
     { type: "unit", unit: units.getUnit("cm") as Unit },
   ],
-  new UnitfulNumericValue("50.5", units.getUnit("cm") as Unit),
+  new NumericValue("50.5", units.getUnit("cm") as Unit),
 );
 
 runTest(
@@ -177,7 +177,7 @@ runTest(
     { type: "unit", unit: units.getUnit("in") as Unit },
     { type: "operator", operator: operators.getOperator("+") as Operator },
   ],
-  new UnitfulNumericValue("60.66", units.getUnit("cm") as Unit),
+  new NumericValue("60.66", units.getUnit("cm") as Unit),
 );
 
 runTest(
@@ -190,7 +190,7 @@ runTest(
     { type: "operator", operator: operators.getOperator("+") as Operator },
     { type: "assignment", variableName: "a" },
   ],
-  new UnitfulNumericValue("8.9370078740157480315", units.getUnit("in") as Unit),
+  new NumericValue("8.9370078740157480315", units.getUnit("in") as Unit),
 );
 
 runTest(
@@ -202,7 +202,7 @@ runTest(
     { type: "operator", operator: operators.getOperator("to") as Operator },
     { type: "assignment", variableName: "Fee" },
   ],
-  new UnitfulNumericValue("4", units.getUnit("EUR") as Unit),
+  new NumericValue("4", units.getUnit("EUR") as Unit),
 );
 
 runTest(
@@ -215,7 +215,7 @@ runTest(
     { type: "operator", operator: operators.getOperator("to") as Operator },
     { type: "assignment", variableName: "Discount" },
   ],
-  new UnitfulNumericValue("-4", units.getUnit("EUR") as Unit),
+  new NumericValue("-4", units.getUnit("EUR") as Unit),
 );
 
 runTest(
@@ -231,7 +231,7 @@ runTest(
     { type: "operator", operator: operators.getOperator("*") as Operator },
     { type: "operator", operator: operators.getOperator("+") as Operator },
   ],
-  new UnitlessNumericValue("143"),
+  new NumericValue("143", unitless),
 );
 
 runTest(
@@ -242,7 +242,7 @@ runTest(
     { type: "unit", unit: units.getUnit("mm") as Unit },
     { type: "operator", operator: operators.getOperator("as") as Operator },
   ],
-  new UnitfulNumericValue("4", units.getUnit("mm") as Unit),
+  new NumericValue("4", units.getUnit("mm") as Unit),
 );
 
 runTest(
@@ -255,7 +255,7 @@ runTest(
     { type: "valueGenerator", generator: new VariableReader("personen") },
     { type: "operator", operator: operators.getOperator("*") as Operator },
   ],
-  new UnitfulNumericValue("999", units.getUnit("$") as Unit),
+  new NumericValue("999", units.getUnit("$") as Unit),
 );
 
 runTest(
@@ -268,7 +268,7 @@ runTest(
     { type: "valueGenerator", generator: new VariableReader("train") },
     { type: "valueGenerator", generator: new VariableReader("ticket") },
   ],
-  new UnitfulNumericValue("30", units.getUnit("€") as Unit),
+  new NumericValue("30", units.getUnit("€") as Unit),
 );
 
 runTest(
@@ -278,7 +278,7 @@ runTest(
     { type: "number", value: new BigNumber("0") },
     { type: "function", function: functions.getFunction("round") as Func },
   ],
-  new UnitlessNumericValue("123"),
+  new NumericValue("123", unitless),
 );
 
 runTest(
@@ -294,7 +294,7 @@ runTest(
     { type: "operator", operator: operators.getOperator("*") as Operator },
     { type: "function", function: functions.getFunction("round") as Func },
   ],
-  new UnitlessNumericValue("4.8"),
+  new NumericValue("4.8", unitless),
 );
 
 runTest(
@@ -307,7 +307,7 @@ runTest(
     { type: "operator", operator: operators.getOperator("-u") as Operator },
     { type: "function", function: functions.getFunction("round") as Func },
   ],
-  new UnitlessNumericValue("100"),
+  new NumericValue("100", unitless),
 );
 
 runTest(
@@ -322,7 +322,7 @@ runTest(
     { type: "operator", operator: operators.getOperator("-u") as Operator },
     { type: "function", function: functions.getFunction("round") as Func },
   ],
-  new UnitlessNumericValue("330"),
+  new NumericValue("330", unitless),
 );
 
 runTest(
@@ -332,7 +332,7 @@ runTest(
     { type: "number", value: new BigNumber("0") },
     { type: "function", function: functions.getFunction("ceil") as Func },
   ],
-  new UnitlessNumericValue("2"),
+  new NumericValue("2", unitless),
 );
 
 runTest(
@@ -342,7 +342,7 @@ runTest(
     { type: "number", value: new BigNumber("0") },
     { type: "function", function: functions.getFunction("floor") as Func },
   ],
-  new UnitlessNumericValue("1"),
+  new NumericValue("1", unitless),
 );
 
 runTest(
@@ -354,5 +354,35 @@ runTest(
     { type: "number", value: new BigNumber("2") },
     { type: "operator", operator: operators.getOperator("+") as Operator },
   ],
-  new UnitlessNumericValue("125"),
+  new NumericValue("125", unitless),
+);
+
+runTest(
+  "now",
+  [{ type: "valueGenerator", generator: valueGenerators.getAggregator("now") as ValueGenerator }],
+  new DateTimeValue(new Date(2018, 5, 27, 0, 0, 0), true),
+);
+
+runTest(
+  "today",
+  [{ type: "valueGenerator", generator: valueGenerators.getAggregator("today") as ValueGenerator }],
+  new DateTimeValue(new Date(2018, 5, 27, 0, 0, 0), false),
+);
+
+runTest(
+  "10 days + now",
+  [
+    { type: "number", value: new BigNumber("10") },
+    { type: "unit", unit: units.getUnit("day") as Unit },
+    { type: "valueGenerator", generator: valueGenerators.getAggregator("now") as ValueGenerator },
+    { type: "operator", operator: operators.getOperator("from") as Operator },
+  ],
+  new DateTimeValue(new Date(2018, 6, 7, 0, 0, 0), true),
+);
+
+const testDate = "1985-05-17";
+runTest(
+  testDate,
+  [{ type: "date", date: new Date(testDate) }],
+  new DateTimeValue(new Date(testDate), false),
 );

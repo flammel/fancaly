@@ -1,8 +1,8 @@
 import { BigNumber } from "bignumber.js";
+import { Formatter } from "./formatter";
 import { Func } from "./function";
-import { NumberFormat } from "./numberFormat";
 import { Operator } from "./operator";
-import { Formatter, Unit, UnitName } from "./unit";
+import { percentage, Unit, UnitFormatter, UnitName } from "./unit";
 import { Aggregator } from "./valueGenerator";
 
 export class Operators {
@@ -54,9 +54,9 @@ export class ValueGenerators {
 }
 
 export class Units {
-  private unitTable: { [key: string]: Unit } = {};
+  private unitTable: { [key: string]: Unit } = { [percentage.name]: percentage };
 
-  public addUnit(base: UnitName, multiplier: string, format: Formatter, ...names: UnitName[]) {
+  public addUnit(base: UnitName, multiplier: string, format: UnitFormatter, ...names: UnitName[]) {
     for (const name of names) {
       this.unitTable[name.toLowerCase()] = {
         base,
@@ -81,10 +81,10 @@ export class Config {
   private functions: Functions;
   private units: Units;
   private valueGenerators: ValueGenerators;
-  private numberFormat: NumberFormat;
+  private formatter: Formatter;
 
-  constructor(numberFormat: NumberFormat) {
-    this.numberFormat = numberFormat;
+  constructor(formatter: Formatter) {
+    this.formatter = formatter;
     this.operators = new Operators();
     this.functions = new Functions();
     this.units = new Units();
@@ -107,7 +107,7 @@ export class Config {
     return this.valueGenerators;
   }
 
-  public getNumberFormat(): NumberFormat {
-    return this.numberFormat;
+  public getFormatter(): Formatter {
+    return this.formatter;
   }
 }

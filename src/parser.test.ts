@@ -6,7 +6,7 @@ import { List } from "./list";
 import { Operator } from "./operator";
 import { Parser, ParserResult, RPNItem } from "./parser";
 import { testConfig } from "./testConfig";
-import { Unit } from "./unit";
+import { percentage, Unit } from "./unit";
 import { EmptyValue, Value } from "./value";
 import { ValueGenerator, VariableReader } from "./valueGenerator";
 
@@ -28,7 +28,7 @@ const operators = config.getOperators();
 const functions = config.getFunctions();
 const units = config.getUnits();
 const valueGenerators = config.getValueGenerators();
-const parser = new Parser(operators, functions, units, valueGenerators, config.getNumberFormat());
+const parser = new Parser(operators, functions, units, valueGenerators, config.getFormatter());
 
 function runTest(name: string, tokens: Token[], output: ParserResult) {
   test(name, () => {
@@ -251,7 +251,7 @@ runTest("10 %", [{ type: "number", value: "10" }, { type: "unit", value: "%" }],
   type: "success",
   rpn: new List<RPNItem>([
     { type: "number", value: new BigNumber("10") },
-    { type: "unit", unit: units.getUnit("%") as Unit },
+    { type: "unit", unit: percentage },
   ]),
 });
 
@@ -321,7 +321,7 @@ runTest(
     rpn: new List<RPNItem>([
       { type: "number", value: new BigNumber("120") },
       { type: "number", value: new BigNumber("10") },
-      { type: "unit", unit: units.getUnit("%") as Unit },
+      { type: "unit", unit: percentage },
       { type: "operator", operator: operators.getOperator("-") as Operator },
     ]),
   },
@@ -346,7 +346,7 @@ runTest(
       { type: "number", value: new BigNumber("5") },
       { type: "number", value: new BigNumber("1") },
       { type: "operator", operator: operators.getOperator("+") as Operator },
-      { type: "unit", unit: units.getUnit("%") as Unit },
+      { type: "unit", unit: percentage },
       { type: "operator", operator: operators.getOperator("-") as Operator },
     ]),
   },
@@ -684,6 +684,31 @@ runTest(
       { type: "function", function: functions.getFunction("floor") as Func },
       { type: "number", value: new BigNumber("2") },
       { type: "operator", operator: operators.getOperator("+") as Operator },
+    ]),
+  },
+);
+
+const testDate = "2019-04-20";
+runTest(testDate, [{ type: "date", value: testDate }], {
+  type: "success",
+  rpn: new List<RPNItem>([{ type: "date", date: new Date(testDate) }]),
+});
+
+runTest(
+  "10 days from now",
+  [
+    { type: "number", value: "10" },
+    { type: "unit", value: "days" },
+    { type: "operator", value: "from" },
+    { type: "aggregator", value: "now" },
+  ],
+  {
+    type: "success",
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("10") },
+      { type: "unit", unit: units.getUnit("day") as Unit },
+      { type: "valueGenerator", generator: valueGenerators.getAggregator("now") as ValueGenerator },
+      { type: "operator", operator: operators.getOperator("from") as Operator },
     ]),
   },
 );

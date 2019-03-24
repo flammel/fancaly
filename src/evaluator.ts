@@ -4,16 +4,17 @@ import { Func } from "./function";
 import { Operator } from "./operator";
 import { RPN, RPNItem } from "./parser";
 import { Stack } from "./stack";
-import { Unit } from "./unit";
+import { Unit, unitless } from "./unit";
 import { assertNever } from "./util";
 import {
+  DateTimeValue,
   EmptyValue,
   ErrorValue,
+  isDateTime,
   isEmpty,
   isError,
   isNumeric,
-  isUnitless,
-  UnitlessNumericValue,
+  NumericValue,
   UnitValue,
   Value,
 } from "./value";
@@ -85,19 +86,20 @@ export class Evaluator {
   }
 
   private evaluateNumber(stack: Stack<Value>, value: BigNumber): ErrorMessage | null {
-    stack.push(new UnitlessNumericValue(value));
+    stack.push(new NumericValue(value, unitless));
+    return null;
+  }
+
+  private evaluateDate(stack: Stack<Value>, date: Date): ErrorMessage | null {
+    stack.push(new DateTimeValue(date, false));
     return null;
   }
 
   private evaluateUnit(stack: Stack<Value>, unit: Unit): ErrorMessage | null {
     const lastVal = stack.peek();
-    if (isUnitless(lastVal)) {
+    if (isNumeric(lastVal) && lastVal.unit === unitless) {
       stack.pop();
-      const converted = lastVal.convert(new UnitValue(unit));
-      if (isError(converted)) {
-        return converted.description;
-      }
-      stack.push(converted);
+      stack.push(new NumericValue(lastVal.value, unit));
     } else {
       stack.push(new UnitValue(unit));
     }
@@ -122,6 +124,8 @@ export class Evaluator {
         return this.evaluateNumber(stack, currentItem.value);
       case "unit":
         return this.evaluateUnit(stack, currentItem.unit);
+      case "date":
+        return this.evaluateDate(stack, currentItem.date);
       /* istanbul ignore next */
       default:
         assertNever(currentItem);
@@ -131,7 +135,7 @@ export class Evaluator {
 
   private getResultFromStack(stack: Stack<Value>): Value {
     const result = stack.popUntil((val) => !isEmpty(val));
-    if (isNumeric(result)) {
+    if (isNumeric(result) || isDateTime(result)) {
       return result;
     } else {
       return new ErrorValue(

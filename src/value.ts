@@ -1,120 +1,89 @@
 import { BigNumber } from "bignumber.js";
-import { Unit } from "./unit";
-
-type NumberFormatter = (value: BigNumber) => string;
+import { Unit, unitless } from "./unit";
 
 export function isError(obj: any): obj is ErrorValue {
-  return "typeName" in obj && obj.typeName === "ErrorValue";
+  return obj instanceof ErrorValue;
 }
 
 export function isEmpty(obj: any): obj is EmptyValue {
-  return "typeName" in obj && obj.typeName === "EmptyValue";
+  return obj instanceof EmptyValue;
 }
 
-export function isNumeric(obj: any): obj is UnitfulNumericValue | UnitlessNumericValue {
-  return obj instanceof UnitfulNumericValue || obj instanceof UnitlessNumericValue;
+export function isNumeric(obj: any): obj is NumericValue {
+  return obj instanceof NumericValue;
 }
 
 export function isUnit(obj: any): obj is UnitValue {
-  return "typeName" in obj && obj.typeName === "UnitValue";
+  return obj instanceof UnitValue;
 }
 
-export function isUnitless(obj: any): obj is UnitlessNumericValue {
-  return "typeName" in obj && obj.typeName === "UnitlessNumericValue";
+export function isDateTime(obj: any): obj is DateTimeValue {
+  return obj instanceof DateTimeValue;
 }
 
-export function isUnitful(obj: any): obj is UnitfulNumericValue {
-  return "typeName" in obj && obj.typeName === "UnitfulNumericValue";
+export function isResult(obj: any): boolean {
+  return isNumeric(obj) || isDateTime(obj);
 }
 
-function hasUnit(obj: any): obj is UnitValue | UnitfulNumericValue {
-  return obj instanceof UnitValue || obj instanceof UnitfulNumericValue;
-}
+export type Value = DateTimeValue | NumericValue | ErrorValue | EmptyValue | UnitValue;
 
-export type NumericValue = UnitfulNumericValue | UnitlessNumericValue;
+export class DateTimeValue {
+  constructor(public date: Date, public withTime: boolean) {}
 
-export interface Value {
-  typeName: string;
-  toString(numberFormatter: NumberFormatter): string;
-}
-
-export class UnitlessNumericValue implements Value {
-  public typeName = "UnitlessNumericValue";
-  public value: BigNumber;
-
-  constructor(value: BigNumber | string) {
-    this.value = new BigNumber(value);
+  public withNewValue(newValue: Date): DateTimeValue {
+    return new DateTimeValue(newValue, this.withTime);
   }
 
-  public toString(numberFormatter: NumberFormatter): string {
-    return numberFormatter(this.value);
-  }
-
-  public convert(other: Value): NumericValue {
-    if (hasUnit(other)) {
-      return new UnitfulNumericValue(this.value, other.unit);
-    } else {
-      return new UnitlessNumericValue(this.value);
-    }
-  }
-
-  public withNewValue(newValue: BigNumber): UnitlessNumericValue {
-    return new UnitlessNumericValue(newValue);
+  public toString(): string {
+    return `DateTimeValue(${this.date.toISOString()}, ${this.withTime})`;
   }
 }
 
-export class UnitfulNumericValue implements Value {
-  public typeName = "UnitfulNumericValue";
+export class NumericValue {
   public value: BigNumber;
 
   constructor(value: BigNumber | string, public unit: Unit) {
     this.value = new BigNumber(value);
   }
 
-  public toString(numberFormatter: NumberFormatter): string {
-    return this.unit.format(numberFormatter(this.value));
-  }
-
-  public convert(other: Value): NumericValue {
-    if (hasUnit(other) && this.unit.base === other.unit.base) {
-      return new UnitfulNumericValue(
-        this.value.times(this.unit.multiplier.dividedBy(other.unit.multiplier)),
-        other.unit,
+  public withNewUnit(newUnit: Unit): NumericValue {
+    if (this.unit.base === newUnit.base) {
+      return new NumericValue(
+        this.value.times(this.unit.multiplier.dividedBy(newUnit.multiplier)),
+        newUnit,
       );
+    } else if (this.unit === unitless) {
+      return new NumericValue(this.value, newUnit);
     } else {
-      return new UnitlessNumericValue(this.value);
+      return new NumericValue(this.value, unitless);
     }
   }
 
-  public withNewValue(newValue: BigNumber): UnitfulNumericValue {
-    return new UnitfulNumericValue(newValue, this.unit);
+  public withNewValue(newValue: BigNumber): NumericValue {
+    return new NumericValue(newValue, this.unit);
+  }
+
+  public toString(): string {
+    return `NumericValue(${this.value.valueOf()}, ${this.unit.name})`;
   }
 }
 
-export class ErrorValue implements Value {
-  public typeName = "ErrorValue";
-
+export class ErrorValue {
   constructor(public description: string) {}
-
   public toString(): string {
-    return "";
+    return `ErrorValue(${this.description})`;
   }
 }
 
-export class UnitValue implements Value {
-  public typeName = "UnitValue";
-
+export class UnitValue {
   constructor(public unit: Unit) {}
-
   public toString(): string {
-    return "";
+    return `UnitValue(${this.unit.name})`;
   }
 }
 
-export class EmptyValue implements Value {
-  public typeName = "EmptyValue";
-
+export class EmptyValue {
   public toString(): string {
-    return "";
+    return `EmptyValue()`;
   }
 }
