@@ -392,7 +392,7 @@ runTest(
   ],
   new ErrorValue(
     "Operation \"+\" cannot be applied to operands " +
-    "DateTimeValue(2018-06-26T22:00:00.000Z, false) and NumericValue(10, ).",
+    "DateTimeValue(2018-06-27T00:00:00.000Z, false) and NumericValue(10, ).",
   ),
 );
 
@@ -412,7 +412,7 @@ runTest(
     { type: "valueGenerator", generator: valueGenerators.getAggregator("now") as ValueGenerator },
     { type: "operator", operator: operators.getOperator("-u") as Operator },
   ],
-  new ErrorValue("Operand of \"-u\" must be a numeric value but is DateTimeValue(2018-06-26T22:00:00.000Z, true)."),
+  new ErrorValue("Operand of \"-u\" must be a numeric value but is DateTimeValue(2018-06-27T00:00:00.000Z, true)."),
 );
 
 runTest(

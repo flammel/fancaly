@@ -316,15 +316,15 @@ runTest(`
 `);
 
 runTest(`
-  10 days from now            2018-07-07T10:42:36.134Z
+  10 days from now            2018-07-07T12:42:36.134Z
 `);
 
 runTest(`
-  10 days + now               2018-07-07T10:42:36.134Z
+  10 days + now               2018-07-07T12:42:36.134Z
 `);
 
 runTest(`
-  now + 10 days               2018-07-07T10:42:36.134Z
+  now + 10 days               2018-07-07T12:42:36.134Z
 `);
 
 runTest(`
@@ -340,7 +340,7 @@ runTest(`
 `);
 
 runTest(`
-  now                         2018-06-27T10:42:36.134Z
+  now                         2018-06-27T12:42:36.134Z
 `);
 
 runTest(`

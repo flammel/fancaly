@@ -6,7 +6,7 @@
   "scripts": {
     "start": "parcel src/index.html",
     "prettier": "prettier --write .babelrc *.json src/*.ts src/*.js src/*.scss tests/*.ts src/*.webmanifest",
-    "test": "jest",
+    "test": "TZ=UTC jest",
     "coverage": "jest --coverage",
     "lint": "tslint --project tsconfig.json -c tslint.json 'src/*.ts' 'tests/*.ts'",
     "lintfix": "tslint --project tsconfig.json --fix -c tslint.json 'src/*.ts' 'tests/*.ts'",
