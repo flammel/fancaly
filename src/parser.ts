@@ -108,6 +108,7 @@ export class Parser {
         return this.parseAggregator(this.valueGenerators, state, currentToken.value);
       case "date":
         return this.parseDate(state, currentToken.value);
+      /* istanbul ignore next */
       default:
         assertNever(currentToken.type);
         return null;

@@ -16,11 +16,4 @@ export const unitless: Unit = {
   format: (str) => str,
 };
 
-export const percentage: Unit = {
-  base: "%",
-  name: "%",
-  multiplier: new BigNumber(1),
-  format: (str) => str,
-};
-
 export type UnitFormatter = (formattedNumber: string) => string;

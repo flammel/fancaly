@@ -6,7 +6,7 @@ import { List } from "./list";
 import { Operator } from "./operator";
 import { Parser, ParserResult, RPNItem } from "./parser";
 import { testConfig } from "./testConfig";
-import { percentage, Unit } from "./unit";
+import { Unit } from "./unit";
 import { EmptyValue, Value } from "./value";
 import { ValueGenerator, VariableReader } from "./valueGenerator";
 
@@ -251,7 +251,7 @@ runTest("10 %", [{ type: "number", value: "10" }, { type: "unit", value: "%" }],
   type: "success",
   rpn: new List<RPNItem>([
     { type: "number", value: new BigNumber("10") },
-    { type: "unit", unit: percentage },
+    { type: "unit", unit: units.getUnit("%") as Unit },
   ]),
 });
 
@@ -321,7 +321,7 @@ runTest(
     rpn: new List<RPNItem>([
       { type: "number", value: new BigNumber("120") },
       { type: "number", value: new BigNumber("10") },
-      { type: "unit", unit: percentage },
+      { type: "unit", unit: units.getUnit("%") as Unit },
       { type: "operator", operator: operators.getOperator("-") as Operator },
     ]),
   },
@@ -346,7 +346,7 @@ runTest(
       { type: "number", value: new BigNumber("5") },
       { type: "number", value: new BigNumber("1") },
       { type: "operator", operator: operators.getOperator("+") as Operator },
-      { type: "unit", unit: percentage },
+      { type: "unit", unit: units.getUnit("%") as Unit },
       { type: "operator", operator: operators.getOperator("-") as Operator },
     ]),
   },
@@ -685,6 +685,62 @@ runTest(
       { type: "number", value: new BigNumber("2") },
       { type: "operator", operator: operators.getOperator("+") as Operator },
     ]),
+  },
+);
+
+runTest(
+  "unknown unit",
+  [
+    { type: "number", value: "10" },
+    { type: "unit", value: "megameter" },
+  ],
+  {
+    type: "error",
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("10") },
+    ]),
+    description: "Unknown unit \"megameter\".",
+  },
+);
+
+runTest(
+  "unknown aggregator",
+  [
+    { type: "aggregator", value: "awerage" },
+  ],
+  {
+    type: "error",
+    rpn: new List<RPNItem>([]),
+    description: "Unknown aggregator \"awerage\".",
+  },
+);
+
+runTest(
+  "1 ! 2",
+  [
+    { type: "number", value: "1" },
+    { type: "operator", value: "!" },
+    { type: "number", value: "2" },
+  ],
+  {
+    type: "error",
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("1") },
+    ]),
+    description: "Unknown operator !",
+  },
+);
+
+runTest(
+  "round ;",
+  [
+    { type: "function", value: "round" },
+    { type: ";", value: ";" },
+  ],
+  {
+    type: "error",
+    rpn: new List<RPNItem>([]),
+    description: "Unbalanced parens in \";\" loop.",
   },
 );
 

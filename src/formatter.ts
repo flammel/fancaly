@@ -1,4 +1,3 @@
-import { percentage } from "./unit";
 import { isDateTime, isNumeric, Value } from "./value";
 
 export class Formatter {
@@ -25,12 +24,7 @@ export class Formatter {
 
   public format(value: Value): string {
     if (isNumeric(value)) {
-      const str = value.value.dp(4).toFormat();
-      if (value.unit === percentage) {
-        return str + " %";
-      } else {
-        return value.unit.format(str);
-      }
+      return value.unit.format(value.value.dp(4).toFormat());
     }
 
     if (isDateTime(value)) {

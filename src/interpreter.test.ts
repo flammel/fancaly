@@ -347,6 +347,10 @@ runTest(`
   1965-08-30                  1965-08-30
 `);
 
+runTest(`
+  round(12.34; 2
+`);
+
 test("1,67823 + 30", () => {
   const interpreter = new Interpreter(testConfig(","));
   const env = new Environment();

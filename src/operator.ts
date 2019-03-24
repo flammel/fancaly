@@ -1,5 +1,5 @@
 import { Stack } from "./stack";
-import { percentage, Unit } from "./unit";
+import { Unit, unitless } from "./unit";
 import { ErrorValue, isDateTime, isEmpty, isNumeric, isUnit, NumericValue, Value } from "./value";
 
 export type Operation = (stack: Stack<Value>) => Value;
@@ -51,34 +51,37 @@ export function oneDateTimeBinaryOperation(
   };
 }
 
-export function leftPercentageBinaryOperation(operation: BinaryOperation): PartialBinaryOperation {
+export function onlyLeftWithUnitBinaryOperation(
+  unit: Unit,
+  operation: BinaryOperation,
+): PartialBinaryOperation {
   return (lft: Value, rgt: Value) => {
-    if (isNumeric(lft) && isNumeric(rgt) && lft.unit === percentage && rgt.unit !== percentage) {
+    if (isNumeric(lft) && isNumeric(rgt) && lft.unit === unit && rgt.unit !== unit) {
       return rgt.withNewValue(operation(lft.value, rgt.value));
     }
     return undefined;
   };
 }
 
-export function rightPercentageBinaryOperation(operation: BinaryOperation): PartialBinaryOperation {
+export function onlyRightWithUnitBinaryOperation(
+  unit: Unit,
+  operation: BinaryOperation,
+): PartialBinaryOperation {
   return (lft: Value, rgt: Value) => {
-    if (isNumeric(lft) && isNumeric(rgt) && lft.unit !== percentage && rgt.unit === percentage) {
+    if (isNumeric(lft) && isNumeric(rgt) && lft.unit !== unit && rgt.unit === unit) {
       return lft.withNewValue(operation(lft.value, rgt.value));
     }
     return undefined;
   };
 }
 
-export function noPercentageBinaryOperation(
-  percentageUnit: Unit,
+export function noneWithUnitBinaryOperation(
+  unit: Unit,
   operation: BinaryOperation,
 ): PartialBinaryOperation {
   return (lft: Value, rgt: Value) => {
-    if (isNumeric(lft) && isNumeric(rgt) && lft.unit !== percentage && rgt.unit !== percentage) {
-      return new NumericValue(
-        operation(lft.value, rgt.withNewUnit(lft.unit).value),
-        percentageUnit,
-      );
+    if (isNumeric(lft) && isNumeric(rgt) && lft.unit !== unit && rgt.unit !== unit) {
+      return new NumericValue(operation(lft.value, rgt.withNewUnit(lft.unit).value), unit);
     }
     return undefined;
   };

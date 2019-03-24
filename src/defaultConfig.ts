@@ -5,17 +5,17 @@ import { Formatter } from "./formatter";
 import {
   binaryOperator,
   conversionOperation,
-  leftPercentageBinaryOperation,
-  noPercentageBinaryOperation,
+  noneWithUnitBinaryOperation,
   numericBinaryOperation,
   oneDateTimeBinaryOperation,
+  onlyLeftWithUnitBinaryOperation,
+  onlyRightWithUnitBinaryOperation,
   Operator,
   rightDateTimeBinaryOperation,
-  rightPercentageBinaryOperation,
   unaryOperator,
 } from "./operator";
 import { Stack } from "./stack";
-import { percentage, unitless, UnitName } from "./unit";
+import { Unit, unitless, UnitName } from "./unit";
 import { DateTimeValue, ErrorValue, isEmpty, isNumeric, NumericValue, Value } from "./value";
 import { ValueGenerator } from "./valueGenerator";
 
@@ -33,6 +33,7 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
 
   const config = new Config(new Formatter(decimalSeparator));
 
+  addUnit(config, "%", "1", "%");
   addUnit(config, "mm", "1", "mm");
   addUnit(config, "mm", "10", "cm");
   addUnit(config, "mm", "100", "dm");
@@ -59,22 +60,24 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
   addUnit(config, "s", "3600", "h");
   addUnit(config, "s", "86400", "day", "days");
 
-  config.getOperators().addOperator(addition);
-  config.getOperators().addOperator(subtraction);
-  config.getOperators().addOperator(multiplication);
-  config.getOperators().addOperator(division);
-  config.getOperators().addOperator(unaryMinus);
-  config.getOperators().addOperator(asAPercentageOff);
-  config.getOperators().addOperator(asAPercentageOf);
-  config.getOperators().addOperator(asAPercentageOn);
-  config.getOperators().addOperator(percentOnWhat);
-  config.getOperators().addOperator(percentOfWhat);
-  config.getOperators().addOperator(percentOffWhat);
-  config.getOperators().addOperator(percentOn);
-  config.getOperators().addOperator(percentOf);
-  config.getOperators().addOperator(percentOff);
+  const percentage = config.getUnits().getUnit("%") as Unit;
+
+  config.getOperators().addOperator(addition(percentage));
+  config.getOperators().addOperator(subtraction(percentage));
+  config.getOperators().addOperator(multiplication(percentage));
+  config.getOperators().addOperator(division(percentage));
+  config.getOperators().addOperator(asAPercentageOff(percentage));
+  config.getOperators().addOperator(asAPercentageOf(percentage));
+  config.getOperators().addOperator(asAPercentageOn(percentage));
+  config.getOperators().addOperator(percentOnWhat(percentage));
+  config.getOperators().addOperator(percentOfWhat(percentage));
+  config.getOperators().addOperator(percentOffWhat(percentage));
+  config.getOperators().addOperator(percentOn(percentage));
+  config.getOperators().addOperator(percentOf(percentage));
+  config.getOperators().addOperator(percentOff(percentage));
   config.getOperators().addOperator(convertTo);
   config.getOperators().addOperator(convertAs);
+  config.getOperators().addOperator(unaryMinus);
   config
     .getOperators()
     .addOperator(binaryOperator("from", "left", 13, [rightDateTimeBinaryOperation(addTimeToDate)]));
@@ -121,9 +124,10 @@ function addUnit(config: Config, base: UnitName, multiplier: string, ...names: U
 }
 
 const bn100 = new BigNumber(100);
+
 const addTimeToDate = (date: Date, value: NumericValue) => {
-  const ms = getMilliseconds(value);
-  if (ms) {
+  if (value.unit.base === "s") {
+    const ms = value.value.toNumber() * value.unit.multiplier.toNumber() * 1000;
     return new Date(date.valueOf() + ms);
   }
   return undefined;
@@ -184,87 +188,105 @@ const unaryMinus: Operator = unaryOperator("-u", "right", 20, (a) => a.negated()
 // binary
 //
 
-function getMilliseconds(value: NumericValue): number | undefined {
-  if (value.unit.base === "s") {
-    return value.value.toNumber() * value.unit.multiplier.toNumber() * 1000;
-  }
-  return undefined;
-}
+const addition = (percentage: Unit) =>
+  binaryOperator("+", "left", 13, [
+    oneDateTimeBinaryOperation(addTimeToDate),
+    onlyRightWithUnitBinaryOperation(percentage, (a, b) =>
+      a.dividedBy(100).multipliedBy(b.plus(bn100)),
+    ),
+    numericBinaryOperation((a, b) => a.plus(b)),
+  ]);
 
-const addition = binaryOperator("+", "left", 13, [
-  oneDateTimeBinaryOperation(addTimeToDate),
-  rightPercentageBinaryOperation((a, b) => a.dividedBy(100).multipliedBy(b.plus(bn100))),
-  numericBinaryOperation((a, b) => a.plus(b)),
-]);
+const subtraction = (percentage: Unit) =>
+  binaryOperator("-", "left", 13, [
+    onlyRightWithUnitBinaryOperation(percentage, (a, b) =>
+      a.dividedBy(100).multipliedBy(bn100.minus(b)),
+    ),
+    numericBinaryOperation((a, b) => a.minus(b)),
+  ]);
 
-const subtraction = binaryOperator("-", "left", 13, [
-  rightPercentageBinaryOperation((a, b) => a.dividedBy(100).multipliedBy(bn100.minus(b))),
-  numericBinaryOperation((a, b) => a.minus(b)),
-]);
+const division = (percentage: Unit) =>
+  binaryOperator("/", "left", 14, [
+    onlyRightWithUnitBinaryOperation(percentage, (a, b) => a.dividedBy(b.dividedBy(100))),
+    numericBinaryOperation((a, b) => a.dividedBy(b)),
+  ]);
 
-const division = binaryOperator("/", "left", 14, [
-  rightPercentageBinaryOperation((a, b) => a.dividedBy(b.dividedBy(100))),
-  numericBinaryOperation((a, b) => a.dividedBy(b)),
-]);
-
-const multiplication = binaryOperator("*", "left", 14, [
-  rightPercentageBinaryOperation((a, b) => a.dividedBy(100).multipliedBy(b)),
-  numericBinaryOperation((a, b) => a.times(b)),
-]);
+const multiplication = (percentage: Unit) =>
+  binaryOperator("*", "left", 14, [
+    onlyRightWithUnitBinaryOperation(percentage, (a, b) => a.dividedBy(100).multipliedBy(b)),
+    numericBinaryOperation((a, b) => a.times(b)),
+  ]);
 
 //
 // percentage operations
 //
 
-const percentOnWhat = binaryOperator("on what is", "left", 10, [
-  leftPercentageBinaryOperation((a, b) => b.dividedBy(a.plus(bn100)).multipliedBy(bn100)),
-]);
+const percentOnWhat = (percentage: Unit) =>
+  binaryOperator("on what is", "left", 10, [
+    onlyLeftWithUnitBinaryOperation(percentage, (a, b) =>
+      b.dividedBy(a.plus(bn100)).multipliedBy(bn100),
+    ),
+  ]);
 
-const percentOffWhat = binaryOperator("off what is", "left", 10, [
-  leftPercentageBinaryOperation((a, b) => b.dividedBy(bn100.minus(a)).multipliedBy(bn100)),
-]);
+const percentOffWhat = (percentage: Unit) =>
+  binaryOperator("off what is", "left", 10, [
+    onlyLeftWithUnitBinaryOperation(percentage, (a, b) =>
+      b.dividedBy(bn100.minus(a)).multipliedBy(bn100),
+    ),
+  ]);
 
-const percentOfWhat = binaryOperator("of what is", "left", 10, [
-  leftPercentageBinaryOperation((a, b) => b.dividedBy(a).multipliedBy(bn100)),
-]);
+const percentOfWhat = (percentage: Unit) =>
+  binaryOperator("of what is", "left", 10, [
+    onlyLeftWithUnitBinaryOperation(percentage, (a, b) => b.dividedBy(a).multipliedBy(bn100)),
+  ]);
 
-const percentOn = binaryOperator("on", "left", 10, [
-  leftPercentageBinaryOperation((a, b) => b.dividedBy(bn100).multipliedBy(a.plus(bn100))),
-]);
+const percentOn = (percentage: Unit) =>
+  binaryOperator("on", "left", 10, [
+    onlyLeftWithUnitBinaryOperation(percentage, (a, b) =>
+      b.dividedBy(bn100).multipliedBy(a.plus(bn100)),
+    ),
+  ]);
 
-const percentOf = binaryOperator("of", "left", 10, [
-  leftPercentageBinaryOperation((a, b) => b.dividedBy(bn100).multipliedBy(a)),
-]);
+const percentOf = (percentage: Unit) =>
+  binaryOperator("of", "left", 10, [
+    onlyLeftWithUnitBinaryOperation(percentage, (a, b) => b.dividedBy(bn100).multipliedBy(a)),
+  ]);
 
-const percentOff = binaryOperator("off", "left", 10, [
-  leftPercentageBinaryOperation((a, b) => b.dividedBy(bn100).multipliedBy(bn100.minus(a))),
-]);
+const percentOff = (percentage: Unit) =>
+  binaryOperator("off", "left", 10, [
+    onlyLeftWithUnitBinaryOperation(percentage, (a, b) =>
+      b.dividedBy(bn100).multipliedBy(bn100.minus(a)),
+    ),
+  ]);
 
 //
 // "as a %" operations
 //
 
-const asAPercentageOf = binaryOperator("as a % of", "left", 10, [
-  noPercentageBinaryOperation(percentage, (a, b) => a.dividedBy(b).multipliedBy(bn100)),
-]);
+const asAPercentageOf = (percentage: Unit) =>
+  binaryOperator("as a % of", "left", 10, [
+    noneWithUnitBinaryOperation(percentage, (a, b) => a.dividedBy(b).multipliedBy(bn100)),
+  ]);
 
-const asAPercentageOn = binaryOperator("as a % on", "left", 10, [
-  noPercentageBinaryOperation(percentage, (a, b) =>
-    a
-      .minus(b)
-      .dividedBy(b)
-      .multipliedBy(bn100),
-  ),
-]);
+const asAPercentageOn = (percentage: Unit) =>
+  binaryOperator("as a % on", "left", 10, [
+    noneWithUnitBinaryOperation(percentage, (a, b) =>
+      a
+        .minus(b)
+        .dividedBy(b)
+        .multipliedBy(bn100),
+    ),
+  ]);
 
-const asAPercentageOff = binaryOperator("as a % off", "left", 10, [
-  noPercentageBinaryOperation(percentage, (a, b) =>
-    b
-      .minus(a)
-      .dividedBy(b)
-      .multipliedBy(bn100),
-  ),
-]);
+const asAPercentageOff = (percentage: Unit) =>
+  binaryOperator("as a % off", "left", 10, [
+    noneWithUnitBinaryOperation(percentage, (a, b) =>
+      b
+        .minus(a)
+        .dividedBy(b)
+        .multipliedBy(bn100),
+    ),
+  ]);
 
 //
 // conversion

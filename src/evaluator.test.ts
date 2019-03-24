@@ -7,7 +7,7 @@ import { List } from "./list";
 import { Operator } from "./operator";
 import { RPNItem } from "./parser";
 import { testConfig } from "./testConfig";
-import { percentage, Unit, unitless } from "./unit";
+import { Unit, unitless } from "./unit";
 import { DateTimeValue, EmptyValue, ErrorValue, NumericValue, Value } from "./value";
 import { ValueGenerator, VariableReader } from "./valueGenerator";
 
@@ -144,8 +144,11 @@ runTest(
 
 runTest(
   "10 %",
-  [{ type: "number", value: new BigNumber("10") }, { type: "unit", unit: percentage }],
-  new NumericValue("10", percentage),
+  [
+    { type: "number", value: new BigNumber("10") },
+    { type: "unit", unit: units.getUnit("%") as Unit },
+  ],
+  new NumericValue("10", units.getUnit("%") as Unit),
 );
 
 runTest(
@@ -153,7 +156,7 @@ runTest(
   [
     { type: "number", value: new BigNumber("120") },
     { type: "number", value: new BigNumber("10") },
-    { type: "unit", unit: percentage },
+    { type: "unit", unit: units.getUnit("%") as Unit },
     { type: "operator", operator: operators.getOperator("-") as Operator },
   ],
   new NumericValue("108", unitless),
@@ -378,6 +381,70 @@ runTest(
     { type: "operator", operator: operators.getOperator("from") as Operator },
   ],
   new DateTimeValue(new Date(2018, 6, 7, 0, 0, 0), true),
+);
+
+runTest(
+  "today + 10",
+  [
+    { type: "valueGenerator", generator: valueGenerators.getAggregator("today") as ValueGenerator },
+    { type: "number", value: new BigNumber("10") },
+    { type: "operator", operator: operators.getOperator("+") as Operator },
+  ],
+  new ErrorValue(
+    "Operation \"+\" cannot be applied to operands " +
+    "DateTimeValue(2018-06-26T22:00:00.000Z, false) and NumericValue(10, ).",
+  ),
+);
+
+runTest(
+  "round(today; 0)",
+  [
+    { type: "valueGenerator", generator: valueGenerators.getAggregator("today") as ValueGenerator },
+    { type: "number", value: new BigNumber("0") },
+    { type: "function", function: functions.getFunction("round") as Func },
+  ],
+  new ErrorValue("The function \"round\" must be applied to two numeric values"),
+);
+
+runTest(
+  "-now",
+  [
+    { type: "valueGenerator", generator: valueGenerators.getAggregator("now") as ValueGenerator },
+    { type: "operator", operator: operators.getOperator("-u") as Operator },
+  ],
+  new ErrorValue("Operand of \"-u\" must be a numeric value but is DateTimeValue(2018-06-26T22:00:00.000Z, true)."),
+);
+
+runTest(
+  "12 to 10",
+  [
+    { type: "number", value: new BigNumber("12") },
+    { type: "number", value: new BigNumber("10") },
+    { type: "operator", operator: operators.getOperator("to") as Operator },
+  ],
+  new ErrorValue("Operation \"to\" cannot be applied to operands NumericValue(12, ) and NumericValue(10, )."),
+);
+
+runTest(
+  "10 % as a % off 100",
+  [
+    { type: "number", value: new BigNumber("10") },
+    { type: "unit", unit: units.getUnit("%") as Unit },
+    { type: "number", value: new BigNumber("100") },
+    { type: "operator", operator: operators.getOperator("as a % off") as Operator },
+  ],
+  new ErrorValue("Operation \"as a % off\" cannot be applied to operands NumericValue(10, %) and NumericValue(100, )."),
+);
+
+runTest(
+  "10 minutes from 10",
+  [
+    { type: "number", value: new BigNumber("10") },
+    { type: "unit", unit: units.getUnit("minutes") as Unit },
+    { type: "number", value: new BigNumber("10") },
+    { type: "operator", operator: operators.getOperator("from") as Operator },
+  ],
+  new ErrorValue("Operation \"from\" cannot be applied to operands NumericValue(10, minute) and NumericValue(10, )."),
 );
 
 const testDate = "1985-05-17";

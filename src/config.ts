@@ -2,7 +2,7 @@ import { BigNumber } from "bignumber.js";
 import { Formatter } from "./formatter";
 import { Func } from "./function";
 import { Operator } from "./operator";
-import { percentage, Unit, UnitFormatter, UnitName } from "./unit";
+import { Unit, UnitFormatter, UnitName } from "./unit";
 import { Aggregator } from "./valueGenerator";
 
 export class Operators {
@@ -54,7 +54,7 @@ export class ValueGenerators {
 }
 
 export class Units {
-  private unitTable: { [key: string]: Unit } = { [percentage.name]: percentage };
+  private unitTable: { [key: string]: Unit } = {};
 
   public addUnit(base: UnitName, multiplier: string, format: UnitFormatter, ...names: UnitName[]) {
     for (const name of names) {
