@@ -688,32 +688,17 @@ runTest(
   },
 );
 
-runTest(
-  "unknown unit",
-  [
-    { type: "number", value: "10" },
-    { type: "unit", value: "megameter" },
-  ],
-  {
-    type: "error",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("10") },
-    ]),
-    description: "Unknown unit \"megameter\".",
-  },
-);
+runTest("unknown unit", [{ type: "number", value: "10" }, { type: "unit", value: "megameter" }], {
+  type: "error",
+  rpn: new List<RPNItem>([{ type: "number", value: new BigNumber("10") }]),
+  description: 'Unknown unit "megameter".',
+});
 
-runTest(
-  "unknown aggregator",
-  [
-    { type: "aggregator", value: "awerage" },
-  ],
-  {
-    type: "error",
-    rpn: new List<RPNItem>([]),
-    description: "Unknown aggregator \"awerage\".",
-  },
-);
+runTest("unknown aggregator", [{ type: "aggregator", value: "awerage" }], {
+  type: "error",
+  rpn: new List<RPNItem>([]),
+  description: 'Unknown aggregator "awerage".',
+});
 
 runTest(
   "1 ! 2",
@@ -724,25 +709,16 @@ runTest(
   ],
   {
     type: "error",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("1") },
-    ]),
+    rpn: new List<RPNItem>([{ type: "number", value: new BigNumber("1") }]),
     description: "Unknown operator !",
   },
 );
 
-runTest(
-  "round ;",
-  [
-    { type: "function", value: "round" },
-    { type: ";", value: ";" },
-  ],
-  {
-    type: "error",
-    rpn: new List<RPNItem>([]),
-    description: "Unbalanced parens in \";\" loop.",
-  },
-);
+runTest("round ;", [{ type: "function", value: "round" }, { type: ";", value: ";" }], {
+  type: "error",
+  rpn: new List<RPNItem>([]),
+  description: 'Unbalanced parens in ";" loop.',
+});
 
 const testDate = "2019-04-20";
 runTest(testDate, [{ type: "date", value: testDate }], {

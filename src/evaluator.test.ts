@@ -391,8 +391,8 @@ runTest(
     { type: "operator", operator: operators.getOperator("+") as Operator },
   ],
   new ErrorValue(
-    "Operation \"+\" cannot be applied to operands " +
-    "DateTimeValue(2018-06-27T00:00:00.000Z, false) and NumericValue(10, ).",
+    'Operation "+" cannot be applied to operands ' +
+      "DateTimeValue(2018-06-27T00:00:00.000Z, false) and NumericValue(10, ).",
   ),
 );
 
@@ -403,7 +403,7 @@ runTest(
     { type: "number", value: new BigNumber("0") },
     { type: "function", function: functions.getFunction("round") as Func },
   ],
-  new ErrorValue("The function \"round\" must be applied to two numeric values"),
+  new ErrorValue('The function "round" must be applied to two numeric values'),
 );
 
 runTest(
@@ -412,7 +412,9 @@ runTest(
     { type: "valueGenerator", generator: valueGenerators.getAggregator("now") as ValueGenerator },
     { type: "operator", operator: operators.getOperator("-u") as Operator },
   ],
-  new ErrorValue("Operand of \"-u\" must be a numeric value but is DateTimeValue(2018-06-27T00:00:00.000Z, true)."),
+  new ErrorValue(
+    'Operand of "-u" must be a numeric value but is DateTimeValue(2018-06-27T00:00:00.000Z, true).',
+  ),
 );
 
 runTest(
@@ -422,7 +424,9 @@ runTest(
     { type: "number", value: new BigNumber("10") },
     { type: "operator", operator: operators.getOperator("to") as Operator },
   ],
-  new ErrorValue("Operation \"to\" cannot be applied to operands NumericValue(12, ) and NumericValue(10, )."),
+  new ErrorValue(
+    'Operation "to" cannot be applied to operands NumericValue(12, ) and NumericValue(10, ).',
+  ),
 );
 
 runTest(
@@ -433,7 +437,9 @@ runTest(
     { type: "number", value: new BigNumber("100") },
     { type: "operator", operator: operators.getOperator("as a % off") as Operator },
   ],
-  new ErrorValue("Operation \"as a % off\" cannot be applied to operands NumericValue(10, %) and NumericValue(100, )."),
+  new ErrorValue(
+    'Operation "as a % off" cannot be applied to operands NumericValue(10, %) and NumericValue(100, ).',
+  ),
 );
 
 runTest(
@@ -444,7 +450,9 @@ runTest(
     { type: "number", value: new BigNumber("10") },
     { type: "operator", operator: operators.getOperator("from") as Operator },
   ],
-  new ErrorValue("Operation \"from\" cannot be applied to operands NumericValue(10, minute) and NumericValue(10, )."),
+  new ErrorValue(
+    'Operation "from" cannot be applied to operands NumericValue(10, minute) and NumericValue(10, ).',
+  ),
 );
 
 const testDate = "1985-05-17";
