@@ -70,6 +70,7 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
 
   const percentage = config.getUnits().getUnit("%") as Unit;
   const seconds = config.getUnits().getUnit("s") as Unit;
+  const days = config.getUnits().getUnit("days") as Unit;
 
   config.getOperators().addOperator(addition(percentage));
   config.getOperators().addOperator(subtraction(percentage, seconds));
@@ -87,6 +88,29 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
   config.getOperators().addOperator(convertTo);
   config.getOperators().addOperator(convertAs);
   config.getOperators().addOperator(unaryMinus);
+  config.getOperators().addOperator({
+    operator: "days until",
+    associativity: "right",
+    precedence: 10,
+    operation: (stack: Stack<Value>): Value => {
+      const rgt = stack.popUntil((val) => !isEmpty(val));
+      if (isDateTime(rgt)) {
+        const newRgt = new Date(rgt.date.getTime());
+        newRgt.setHours(0);
+        newRgt.setMinutes(0);
+        newRgt.setSeconds(0);
+        newRgt.setMilliseconds(0);
+        const now = new Date();
+        now.setHours(0);
+        now.setMinutes(0);
+        now.setSeconds(0);
+        now.setMilliseconds(0);
+        const diffInSeconds = new BigNumber(newRgt.getTime() - now.getTime()).dividedBy(1000);
+        return new NumericValue(diffInSeconds, seconds).withNewUnit(days);
+      }
+      return new ErrorValue(`Operation "days until" cannot be applied to operand ${rgt}.`);
+    },
+  });
   config
     .getOperators()
     .addOperator(binaryOperator("from", "left", 13, [rightDateTimeBinaryOperation(addTimeToDate)]));
