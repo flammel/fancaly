@@ -351,6 +351,10 @@ runTest(`
   round(12.34; 2
 `);
 
+runTest(`
+  x = round(12.34; 1) m         12.3 m
+`);
+
 test("1,67823 + 30", () => {
   const interpreter = new Interpreter(testConfig(","));
   const env = new Environment();

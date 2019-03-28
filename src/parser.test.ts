@@ -768,3 +768,28 @@ runTest(
     ]),
   },
 );
+
+runTest(
+  "x = round(12.34; 1) m",
+  [
+    { type: "identifier", value: "x" },
+    { type: "assignment", value: "=" },
+    { type: "function", value: "round" },
+    { type: "(", value: "(" },
+    { type: "number", value: "12.34" },
+    { type: ";", value: ";" },
+    { type: "number", value: "1" },
+    { type: ")", value: ")" },
+    { type: "unit", value: "m" },
+  ],
+  {
+    type: "success",
+    rpn: new List<RPNItem>([
+      { type: "number", value: new BigNumber("12.34") },
+      { type: "number", value: new BigNumber("1") },
+      { type: "function", function: functions.getFunction("round") as Func },
+      { type: "unit", unit: units.getUnit("m") as Unit },
+      { type: "assignment", variableName: "x" },
+    ]),
+  },
+);

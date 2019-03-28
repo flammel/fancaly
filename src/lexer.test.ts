@@ -289,3 +289,18 @@ runTest("1992-06- 22", {
     { type: "number", value: "22" },
   ]),
 });
+
+runTest("x = round(12.34; 1) m", {
+  type: "success",
+  tokens: new List<Token>([
+    { type: "identifier", value: "x" },
+    { type: "assignment", value: "=" },
+    { type: "function", value: "round" },
+    { type: "(", value: "(" },
+    { type: "number", value: "12.34" },
+    { type: ";", value: ";" },
+    { type: "number", value: "1" },
+    { type: ")", value: ")" },
+    { type: "unit", value: "m" },
+  ]),
+});

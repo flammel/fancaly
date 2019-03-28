@@ -214,6 +214,11 @@ export class Parser {
       return 'Unbalanced parens in ")" loop.';
     }
     state.stack.pop();
+    stackTop = state.stack.peek();
+    if (stackTop !== undefined && stackTop.type === "function") {
+      state.queue.push(stackTop);
+      state.stack.pop();
+    }
     return null;
   }
 

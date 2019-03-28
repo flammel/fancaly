@@ -453,3 +453,15 @@ runTest(
   [{ type: "date", date: new Date(testDate) }],
   new DateTimeValue(new Date(testDate), false),
 );
+
+runTest(
+  "x = round(12.34; 1) m",
+  [
+    { type: "number", value: new BigNumber("12.34") },
+    { type: "number", value: new BigNumber("1") },
+    { type: "function", function: functions.getFunction("round") as Func },
+    { type: "unit", unit: units.getUnit("m") as Unit },
+    { type: "assignment", variableName: "x" },
+  ],
+  new NumericValue("12.3", units.getUnit("m") as Unit),
+);
