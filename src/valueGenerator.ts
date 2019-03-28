@@ -8,17 +8,20 @@ export interface ValueGenerator {
 
 export type Aggregator = ValueGenerator;
 
+function readVariable(varName: string, env: Environment): Value {
+  if (env.variables[varName] !== undefined) {
+    return env.variables[varName];
+  } else {
+    return new EmptyValue();
+  }
+}
+
 export class VariableReader implements ValueGenerator {
   public name = "readVariable";
-  public operation: (env: Environment) => Value;
 
-  constructor(varName: string) {
-    this.operation = (env: Environment) => {
-      if (env.variables[varName] !== undefined) {
-        return env.variables[varName];
-      } else {
-        return new EmptyValue();
-      }
-    };
+  constructor(private varName: string) {}
+
+  public operation(env: Environment): Value {
+    return readVariable(this.varName, env);
   }
 }
