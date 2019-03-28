@@ -40,6 +40,21 @@ interface ParserState {
 
 type ErrorMessage = string;
 
+export function parserSuccess(rpnItems: RPNItem[]): ParserResult {
+  return {
+    type: "success",
+    rpn: new List(rpnItems),
+  };
+}
+
+export function parserError(description: string, rpnItems: RPNItem[]): ParserResult {
+  return {
+    type: "error",
+    description,
+    rpn: new List(rpnItems),
+  };
+}
+
 export class Parser {
   private operators: Operators;
   private functions: Functions;
@@ -290,14 +305,10 @@ export class Parser {
       ) {
         state.queue.push(stackTop);
       } else {
-        return {
-          type: "error",
-          description: "Unbalanced parens in final loop.",
-          rpn: new List(state.queue),
-        };
+        return parserError("Unbalanced parens in final loop.", state.queue);
       }
       stackTop = state.stack.peek();
     }
-    return { type: "success", rpn: new List(state.queue) };
+    return parserSuccess(state.queue);
   }
 }

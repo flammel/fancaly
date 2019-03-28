@@ -4,7 +4,7 @@ import { Func } from "./function";
 import { Token } from "./lexer";
 import { List } from "./list";
 import { Operator } from "./operator";
-import { Parser, ParserResult, RPNItem } from "./parser";
+import { Parser, parserError, ParserResult, parserSuccess } from "./parser";
 import { testConfig } from "./testConfig";
 import { Unit } from "./unit";
 import { EmptyValue, Value } from "./value";
@@ -37,10 +37,7 @@ function runTest(name: string, tokens: Token[], output: ParserResult) {
   });
 }
 
-runTest("", [], {
-  type: "success",
-  rpn: new List<RPNItem>([]),
-});
+runTest("", [], parserSuccess([]));
 
 runTest(
   "1 + 2",
@@ -49,14 +46,11 @@ runTest(
     { type: "operator", value: "+" },
     { type: "number", value: "2" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("1") },
-      { type: "number", value: new BigNumber("2") },
-      { type: "operator", operator: operators.getOperator("+") as Operator },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("1") },
+    { type: "number", value: new BigNumber("2") },
+    { type: "operator", operator: operators.getOperator("+") as Operator },
+  ]),
 );
 
 runTest(
@@ -70,16 +64,13 @@ runTest(
     { type: "operator", value: "*" },
     { type: "number", value: "3" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("1") },
-      { type: "number", value: new BigNumber("2") },
-      { type: "operator", operator: operators.getOperator("+") as Operator },
-      { type: "number", value: new BigNumber("3") },
-      { type: "operator", operator: operators.getOperator("*") as Operator },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("1") },
+    { type: "number", value: new BigNumber("2") },
+    { type: "operator", operator: operators.getOperator("+") as Operator },
+    { type: "number", value: new BigNumber("3") },
+    { type: "operator", operator: operators.getOperator("*") as Operator },
+  ]),
 );
 
 runTest(
@@ -92,17 +83,13 @@ runTest(
     { type: "operator", value: "*" },
     { type: "number", value: "3" },
   ],
-  {
-    type: "error",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("1") },
-      { type: "number", value: new BigNumber("2") },
-      { type: "number", value: new BigNumber("3") },
-      { type: "operator", operator: operators.getOperator("*") as Operator },
-      { type: "operator", operator: operators.getOperator("+") as Operator },
-    ]),
-    description: "Unbalanced parens in final loop.",
-  },
+  parserError("Unbalanced parens in final loop.", [
+    { type: "number", value: new BigNumber("1") },
+    { type: "number", value: new BigNumber("2") },
+    { type: "number", value: new BigNumber("3") },
+    { type: "operator", operator: operators.getOperator("*") as Operator },
+    { type: "operator", operator: operators.getOperator("+") as Operator },
+  ]),
 );
 
 runTest(
@@ -115,15 +102,11 @@ runTest(
     { type: "operator", value: "*" },
     { type: "number", value: "3" },
   ],
-  {
-    type: "error",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("1") },
-      { type: "number", value: new BigNumber("2") },
-      { type: "operator", operator: operators.getOperator("+") as Operator },
-    ]),
-    description: 'Unbalanced parens in ")" loop.',
-  },
+  parserError('Unbalanced parens in ")" loop.', [
+    { type: "number", value: new BigNumber("1") },
+    { type: "number", value: new BigNumber("2") },
+    { type: "operator", operator: operators.getOperator("+") as Operator },
+  ]),
 );
 
 runTest(
@@ -135,16 +118,13 @@ runTest(
     { type: "operator", value: "*" },
     { type: "number", value: "3" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("1") },
-      { type: "number", value: new BigNumber("2") },
-      { type: "number", value: new BigNumber("3") },
-      { type: "operator", operator: operators.getOperator("*") as Operator },
-      { type: "operator", operator: operators.getOperator("+") as Operator },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("1") },
+    { type: "number", value: new BigNumber("2") },
+    { type: "number", value: new BigNumber("3") },
+    { type: "operator", operator: operators.getOperator("*") as Operator },
+    { type: "operator", operator: operators.getOperator("+") as Operator },
+  ]),
 );
 
 runTest(
@@ -156,15 +136,12 @@ runTest(
     { type: "operator", value: "/" },
     { type: "number", value: "7" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("5") },
-      { type: "number", value: new BigNumber("7") },
-      { type: "operator", operator: operators.getOperator("/") as Operator },
-      { type: "assignment", variableName: "a" },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("5") },
+    { type: "number", value: new BigNumber("7") },
+    { type: "operator", operator: operators.getOperator("/") as Operator },
+    { type: "assignment", variableName: "a" },
+  ]),
 );
 
 runTest(
@@ -178,17 +155,14 @@ runTest(
     { type: "operator", value: "/" },
     { type: "number", value: "40" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "valueGenerator", generator: new VariableReader("y") },
-      { type: "valueGenerator", generator: new VariableReader("x") },
-      { type: "number", value: new BigNumber("40") },
-      { type: "operator", operator: operators.getOperator("/") as Operator },
-      { type: "operator", operator: operators.getOperator("+") as Operator },
-      { type: "assignment", variableName: "d" },
-    ]),
-  },
+  parserSuccess([
+    { type: "valueGenerator", generator: new VariableReader("y") },
+    { type: "valueGenerator", generator: new VariableReader("x") },
+    { type: "number", value: new BigNumber("40") },
+    { type: "operator", operator: operators.getOperator("/") as Operator },
+    { type: "operator", operator: operators.getOperator("+") as Operator },
+    { type: "assignment", variableName: "d" },
+  ]),
 );
 
 runTest(
@@ -202,36 +176,35 @@ runTest(
     { type: "operator", value: "*" },
     { type: "number", value: "75" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("5") },
-      { type: "number", value: new BigNumber("7") },
-      { type: "operator", operator: operators.getOperator("/") as Operator },
-      { type: "number", value: new BigNumber("10") },
-      { type: "number", value: new BigNumber("75") },
-      { type: "operator", operator: operators.getOperator("*") as Operator },
-      { type: "operator", operator: operators.getOperator("+") as Operator },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("5") },
+    { type: "number", value: new BigNumber("7") },
+    { type: "operator", operator: operators.getOperator("/") as Operator },
+    { type: "number", value: new BigNumber("10") },
+    { type: "number", value: new BigNumber("75") },
+    { type: "operator", operator: operators.getOperator("*") as Operator },
+    { type: "operator", operator: operators.getOperator("+") as Operator },
+  ]),
 );
 
-runTest("sum", [{ type: "aggregator", value: "sum" }], {
-  type: "success",
-  rpn: new List<RPNItem>([
+runTest(
+  "sum",
+  [{ type: "aggregator", value: "sum" }],
+  parserSuccess([
     { type: "valueGenerator", generator: valueGenerators.getAggregator("sum") as ValueGenerator },
   ]),
-});
+);
 
-runTest("average", [{ type: "aggregator", value: "average" }], {
-  type: "success",
-  rpn: new List<RPNItem>([
+runTest(
+  "average",
+  [{ type: "aggregator", value: "average" }],
+  parserSuccess([
     {
       type: "valueGenerator",
       generator: valueGenerators.getAggregator("average") as ValueGenerator,
     },
   ]),
-});
+);
 
 runTest(
   "0 = 1",
@@ -240,28 +213,28 @@ runTest(
     { type: "assignment", value: "=" },
     { type: "number", value: "1" },
   ],
-  {
-    type: "error",
-    description: "Assignment operators are only allowed after identifiers.",
-    rpn: new List<RPNItem>([{ type: "number", value: new BigNumber("0") }]),
-  },
+  parserError("Assignment operators are only allowed after identifiers.", [
+    { type: "number", value: new BigNumber("0") },
+  ]),
 );
 
-runTest("10 %", [{ type: "number", value: "10" }, { type: "unit", value: "%" }], {
-  type: "success",
-  rpn: new List<RPNItem>([
+runTest(
+  "10 %",
+  [{ type: "number", value: "10" }, { type: "unit", value: "%" }],
+  parserSuccess([
     { type: "number", value: new BigNumber("10") },
     { type: "unit", unit: units.getUnit("%") as Unit },
   ]),
-});
+);
 
-runTest("50.5 cm", [{ type: "number", value: "50.5" }, { type: "unit", value: "cm" }], {
-  type: "success",
-  rpn: new List<RPNItem>([
+runTest(
+  "50.5 cm",
+  [{ type: "number", value: "50.5" }, { type: "unit", value: "cm" }],
+  parserSuccess([
     { type: "number", value: new BigNumber("50.5") },
     { type: "unit", unit: units.getUnit("cm") as Unit },
   ]),
-});
+);
 
 runTest(
   "50.5 cm + 4 in",
@@ -272,16 +245,13 @@ runTest(
     { type: "number", value: "4" },
     { type: "unit", value: "in" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("50.5") },
-      { type: "unit", unit: units.getUnit("cm") as Unit },
-      { type: "number", value: new BigNumber("4") },
-      { type: "unit", unit: units.getUnit("in") as Unit },
-      { type: "operator", operator: operators.getOperator("+") as Operator },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("50.5") },
+    { type: "unit", unit: units.getUnit("cm") as Unit },
+    { type: "number", value: new BigNumber("4") },
+    { type: "unit", unit: units.getUnit("in") as Unit },
+    { type: "operator", operator: operators.getOperator("+") as Operator },
+  ]),
 );
 
 runTest(
@@ -295,17 +265,14 @@ runTest(
     { type: "number", value: "10" },
     { type: "unit", value: "cm" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("5") },
-      { type: "unit", unit: units.getUnit("in") as Unit },
-      { type: "number", value: new BigNumber("10") },
-      { type: "unit", unit: units.getUnit("cm") as Unit },
-      { type: "operator", operator: operators.getOperator("+") as Operator },
-      { type: "assignment", variableName: "a" },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("5") },
+    { type: "unit", unit: units.getUnit("in") as Unit },
+    { type: "number", value: new BigNumber("10") },
+    { type: "unit", unit: units.getUnit("cm") as Unit },
+    { type: "operator", operator: operators.getOperator("+") as Operator },
+    { type: "assignment", variableName: "a" },
+  ]),
 );
 
 runTest(
@@ -316,15 +283,12 @@ runTest(
     { type: "number", value: "10" },
     { type: "unit", value: "%" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("120") },
-      { type: "number", value: new BigNumber("10") },
-      { type: "unit", unit: units.getUnit("%") as Unit },
-      { type: "operator", operator: operators.getOperator("-") as Operator },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("120") },
+    { type: "number", value: new BigNumber("10") },
+    { type: "unit", unit: units.getUnit("%") as Unit },
+    { type: "operator", operator: operators.getOperator("-") as Operator },
+  ]),
 );
 
 runTest(
@@ -339,17 +303,14 @@ runTest(
     { type: ")", value: ")" },
     { type: "unit", value: "%" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("100") },
-      { type: "number", value: new BigNumber("5") },
-      { type: "number", value: new BigNumber("1") },
-      { type: "operator", operator: operators.getOperator("+") as Operator },
-      { type: "unit", unit: units.getUnit("%") as Unit },
-      { type: "operator", operator: operators.getOperator("-") as Operator },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("100") },
+    { type: "number", value: new BigNumber("5") },
+    { type: "number", value: new BigNumber("1") },
+    { type: "operator", operator: operators.getOperator("+") as Operator },
+    { type: "unit", unit: units.getUnit("%") as Unit },
+    { type: "operator", operator: operators.getOperator("-") as Operator },
+  ]),
 );
 
 runTest(
@@ -360,15 +321,12 @@ runTest(
     { type: "operator", value: "to" },
     { type: "unit", value: "cm" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("10") },
-      { type: "unit", unit: units.getUnit("in") as Unit },
-      { type: "unit", unit: units.getUnit("cm") as Unit },
-      { type: "operator", operator: operators.getOperator("to") as Operator },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("10") },
+    { type: "unit", unit: units.getUnit("in") as Unit },
+    { type: "unit", unit: units.getUnit("cm") as Unit },
+    { type: "operator", operator: operators.getOperator("to") as Operator },
+  ]),
 );
 
 runTest(
@@ -382,18 +340,15 @@ runTest(
     { type: "operator", value: "as" },
     { type: "unit", value: "cm" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("10") },
-      { type: "unit", unit: units.getUnit("in") as Unit },
-      { type: "number", value: new BigNumber("120") },
-      { type: "unit", unit: units.getUnit("mm") as Unit },
-      { type: "unit", unit: units.getUnit("cm") as Unit },
-      { type: "operator", operator: operators.getOperator("as") as Operator },
-      { type: "operator", operator: operators.getOperator("+") as Operator },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("10") },
+    { type: "unit", unit: units.getUnit("in") as Unit },
+    { type: "number", value: new BigNumber("120") },
+    { type: "unit", unit: units.getUnit("mm") as Unit },
+    { type: "unit", unit: units.getUnit("cm") as Unit },
+    { type: "operator", operator: operators.getOperator("as") as Operator },
+    { type: "operator", operator: operators.getOperator("+") as Operator },
+  ]),
 );
 
 runTest(
@@ -406,16 +361,13 @@ runTest(
     { type: "operator", value: "to" },
     { type: "unit", value: "Euro" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("4") },
-      { type: "unit", unit: units.getUnit("GBP") as Unit },
-      { type: "unit", unit: units.getUnit("EUR") as Unit },
-      { type: "operator", operator: operators.getOperator("to") as Operator },
-      { type: "assignment", variableName: "Fee" },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("4") },
+    { type: "unit", unit: units.getUnit("GBP") as Unit },
+    { type: "unit", unit: units.getUnit("EUR") as Unit },
+    { type: "operator", operator: operators.getOperator("to") as Operator },
+    { type: "assignment", variableName: "Fee" },
+  ]),
 );
 
 runTest(
@@ -429,17 +381,14 @@ runTest(
     { type: "operator", value: "to" },
     { type: "unit", value: "Euro" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("4") },
-      { type: "unit", unit: units.getUnit("GBP") as Unit },
-      { type: "operator", operator: operators.getOperator("-u") as Operator },
-      { type: "unit", unit: units.getUnit("EUR") as Unit },
-      { type: "operator", operator: operators.getOperator("to") as Operator },
-      { type: "assignment", variableName: "Discount" },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("4") },
+    { type: "unit", unit: units.getUnit("GBP") as Unit },
+    { type: "operator", operator: operators.getOperator("-u") as Operator },
+    { type: "unit", unit: units.getUnit("EUR") as Unit },
+    { type: "operator", operator: operators.getOperator("to") as Operator },
+    { type: "assignment", variableName: "Discount" },
+  ]),
 );
 
 runTest(
@@ -452,16 +401,13 @@ runTest(
     { type: "operator", value: "as" },
     { type: "unit", value: "Euro" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("4") },
-      { type: "unit", unit: units.getUnit("GBP") as Unit },
-      { type: "unit", unit: units.getUnit("EUR") as Unit },
-      { type: "operator", operator: operators.getOperator("as") as Operator },
-      { type: "assignment", variableName: "Fee" },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("4") },
+    { type: "unit", unit: units.getUnit("GBP") as Unit },
+    { type: "unit", unit: units.getUnit("EUR") as Unit },
+    { type: "operator", operator: operators.getOperator("as") as Operator },
+    { type: "assignment", variableName: "Fee" },
+  ]),
 );
 
 runTest(
@@ -475,16 +421,13 @@ runTest(
     { type: "number", value: "1" },
     { type: ")", value: ")" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("10") },
-      { type: "number", value: new BigNumber("1") },
-      { type: "number", value: new BigNumber("1") },
-      { type: "operator", operator: operators.getOperator("-") as Operator },
-      { type: "operator", operator: operators.getOperator("*") as Operator },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("10") },
+    { type: "number", value: new BigNumber("1") },
+    { type: "number", value: new BigNumber("1") },
+    { type: "operator", operator: operators.getOperator("-") as Operator },
+    { type: "operator", operator: operators.getOperator("*") as Operator },
+  ]),
 );
 
 runTest(
@@ -495,15 +438,12 @@ runTest(
     { type: "number", value: "8.7" },
     { type: "unit", value: "mm" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("10") },
-      { type: "number", value: new BigNumber("8.7") },
-      { type: "unit", unit: units.getUnit("mm") as Unit },
-      { type: "operator", operator: operators.getOperator("*") as Operator },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("10") },
+    { type: "number", value: new BigNumber("8.7") },
+    { type: "unit", unit: units.getUnit("mm") as Unit },
+    { type: "operator", operator: operators.getOperator("*") as Operator },
+  ]),
 );
 
 runTest(
@@ -516,17 +456,14 @@ runTest(
     { type: "number", value: "3" },
     { type: "identifier", value: "personen" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("333") },
-      { type: "unit", unit: units.getUnit("$") as Unit },
-      { type: "valueGenerator", generator: new VariableReader("flug") },
-      { type: "number", value: new BigNumber("3") },
-      { type: "valueGenerator", generator: new VariableReader("personen") },
-      { type: "operator", operator: operators.getOperator("*") as Operator },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("333") },
+    { type: "unit", unit: units.getUnit("$") as Unit },
+    { type: "valueGenerator", generator: new VariableReader("flug") },
+    { type: "number", value: new BigNumber("3") },
+    { type: "valueGenerator", generator: new VariableReader("personen") },
+    { type: "operator", operator: operators.getOperator("*") as Operator },
+  ]),
 );
 
 runTest(
@@ -539,17 +476,14 @@ runTest(
     { type: "identifier", value: "train" },
     { type: "identifier", value: "ticket" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("30") },
-      { type: "unit", unit: units.getUnit("€") as Unit },
-      { type: "valueGenerator", generator: new VariableReader("for") },
-      { type: "valueGenerator", generator: new VariableReader("the") },
-      { type: "valueGenerator", generator: new VariableReader("train") },
-      { type: "valueGenerator", generator: new VariableReader("ticket") },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("30") },
+    { type: "unit", unit: units.getUnit("€") as Unit },
+    { type: "valueGenerator", generator: new VariableReader("for") },
+    { type: "valueGenerator", generator: new VariableReader("the") },
+    { type: "valueGenerator", generator: new VariableReader("train") },
+    { type: "valueGenerator", generator: new VariableReader("ticket") },
+  ]),
 );
 
 runTest(
@@ -562,14 +496,11 @@ runTest(
     { type: "number", value: "0" },
     { type: ")", value: ")" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("123.456789") },
-      { type: "number", value: new BigNumber("0") },
-      { type: "function", function: functions.getFunction("round") as Func },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("123.456789") },
+    { type: "number", value: new BigNumber("0") },
+    { type: "function", function: functions.getFunction("round") as Func },
+  ]),
 );
 
 runTest(
@@ -590,20 +521,17 @@ runTest(
     { type: ")", value: ")" },
     { type: ")", value: ")" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("1.1") },
-      { type: "number", value: new BigNumber("4.4") },
-      { type: "operator", operator: operators.getOperator("*") as Operator },
-      { type: "number", value: new BigNumber("2") },
-      { type: "number", value: new BigNumber("1") },
-      { type: "number", value: new BigNumber("0.5") },
-      { type: "operator", operator: operators.getOperator("-") as Operator },
-      { type: "operator", operator: operators.getOperator("*") as Operator },
-      { type: "function", function: functions.getFunction("round") as Func },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("1.1") },
+    { type: "number", value: new BigNumber("4.4") },
+    { type: "operator", operator: operators.getOperator("*") as Operator },
+    { type: "number", value: new BigNumber("2") },
+    { type: "number", value: new BigNumber("1") },
+    { type: "number", value: new BigNumber("0.5") },
+    { type: "operator", operator: operators.getOperator("-") as Operator },
+    { type: "operator", operator: operators.getOperator("*") as Operator },
+    { type: "function", function: functions.getFunction("round") as Func },
+  ]),
 );
 
 runTest(
@@ -619,17 +547,14 @@ runTest(
     { type: "number", value: "2" },
     { type: ")", value: ")" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("123.4") },
-      { type: "number", value: new BigNumber("12") },
-      { type: "operator", operator: operators.getOperator("-") as Operator },
-      { type: "number", value: new BigNumber("2") },
-      { type: "operator", operator: operators.getOperator("-u") as Operator },
-      { type: "function", function: functions.getFunction("round") as Func },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("123.4") },
+    { type: "number", value: new BigNumber("12") },
+    { type: "operator", operator: operators.getOperator("-") as Operator },
+    { type: "number", value: new BigNumber("2") },
+    { type: "operator", operator: operators.getOperator("-u") as Operator },
+    { type: "function", function: functions.getFunction("round") as Func },
+  ]),
 );
 
 runTest(
@@ -649,19 +574,16 @@ runTest(
     { type: "number", value: "2" },
     { type: ")", value: ")" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("123.4") },
-      { type: "number", value: new BigNumber("12") },
-      { type: "operator", operator: operators.getOperator("-") as Operator },
-      { type: "number", value: new BigNumber("3") },
-      { type: "operator", operator: operators.getOperator("*") as Operator },
-      { type: "number", value: new BigNumber("2") },
-      { type: "operator", operator: operators.getOperator("-u") as Operator },
-      { type: "function", function: functions.getFunction("round") as Func },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("123.4") },
+    { type: "number", value: new BigNumber("12") },
+    { type: "operator", operator: operators.getOperator("-") as Operator },
+    { type: "number", value: new BigNumber("3") },
+    { type: "operator", operator: operators.getOperator("*") as Operator },
+    { type: "number", value: new BigNumber("2") },
+    { type: "operator", operator: operators.getOperator("-u") as Operator },
+    { type: "function", function: functions.getFunction("round") as Func },
+  ]),
 );
 
 runTest(
@@ -676,29 +598,26 @@ runTest(
     { type: "operator", value: "+" },
     { type: "number", value: "2" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("123.65") },
-      { type: "number", value: new BigNumber("0") },
-      { type: "function", function: functions.getFunction("floor") as Func },
-      { type: "number", value: new BigNumber("2") },
-      { type: "operator", operator: operators.getOperator("+") as Operator },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("123.65") },
+    { type: "number", value: new BigNumber("0") },
+    { type: "function", function: functions.getFunction("floor") as Func },
+    { type: "number", value: new BigNumber("2") },
+    { type: "operator", operator: operators.getOperator("+") as Operator },
+  ]),
 );
 
-runTest("unknown unit", [{ type: "number", value: "10" }, { type: "unit", value: "megameter" }], {
-  type: "error",
-  rpn: new List<RPNItem>([{ type: "number", value: new BigNumber("10") }]),
-  description: 'Unknown unit "megameter".',
-});
+runTest(
+  "unknown unit",
+  [{ type: "number", value: "10" }, { type: "unit", value: "megameter" }],
+  parserError('Unknown unit "megameter".', [{ type: "number", value: new BigNumber("10") }]),
+);
 
-runTest("unknown aggregator", [{ type: "aggregator", value: "awerage" }], {
-  type: "error",
-  rpn: new List<RPNItem>([]),
-  description: 'Unknown aggregator "awerage".',
-});
+runTest(
+  "unknown aggregator",
+  [{ type: "aggregator", value: "awerage" }],
+  parserError('Unknown aggregator "awerage".', []),
+);
 
 runTest(
   "1 ! 2",
@@ -707,24 +626,21 @@ runTest(
     { type: "operator", value: "!" },
     { type: "number", value: "2" },
   ],
-  {
-    type: "error",
-    rpn: new List<RPNItem>([{ type: "number", value: new BigNumber("1") }]),
-    description: "Unknown operator !",
-  },
+  parserError("Unknown operator !", [{ type: "number", value: new BigNumber("1") }]),
 );
 
-runTest("round ;", [{ type: "function", value: "round" }, { type: ";", value: ";" }], {
-  type: "error",
-  rpn: new List<RPNItem>([]),
-  description: 'Unbalanced parens in ";" loop.',
-});
+runTest(
+  "round ;",
+  [{ type: "function", value: "round" }, { type: ";", value: ";" }],
+  parserError('Unbalanced parens in ";" loop.', []),
+);
 
 const testDate = "2019-04-20";
-runTest(testDate, [{ type: "date", value: testDate }], {
-  type: "success",
-  rpn: new List<RPNItem>([{ type: "date", date: new Date(testDate) }]),
-});
+runTest(
+  testDate,
+  [{ type: "date", value: testDate }],
+  parserSuccess([{ type: "date", date: new Date(testDate) }]),
+);
 
 runTest(
   "10 days from now",
@@ -734,15 +650,12 @@ runTest(
     { type: "operator", value: "from" },
     { type: "aggregator", value: "now" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("10") },
-      { type: "unit", unit: units.getUnit("day") as Unit },
-      { type: "valueGenerator", generator: valueGenerators.getAggregator("now") as ValueGenerator },
-      { type: "operator", operator: operators.getOperator("from") as Operator },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("10") },
+    { type: "unit", unit: units.getUnit("day") as Unit },
+    { type: "valueGenerator", generator: valueGenerators.getAggregator("now") as ValueGenerator },
+    { type: "operator", operator: operators.getOperator("from") as Operator },
+  ]),
 );
 
 runTest(
@@ -758,14 +671,11 @@ runTest(
     { type: ")", value: ")" },
     { type: "unit", value: "m" },
   ],
-  {
-    type: "success",
-    rpn: new List<RPNItem>([
-      { type: "number", value: new BigNumber("12.34") },
-      { type: "number", value: new BigNumber("1") },
-      { type: "function", function: functions.getFunction("round") as Func },
-      { type: "unit", unit: units.getUnit("m") as Unit },
-      { type: "assignment", variableName: "x" },
-    ]),
-  },
+  parserSuccess([
+    { type: "number", value: new BigNumber("12.34") },
+    { type: "number", value: new BigNumber("1") },
+    { type: "function", function: functions.getFunction("round") as Func },
+    { type: "unit", unit: units.getUnit("m") as Unit },
+    { type: "assignment", variableName: "x" },
+  ]),
 );
