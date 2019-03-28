@@ -26,6 +26,13 @@ export type LexerResult =
   | { type: "success"; tokens: Tokens }
   | { type: "error"; description: string; tokens: Tokens };
 
+export function lexerSuccess(tokens: Token[]): LexerResult {
+  return {
+    type: "success",
+    tokens: new List(tokens),
+  };
+}
+
 type Scanner = (input: string) => [Token, string] | null;
 
 export class Lexer {
