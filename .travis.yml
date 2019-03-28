@@ -1,8 +1,13 @@
+dist: trusty
 language: node_js
 node_js:
   - "8"
-after_success:
-  - npm run coverage
-  - codecov
 notifications:
   email: false
+addons:
+  sonarcloud:
+    organization: "flammel-github"
+script:
+  - npm run coverage
+  - codecov
+  - sonar-scanner
