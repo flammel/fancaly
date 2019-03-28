@@ -94,6 +94,22 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
     operation: (env) => new DateTimeValue(new Date(), false),
     name: "today",
   });
+  config.getValueGenerators().addAggregator({
+    operation: (env) => {
+      const date = new Date();
+      date.setDate(date.getDate() + 1);
+      return new DateTimeValue(date, false);
+    },
+    name: "tomorrow",
+  });
+  config.getValueGenerators().addAggregator({
+    operation: (env) => {
+      const date = new Date();
+      date.setDate(date.getDate() - 1);
+      return new DateTimeValue(date, false);
+    },
+    name: "yesterday",
+  });
 
   const currencies = (window as any).currencies;
   if (currencies && currencies.hasOwnProperty("rates") && currencies.hasOwnProperty("base")) {

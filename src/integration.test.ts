@@ -802,6 +802,20 @@ runTest(
 );
 
 runTest(
+  "tomorrow",
+  [{ type: "aggregator", value: "tomorrow" }],
+  [{ type: "valueGenerator", generator: valueGenerators.getAggregator("tomorrow") as ValueGenerator }],
+  new DateTimeValue(new Date(2018, 5, 28, 0, 0, 0), false),
+);
+
+runTest(
+  "yesterday",
+  [{ type: "aggregator", value: "yesterday" }],
+  [{ type: "valueGenerator", generator: valueGenerators.getAggregator("yesterday") as ValueGenerator }],
+  new DateTimeValue(new Date(2018, 5, 26, 0, 0, 0), false),
+);
+
+runTest(
   "a : (1.1 cm - x in) to m",
   [
     { type: "identifier", value: "a" },
