@@ -129,6 +129,9 @@ function startsWith(separators: string[]): (input: string, name: string) => bool
     if (haytack.toLowerCase().indexOf(needle.toLowerCase()) !== 0) {
       return false;
     }
+    // Names that contain only letters must be separated from the next token
+    // with a separator or end of input. Other names (like operators +, * etc.)
+    // do not have to be separated, so the check above suffices to return true.
     if (needle.match(/^[a-z]+$/i)) {
       const remaining = haytack.substr(needle.length);
       return remaining === "" || separators.indexOf(remaining[0]) !== -1;
@@ -148,7 +151,7 @@ function nameScanner(
         return [
           {
             type,
-            value: name,
+            value: input.substr(0, name.length),
           },
           input.substr(name.length),
         ];
