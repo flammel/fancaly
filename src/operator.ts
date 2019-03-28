@@ -90,8 +90,12 @@ export function noneWithUnitBinaryOperation(
 export function numericBinaryOperation(operation: BinaryOperation): PartialBinaryOperation {
   return (lft: Value, rgt: Value) => {
     if (isNumeric(lft) && isNumeric(rgt)) {
-      const convertedRgt = rgt.withNewUnit(lft.unit);
-      return convertedRgt.withNewValue(operation(lft.value, convertedRgt.value));
+      if (lft.unit === unitless) {
+        return rgt.withNewValue(operation(lft.value, rgt.value));
+      } else {
+        const convertedRgt = rgt.withNewUnit(lft.unit);
+        return convertedRgt.withNewValue(operation(lft.value, convertedRgt.value));
+      }
     }
     return undefined;
   };
