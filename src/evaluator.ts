@@ -95,6 +95,24 @@ export class Evaluator {
     return null;
   }
 
+  private evaluateTime(
+    stack: Stack<Value>,
+    hours: BigNumber,
+    minutes: BigNumber,
+    seconds?: BigNumber,
+  ): ErrorMessage | null {
+    const date = new Date(
+      1970,
+      0,
+      1,
+      hours.toNumber(),
+      minutes.toNumber(),
+      seconds ? seconds.toNumber() : 0,
+    );
+    stack.push(new DateTimeValue(date, true));
+    return null;
+  }
+
   private evaluateUnit(stack: Stack<Value>, unit: Unit): ErrorMessage | null {
     const lastVal = stack.peek();
     if (isNumeric(lastVal) && lastVal.unit === unitless) {
@@ -126,6 +144,13 @@ export class Evaluator {
         return this.evaluateUnit(stack, currentItem.unit);
       case "date":
         return this.evaluateDate(stack, currentItem.date);
+      case "time":
+        return this.evaluateTime(
+          stack,
+          currentItem.hours,
+          currentItem.minutes,
+          currentItem.seconds,
+        );
       /* istanbul ignore next */
       default:
         assertNever(currentItem);

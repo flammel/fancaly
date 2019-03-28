@@ -312,6 +312,14 @@ runTest(`
 `);
 
 runTest(`
+  round(12.34; 2
+`);
+
+runTest(`
+  x = round(12.34; 1) m         12.3 m
+`);
+
+runTest(`
   10 days from today          2018-07-07
 `);
 
@@ -348,11 +356,27 @@ runTest(`
 `);
 
 runTest(`
-  round(12.34; 2
+  1 day to seconds             86400 s
 `);
 
 runTest(`
-  x = round(12.34; 1) m         12.3 m
+  now + 10 minutes             2018-06-27T12:52:36.134Z
+`);
+
+runTest(`
+  2018-10-26 - 2018-10-10                1382400 s
+`);
+
+runTest(`
+  (2018-10-26 - 2018-10-10) to days      16 day
+`);
+
+runTest(`
+  09:50 - 08:51                3540 s
+`);
+
+runTest(`
+  days until 2018-09-20        85 day
 `);
 
 test("1,67823 + 30", () => {

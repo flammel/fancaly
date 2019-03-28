@@ -21,6 +21,7 @@ export type RPNItem =
   | { type: "number"; value: BigNumber }
   | { type: "unit"; unit: Unit }
   | { type: "date"; date: Date }
+  | { type: "time"; hours: BigNumber; minutes: BigNumber; seconds?: BigNumber }
   | { type: "valueGenerator"; generator: ValueGenerator };
 
 export type RPN = List<RPNItem>;
@@ -123,6 +124,8 @@ export class Parser {
         return this.parseAggregator(this.valueGenerators, state, currentToken.value);
       case "date":
         return this.parseDate(state, currentToken.value);
+      case "time":
+        return this.parseTime(state, currentToken.value);
       /* istanbul ignore next */
       default:
         assertNever(currentToken.type);
@@ -144,6 +147,18 @@ export class Parser {
     state.queue.push({
       type: "date",
       date: new Date(value),
+    });
+    return null;
+  }
+
+  private parseTime(state: ParserState, value: string): ErrorMessage | null {
+    state.nextMinus = "-";
+    const [hours, minutes, seconds] = value.split(":").map((x) => new BigNumber(x));
+    state.queue.push({
+      type: "time",
+      hours,
+      minutes,
+      seconds,
     });
     return null;
   }

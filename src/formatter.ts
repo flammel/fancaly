@@ -15,6 +15,10 @@ export class Formatter {
     return new RegExp("^([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9])(.*)$");
   }
 
+  public getTimeRegExp(): RegExp {
+    return new RegExp("^([0-9][0-9]:[0-9][0-9])(.*)$");
+  }
+
   public parseNumber(value: string): string {
     if (this.decimalSeparator === ".") {
       return value;

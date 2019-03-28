@@ -13,7 +13,8 @@ type TokenType =
   | "assignment"
   | "comment"
   | "aggregator"
-  | "date";
+  | "date"
+  | "time";
 
 export interface Token {
   type: TokenType;
@@ -81,6 +82,7 @@ export class Lexer {
       regexScanner(/^([\)])\s*(.*)$/, ")"),
       regexScanner(/^([;])\s*(.*)$/, ";"),
       regexScanner(formatter.getDateRegExp(), "date"),
+      regexScanner(formatter.getTimeRegExp(), "time"),
       regexScanner(formatter.getNumberRegExp(), "number"),
       nameScanner(operatorNames, "operator", nameCondition),
       nameScanner(functionNames, "function", nameCondition),

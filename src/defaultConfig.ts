@@ -16,7 +16,15 @@ import {
 } from "./operator";
 import { Stack } from "./stack";
 import { Unit, unitless, UnitName } from "./unit";
-import { DateTimeValue, ErrorValue, isEmpty, isNumeric, NumericValue, Value } from "./value";
+import {
+  DateTimeValue,
+  ErrorValue,
+  isDateTime,
+  isEmpty,
+  isNumeric,
+  NumericValue,
+  Value,
+} from "./value";
 import { ValueGenerator } from "./valueGenerator";
 
 export function defaultConfig(decimalSeparator: string = "."): Config {
@@ -55,15 +63,16 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
   addUnit(config, "ml", "29.5735", "fl oz");
   addUnit(config, "s", "0.000000001", "ns");
   addUnit(config, "s", "0.001", "ms");
-  addUnit(config, "s", "1", "s");
+  addUnit(config, "s", "1", "s", "second", "seconds");
   addUnit(config, "s", "60", "minute", "minutes");
   addUnit(config, "s", "3600", "h");
   addUnit(config, "s", "86400", "day", "days");
 
   const percentage = config.getUnits().getUnit("%") as Unit;
+  const seconds = config.getUnits().getUnit("s") as Unit;
 
   config.getOperators().addOperator(addition(percentage));
-  config.getOperators().addOperator(subtraction(percentage));
+  config.getOperators().addOperator(subtraction(percentage, seconds));
   config.getOperators().addOperator(multiplication(percentage));
   config.getOperators().addOperator(division(percentage));
   config.getOperators().addOperator(asAPercentageOff(percentage));
@@ -213,8 +222,17 @@ const addition = (percentage: Unit) =>
     numericBinaryOperation((a, b) => a.plus(b)),
   ]);
 
-const subtraction = (percentage: Unit) =>
+const subtraction = (percentage: Unit, seconds: Unit) =>
   binaryOperator("-", "left", 13, [
+    (lft: Value, rgt: Value) => {
+      if (isDateTime(lft) && isDateTime(rgt)) {
+        return new NumericValue(
+          new BigNumber(lft.date.getTime() - rgt.date.getTime()).dividedBy(1000),
+          seconds,
+        );
+      }
+      return undefined;
+    },
     onlyRightWithUnitBinaryOperation(percentage, (a, b) =>
       a.dividedBy(100).multipliedBy(bn100.minus(b)),
     ),
