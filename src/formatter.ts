@@ -1,3 +1,4 @@
+import { BigNumber } from "bignumber.js";
 import { isDateTime, isNumeric, Value } from "./value";
 
 export class Formatter {
@@ -28,7 +29,11 @@ export class Formatter {
 
   public format(value: Value): string {
     if (isNumeric(value)) {
-      return value.unit.format(value.value.dp(4).toFormat());
+      if (value.value.eq(new BigNumber(1))) {
+        return value.unit.formatSingular(value.value.dp(4).toFormat());
+      } else {
+        return value.unit.formatPlural(value.value.dp(4).toFormat());
+      }
     }
 
     if (isDateTime(value)) {

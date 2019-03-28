@@ -368,7 +368,7 @@ runTest(`
 `);
 
 runTest(`
-  (2018-10-26 - 2018-10-10) to days      16 day
+  (2018-10-26 - 2018-10-10) to days      16 days
 `);
 
 runTest(`
@@ -376,7 +376,30 @@ runTest(`
 `);
 
 runTest(`
-  days until 2018-09-20        85 day
+  days until 2018-09-20        85 days
+`);
+
+runTest(`
+  1 seconds         1 s
+  2 second          2 s
+
+  1 minutes         1 minute
+  2 minute          2 minutes
+
+  1 hours           1 h
+  2 hour            2 h
+
+  1 days            1 day
+  2 day             2 days
+
+  1 months          1 month
+  2 month           2 months
+
+  1 years           1 year
+  2 year            2 years
+
+  1 miles           1 mile
+  2 mile            2 miles
 `);
 
 test("1,67823 + 30", () => {

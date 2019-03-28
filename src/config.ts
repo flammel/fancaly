@@ -1,8 +1,7 @@
-import { BigNumber } from "bignumber.js";
 import { Formatter } from "./formatter";
 import { Func } from "./function";
 import { Operator } from "./operator";
-import { Unit, UnitFormatter, UnitName } from "./unit";
+import { Unit } from "./unit";
 import { Aggregator } from "./valueGenerator";
 
 export class Operators {
@@ -56,14 +55,12 @@ export class ValueGenerators {
 export class Units {
   private unitTable: { [key: string]: Unit } = {};
 
-  public addUnit(base: UnitName, multiplier: string, format: UnitFormatter, ...names: UnitName[]) {
-    for (const name of names) {
-      this.unitTable[name.toLowerCase()] = {
-        base,
-        name: names[0],
-        multiplier: new BigNumber(multiplier),
-        format,
-      };
+  public addUnit(unit: Unit) {
+    this.unitTable[unit.defaultName.singular.toLowerCase()] = unit;
+    this.unitTable[unit.defaultName.plural.toLowerCase()] = unit;
+    for (const name of unit.synonyms) {
+      this.unitTable[name.singular.toLowerCase()] = unit;
+      this.unitTable[name.plural.toLowerCase()] = unit;
     }
   }
 

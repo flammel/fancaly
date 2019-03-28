@@ -15,7 +15,7 @@ import {
   unaryOperator,
 } from "./operator";
 import { Stack } from "./stack";
-import { Unit, unitless, UnitName } from "./unit";
+import { makeUnit, Unit, unitless } from "./unit";
 import {
   DateTimeValue,
   ErrorValue,
@@ -40,33 +40,38 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
   });
 
   const config = new Config(new Formatter(decimalSeparator));
+  const units = config.getUnits();
 
-  addUnit(config, "%", "1", "%");
-  addUnit(config, "mm", "1", "mm");
-  addUnit(config, "mm", "10", "cm");
-  addUnit(config, "mm", "100", "dm");
-  addUnit(config, "mm", "1000", "m");
-  addUnit(config, "mm", "1000000", "km");
-  addUnit(config, "mm", "304.8", "ft", "foot", "feet");
-  addUnit(config, "mm", "25.4", "in", "inch");
-  addUnit(config, "mm", "1609340", "mile", "miles");
-  addUnit(config, "g", "1", "g", "gram", "grams");
-  addUnit(config, "g", "10", "dkg");
-  addUnit(config, "g", "1000", "kg");
-  addUnit(config, "g", "1000000", "t");
-  addUnit(config, "g", "28.3495", "oz");
-  addUnit(config, "ml", "1", "ml");
-  addUnit(config, "ml", "10", "cl");
-  addUnit(config, "ml", "100", "dl");
-  addUnit(config, "ml", "1000", "l");
-  addUnit(config, "ml", "1000", "l");
-  addUnit(config, "ml", "29.5735", "fl oz");
-  addUnit(config, "s", "0.000000001", "ns");
-  addUnit(config, "s", "0.001", "ms");
-  addUnit(config, "s", "1", "s", "second", "seconds");
-  addUnit(config, "s", "60", "minute", "minutes");
-  addUnit(config, "s", "3600", "h");
-  addUnit(config, "s", "86400", "day", "days");
+  units.addUnit(makeUnit("%", "1", "%"));
+  units.addUnit(makeUnit("mm", "1", "mm"));
+  units.addUnit(makeUnit("mm", "10", "cm"));
+  units.addUnit(makeUnit("mm", "100", "dm"));
+  units.addUnit(makeUnit("mm", "1000", "m"));
+  units.addUnit(makeUnit("mm", "1000000", "km"));
+  units.addUnit(makeUnit("mm", "304.8", "ft", [["foot", "feet"]]));
+  units.addUnit(makeUnit("mm", "25.4", "in", [["inch", "inches"]]));
+  units.addUnit(makeUnit("mm", "1609340", ["mile", "miles"]));
+  units.addUnit(makeUnit("g", "1", "g", [["gram", "grams"]]));
+  units.addUnit(makeUnit("g", "10", "dkg"));
+  units.addUnit(makeUnit("g", "1000", "kg"));
+  units.addUnit(makeUnit("g", "1000000", "t"));
+  units.addUnit(makeUnit("g", "28.3495", "oz"));
+  units.addUnit(makeUnit("ml", "1", "ml"));
+  units.addUnit(makeUnit("ml", "10", "cl"));
+  units.addUnit(makeUnit("ml", "100", "dl"));
+  units.addUnit(makeUnit("ml", "1000", "l"));
+  units.addUnit(makeUnit("ml", "1000", "l"));
+  units.addUnit(makeUnit("ml", "29.5735", "fl oz"));
+  units.addUnit(makeUnit("s", "0.000000001", "ns"));
+  units.addUnit(makeUnit("s", "0.001", "ms"));
+  units.addUnit(makeUnit("s", "1", "s", [["second", "seconds"]]));
+  units.addUnit(makeUnit("s", "60", ["minute", "minutes"]));
+  units.addUnit(makeUnit("s", "3600", "h", [["hour", "hours"]]));
+  units.addUnit(makeUnit("s", "86400", ["day", "days"]));
+  // 30 days
+  units.addUnit(makeUnit("s", "2592000", ["month", "months"]));
+  // 365 days
+  units.addUnit(makeUnit("s", "31536000", ["year", "years"]));
 
   const percentage = config.getUnits().getUnit("%") as Unit;
   const seconds = config.getUnits().getUnit("s") as Unit;
@@ -144,32 +149,7 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
     name: "yesterday",
   });
 
-  const currencies = (window as any).currencies;
-  if (currencies && currencies.hasOwnProperty("rates") && currencies.hasOwnProperty("base")) {
-    Object.keys(currencies.rates || {}).forEach((key) => {
-      let names: string[] = [];
-      if (key === "USD") {
-        names = ["$", "dollar", "dollars"];
-      }
-      if (key === "EUR") {
-        names = ["€", "euro", "euros"];
-      }
-      addUnit(config, currencies.base, currencies.rates[key], key, ...names);
-    });
-  }
-
   return config;
-}
-
-function addUnit(config: Config, base: UnitName, multiplier: string, ...names: UnitName[]) {
-  config
-    .getUnits()
-    .addUnit(
-      base,
-      multiplier,
-      (formattedNumber: string) => formattedNumber + " " + names[0],
-      ...names,
-    );
 }
 
 const bn100 = new BigNumber(100);

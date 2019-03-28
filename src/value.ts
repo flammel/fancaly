@@ -60,7 +60,7 @@ export class NumericValue {
   }
 
   public toString(): string {
-    return `NumericValue(${this.value.valueOf()}, ${this.unit.name})`;
+    return `NumericValue(${this.value.valueOf()}, ${this.unit.defaultName})`;
   }
 }
 
@@ -74,7 +74,7 @@ export class ErrorValue {
 export class UnitValue {
   constructor(public unit: Unit) {}
   public toString(): string {
-    return `UnitValue(${this.unit.name})`;
+    return `UnitValue(${this.unit.defaultName})`;
   }
 }
 
