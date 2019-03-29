@@ -37,7 +37,7 @@ export function makeUnit(
   base: string,
   multiplier: BigNumber | string,
   defaultName: string | [string, string],
-  synonyms: Array<string | [string, string]> = [],
+  ...synonyms: Array<string | [string, string]>
 ): Unit {
   return new Unit(
     base,

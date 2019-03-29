@@ -42,40 +42,49 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
   const config = new Config(new Formatter(decimalSeparator));
   const units = config.getUnits();
 
-  units.addUnit(makeUnit("%", "1", "%"));
-  units.addUnit(makeUnit("mm", "1", "mm"));
-  units.addUnit(makeUnit("mm", "10", "cm"));
-  units.addUnit(makeUnit("mm", "100", "dm"));
-  units.addUnit(makeUnit("mm", "1000", "m"));
-  units.addUnit(makeUnit("mm", "1000000", "km"));
-  units.addUnit(makeUnit("mm", "304.8", "ft", [["foot", "feet"]]));
-  units.addUnit(makeUnit("mm", "25.4", "in", [["inch", "inches"]]));
-  units.addUnit(makeUnit("mm", "1609340", ["mile", "miles"]));
-  units.addUnit(makeUnit("g", "1", "g", [["gram", "grams"]]));
-  units.addUnit(makeUnit("g", "10", "dkg"));
-  units.addUnit(makeUnit("g", "1000", "kg"));
-  units.addUnit(makeUnit("g", "1000000", "t"));
+  const percentage = makeUnit("%", "1", "%");
+  units.addUnit(percentage);
   units.addUnit(makeUnit("g", "28.3495", "oz"));
-  units.addUnit(makeUnit("ml", "1", "ml"));
-  units.addUnit(makeUnit("ml", "10", "cl"));
-  units.addUnit(makeUnit("ml", "100", "dl"));
-  units.addUnit(makeUnit("ml", "1000", "l"));
-  units.addUnit(makeUnit("ml", "1000", "l"));
   units.addUnit(makeUnit("ml", "29.5735", "fl oz"));
-  units.addUnit(makeUnit("s", "0.000000001", "ns"));
-  units.addUnit(makeUnit("s", "0.001", "ms"));
-  units.addUnit(makeUnit("s", "1", "s", [["second", "seconds"]]));
-  units.addUnit(makeUnit("s", "60", ["minute", "minutes"]));
-  units.addUnit(makeUnit("s", "3600", "h", [["hour", "hours"]]));
-  units.addUnit(makeUnit("s", "86400", ["day", "days"]));
-  // 30 days
-  units.addUnit(makeUnit("s", "2592000", ["month", "months"]));
-  // 365 days
-  units.addUnit(makeUnit("s", "31536000", ["year", "years"]));
 
-  const percentage = config.getUnits().getUnit("%") as Unit;
-  const seconds = config.getUnits().getUnit("s") as Unit;
-  const days = config.getUnits().getUnit("days") as Unit;
+  units.addAutoConversionGroup([
+    makeUnit("mm", "1", "mm"),
+    makeUnit("mm", "10", "cm"),
+    makeUnit("mm", "100", "dm"),
+    makeUnit("mm", "1000", "m"),
+    makeUnit("mm", "1000000", "km"),
+  ]);
+  units.addAutoConversionGroup([
+    makeUnit("mm", "304.8", "ft", ["foot", "feet"]),
+    makeUnit("mm", "25.4", "in", ["inch", "inches"]),
+    makeUnit("mm", "1609340", ["mile", "miles"]),
+  ]);
+  units.addAutoConversionGroup([
+    makeUnit("g", "1", "g", ["gram", "grams"]),
+    makeUnit("g", "10", "dkg"),
+    makeUnit("g", "1000", "kg"),
+    makeUnit("g", "1000000", "t"),
+  ]);
+  units.addAutoConversionGroup([
+    makeUnit("ml", "1", "ml"),
+    makeUnit("ml", "10", "cl"),
+    makeUnit("ml", "100", "dl"),
+    makeUnit("ml", "1000", "l"),
+  ]);
+  const seconds = makeUnit("ns", "1000000000", "s", ["second", "seconds"]);
+  const days = makeUnit("ns", "86400000000000", ["day", "days"]);
+  units.addAutoConversionGroup([
+    makeUnit("ns", "1", "ns"),
+    makeUnit("ns", "1000000", "ms"),
+    seconds,
+    makeUnit("ns", "60000000000", ["minute", "minutes"]),
+    makeUnit("ns", "3600000000000", "h", ["hour", "hours"]),
+    days,
+    // 30 days
+    makeUnit("ns", "2592000000000000", ["month", "months"]),
+    // 365 days
+    makeUnit("ns", "31536000000000000", ["year", "years"]),
+  ]);
 
   config.getOperators().addOperator(addition(percentage));
   config.getOperators().addOperator(subtraction(percentage, seconds));
@@ -110,7 +119,9 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
         now.setMinutes(0);
         now.setSeconds(0);
         now.setMilliseconds(0);
-        const diffInSeconds = new BigNumber(newRgt.getTime() - now.getTime()).dividedBy(1000);
+        const diffInSeconds = new BigNumber(newRgt.getTime())
+          .minus(new BigNumber(now.getTime()))
+          .dividedBy(1000);
         return new NumericValue(diffInSeconds, seconds).withNewUnit(days);
       }
       return new ErrorValue(`Operation "days until" cannot be applied to operand ${rgt}.`);
@@ -155,9 +166,12 @@ export function defaultConfig(decimalSeparator: string = "."): Config {
 const bn100 = new BigNumber(100);
 
 const addTimeToDate = (date: Date, value: NumericValue) => {
-  if (value.unit.base === "s") {
-    const ms = value.value.toNumber() * value.unit.multiplier.toNumber() * 1000;
-    return new Date(date.valueOf() + ms);
+  if (value.unit.base === "ns") {
+    const ms = value.value
+      .times(value.unit.multiplier)
+      .dividedBy("1000000")
+      .toFixed(0);
+    return new Date(date.valueOf() + parseFloat(ms));
   }
   return undefined;
 };

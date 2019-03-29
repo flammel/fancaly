@@ -54,6 +54,7 @@ export class ValueGenerators {
 
 export class Units {
   private unitTable: { [key: string]: Unit } = {};
+  private groups: { [key: string]: Unit[] } = {};
 
   public addUnit(unit: Unit) {
     this.unitTable[unit.defaultName.singular.toLowerCase()] = unit;
@@ -61,6 +62,22 @@ export class Units {
     for (const name of unit.synonyms) {
       this.unitTable[name.singular.toLowerCase()] = unit;
       this.unitTable[name.plural.toLowerCase()] = unit;
+    }
+  }
+
+  public addAutoConversionGroup(units: Unit[]) {
+    for (const unit of units) {
+      this.addUnit(unit);
+      this.groups[unit.defaultName.singular] = units;
+    }
+  }
+
+  public getAutoConversionGroup(unit: Unit): Unit[] {
+    const group = this.groups[unit.defaultName.singular];
+    if (group === undefined) {
+      return [];
+    } else {
+      return group;
     }
   }
 

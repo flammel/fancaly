@@ -868,7 +868,7 @@ runTest(
     { type: "unit", unit: units.getUnit("in") as Unit },
     { type: "operator", operator: operators.getOperator("as") as Operator },
   ],
-  new NumericValue("3.9370078740157480315", units.getUnit("in") as Unit),
+  new NumericValue("3.937007874015748031496", units.getUnit("in") as Unit),
 );
 
 runTest(

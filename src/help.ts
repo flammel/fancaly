@@ -134,7 +134,7 @@ export function helpTextForTest(): string {
     be ignored:
 
     This line will be ignored, it contains no calculation
-    This line 1 cm + 1 mm contains a calculation          1.1 cm
+    This line 1 cm + 1 mm contains a calculation          11 mm
     This line 3784 g as kg contains a conversion          3.784 kg
 
     #
@@ -156,7 +156,7 @@ export function helpTextForTest(): string {
 
     Whitespace is generally not important:
 
-    a:10mm*(10-7)            30 mm
+    a:10mm*(10-7)            3 cm
     7*   (  3-   2)           7
   `;
 }

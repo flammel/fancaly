@@ -45,7 +45,7 @@ export class NumericValue {
   public withNewUnit(newUnit: Unit): NumericValue {
     if (this.unit.base === newUnit.base) {
       return new NumericValue(
-        this.value.times(this.unit.multiplier.dividedBy(newUnit.multiplier)),
+        this.value.dividedBy(newUnit.multiplier).times(this.unit.multiplier),
         newUnit,
       );
     } else if (this.unit === unitless) {
