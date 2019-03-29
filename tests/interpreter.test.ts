@@ -1,6 +1,6 @@
 import { advanceTo } from "jest-date-mock";
-import { Environment } from "./environment";
-import { Interpreter } from "./interpreter";
+import { Environment } from "../lib/environment";
+import { Interpreter } from "../lib/interpreter";
 import { testConfig } from "./testConfig";
 
 advanceTo(new Date(2018, 5, 27, 12, 42, 36, 134));

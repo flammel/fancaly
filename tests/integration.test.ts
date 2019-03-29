@@ -1,17 +1,17 @@
 import { BigNumber } from "bignumber.js";
 import { advanceTo } from "jest-date-mock";
-import { Environment } from "./environment";
-import { Evaluator } from "./evaluator";
-import { Formatter } from "./formatter";
-import { Func } from "./function";
-import { Lexer, lexerSuccess, Token } from "./lexer";
-import { List } from "./list";
-import { Operator } from "./operator";
-import { Parser, parserSuccess, RPNItem } from "./parser";
+import { Environment } from "../lib/environment";
+import { Evaluator } from "../lib/evaluator";
+import { Formatter } from "../lib/formatter";
+import { Func } from "../lib/function";
+import { Lexer, lexerSuccess, Token } from "../lib/lexer";
+import { List } from "../lib/list";
+import { Operator } from "../lib/operator";
+import { Parser, parserSuccess, RPNItem } from "../lib/parser";
+import { Unit, unitless } from "../lib/unit";
+import { DateTimeValue, EmptyValue, NumericValue, Value } from "../lib/value";
+import { ValueGenerator, VariableReader } from "../lib/valueGenerator";
 import { testConfig } from "./testConfig";
-import { Unit, unitless } from "./unit";
-import { DateTimeValue, EmptyValue, NumericValue, Value } from "./value";
-import { ValueGenerator, VariableReader } from "./valueGenerator";
 
 advanceTo(new Date(2018, 5, 27, 0, 0, 0));
 

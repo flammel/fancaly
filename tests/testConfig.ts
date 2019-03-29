@@ -1,6 +1,6 @@
-import { Config } from "./config";
-import { defaultConfig } from "./defaultConfig";
-import { makeUnit } from "./unit";
+import { Config } from "../lib/config";
+import { defaultConfig } from "../lib/defaultConfig";
+import { makeUnit } from "../lib/unit";
 
 export function testConfig(decimalSeparator: string = "."): Config {
   const config = defaultConfig(decimalSeparator);

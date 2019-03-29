@@ -4,13 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "parcel src/index.html",
-    "prettier": "prettier --write .babelrc *.json src/*.ts src/*.js src/*.scss tests/*.ts src/*.webmanifest",
+    "start": "parcel app/index.html",
+    "prettier": "prettier --write .babelrc *.json lib/*.ts app/*.ts app/*.scss tests/*.ts app/manifest.webmanifest",
     "test": "TZ=UTC jest",
     "coverage": "jest --coverage",
-    "lint": "tslint --project tsconfig.json -c tslint.json 'src/*.ts' 'tests/*.ts'",
-    "lintfix": "tslint --project tsconfig.json --fix -c tslint.json 'src/*.ts' 'tests/*.ts'",
-    "build": "parcel build src/index.html --public-url ./",
+    "lint": "tslint --project tsconfig.json -c tslint.json 'lib/*.ts' 'app/*.ts' 'tests/*.ts'",
+    "lintfix": "tslint --project tsconfig.json --fix -c tslint.json 'src/*.ts' 'app/*.ts' 'tests/*.ts'",
+    "build": "parcel build app/index.html --public-url ./",
     "typecheck": "tsc --noEmit -p ./tsconfig.json",
     "check": "npm run prettier; npm run lintfix; npm run lint; npm run typecheck"
   },
@@ -36,7 +36,7 @@
       "^.+\\.tsx?$": "ts-jest"
     },
     "testURL": "http://localhost/",
-    "testRegex": "(/tests/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "testRegex": "(/tests/.*\\.test\\.ts)$",
     "moduleFileExtensions": [
       "ts",
       "tsx",

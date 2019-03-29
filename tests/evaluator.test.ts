@@ -1,15 +1,15 @@
 import { BigNumber } from "bignumber.js";
 import { advanceTo } from "jest-date-mock";
-import { Environment } from "./environment";
-import { Evaluator } from "./evaluator";
-import { Func } from "./function";
-import { List } from "./list";
-import { Operator } from "./operator";
-import { RPNItem } from "./parser";
+import { Environment } from "../lib/environment";
+import { Evaluator } from "../lib/evaluator";
+import { Func } from "../lib/function";
+import { List } from "../lib/list";
+import { Operator } from "../lib/operator";
+import { RPNItem } from "../lib/parser";
+import { Unit } from "../lib/unit";
+import { ErrorValue, NumericValue, Value } from "../lib/value";
+import { ValueGenerator } from "../lib/valueGenerator";
 import { testConfig } from "./testConfig";
-import { Unit } from "./unit";
-import { ErrorValue, NumericValue, Value } from "./value";
-import { ValueGenerator } from "./valueGenerator";
 
 advanceTo(new Date(2018, 5, 27, 0, 0, 0));
 

@@ -1,7 +1,7 @@
-import { defaultConfig } from "./defaultConfig";
-import { Environment } from "./environment";
-import { helpText } from "./help";
-import { Interpreter } from "./interpreter";
+import { defaultConfig } from "../lib/defaultConfig";
+import { Environment } from "../lib/environment";
+import { helpText } from "../lib/help";
+import { Interpreter } from "../lib/interpreter";
 import { Storage } from "./storage";
 
 import "./index.scss";

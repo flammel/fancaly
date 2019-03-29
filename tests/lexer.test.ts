@@ -1,5 +1,5 @@
-import { Formatter } from "./formatter";
-import { Lexer, LexerResult, lexerSuccess } from "./lexer";
+import { Formatter } from "../lib/formatter";
+import { Lexer, LexerResult, lexerSuccess } from "../lib/lexer";
 import { testConfig } from "./testConfig";
 
 const config = testConfig();

@@ -1,6 +1,6 @@
-import { Environment } from "./environment";
-import { helpTextForTest } from "./help";
-import { Interpreter } from "./interpreter";
+import { Environment } from "../lib/environment";
+import { helpTextForTest } from "../lib/help";
+import { Interpreter } from "../lib/interpreter";
 import { testConfig } from "./testConfig";
 
 const inputsOutputs = helpTextForTest()

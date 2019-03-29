@@ -1,8 +1,8 @@
 import { BigNumber } from "bignumber.js";
-import { Token } from "./lexer";
-import { List } from "./list";
-import { Operator } from "./operator";
-import { Parser, parserError, ParserResult } from "./parser";
+import { Token } from "../lib/lexer";
+import { List } from "../lib/list";
+import { Operator } from "../lib/operator";
+import { Parser, parserError, ParserResult } from "../lib/parser";
 import { testConfig } from "./testConfig";
 
 const config = testConfig();
