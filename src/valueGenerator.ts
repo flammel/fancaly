@@ -17,9 +17,9 @@ function readVariable(varName: string, env: Environment): Value {
 }
 
 export class VariableReader implements ValueGenerator {
-  public name = "readVariable";
+  public readonly name = "readVariable";
 
-  constructor(private varName: string) {}
+  constructor(private readonly varName: string) {}
 
   public operation(env: Environment): Value {
     return readVariable(this.varName, env);

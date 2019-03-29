@@ -5,7 +5,7 @@ import { Unit } from "./unit";
 import { Aggregator } from "./valueGenerator";
 
 export class Operators {
-  private operators: { [k: string]: Operator } = {};
+  private readonly operators: { [k: string]: Operator } = {};
 
   public addOperator(operator: Operator) {
     this.operators[operator.operator] = operator;
@@ -21,7 +21,7 @@ export class Operators {
 }
 
 export class Functions {
-  private functions: { [k: string]: Func } = {};
+  private readonly functions: { [k: string]: Func } = {};
 
   public addFunction(func: Func) {
     this.functions[func.name] = func;
@@ -37,7 +37,7 @@ export class Functions {
 }
 
 export class ValueGenerators {
-  private valueGenerators: { [k: string]: Aggregator } = {};
+  private readonly valueGenerators: { [k: string]: Aggregator } = {};
 
   public addAggregator(aggregator: Aggregator) {
     this.valueGenerators[aggregator.name] = aggregator;
@@ -53,8 +53,8 @@ export class ValueGenerators {
 }
 
 export class Units {
-  private unitTable: { [key: string]: Unit } = {};
-  private groups: { [key: string]: Unit[] } = {};
+  private readonly unitTable: { [key: string]: Unit } = {};
+  private readonly groups: { [key: string]: Unit[] } = {};
 
   public addUnit(unit: Unit) {
     this.unitTable[unit.defaultName.singular.toLowerCase()] = unit;
@@ -91,11 +91,11 @@ export class Units {
 }
 
 export class Config {
-  private operators: Operators;
-  private functions: Functions;
-  private units: Units;
-  private valueGenerators: ValueGenerators;
-  private formatter: Formatter;
+  private readonly operators: Operators;
+  private readonly functions: Functions;
+  private readonly units: Units;
+  private readonly valueGenerators: ValueGenerators;
+  private readonly formatter: Formatter;
 
   constructor(formatter: Formatter) {
     this.formatter = formatter;

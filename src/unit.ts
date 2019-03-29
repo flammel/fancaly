@@ -17,11 +17,11 @@ export class Unit {
   ) {}
 
   public formatSingular(str: string): string {
-    return (str + " " + this.defaultName.singular).trim();
+    return `${str} ${this.defaultName.singular}`.trim();
   }
 
   public formatPlural(str: string): string {
-    return (str + " " + this.defaultName.plural).trim();
+    return `${str} ${this.defaultName.plural}`.trim();
   }
 }
 

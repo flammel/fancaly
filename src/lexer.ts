@@ -65,7 +65,7 @@ export class Lexer {
    * console.timeEnd('Function #1')
    *
    */
-  private scanners: Scanner[];
+  private readonly scanners: Scanner[];
 
   constructor(
     operatorNames: string[],

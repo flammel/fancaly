@@ -57,11 +57,11 @@ export function parserError(description: string, rpnItems: RPNItem[]): ParserRes
 }
 
 export class Parser {
-  private operators: Operators;
-  private functions: Functions;
-  private units: Units;
-  private valueGenerators: ValueGenerators;
-  private formatter: Formatter;
+  private readonly operators: Operators;
+  private readonly functions: Functions;
+  private readonly units: Units;
+  private readonly valueGenerators: ValueGenerators;
+  private readonly formatter: Formatter;
 
   constructor(
     operators: Operators,
@@ -173,7 +173,7 @@ export class Parser {
     const operator = operators.getOperator(operatorSymbol);
 
     if (operator === undefined) {
-      return "Unknown operator " + operatorSymbol;
+      return `Unknown operator "${operatorSymbol}".`;
     }
 
     state.nextMinus = "-u";
@@ -275,7 +275,7 @@ export class Parser {
     state.nextMinus = "-";
     const unit = units.getUnit(value);
     if (unit === undefined) {
-      return 'Unknown unit "' + value + '".';
+      return `Unknown unit "${value}".`;
     }
     state.queue.push({
       type: "unit",
@@ -300,7 +300,7 @@ export class Parser {
     state.nextMinus = "-";
     const aggregator = valueGenerators.getAggregator(value);
     if (aggregator === undefined) {
-      return 'Unknown aggregator "' + value + '".';
+      return `Unknown aggregator "${value}".`;
     }
     state.queue.push({
       type: "valueGenerator",

@@ -1,6 +1,6 @@
 export class Stack<T> {
-  private arr: T[];
-  private fallback: T;
+  private readonly arr: T[];
+  private readonly fallback: T;
 
   constructor(fallback: T) {
     this.arr = [];

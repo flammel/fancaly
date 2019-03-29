@@ -2,14 +2,14 @@ import { BigNumber } from "bignumber.js";
 import { isDateTime, isNumeric, Value } from "./value";
 
 export class Formatter {
-  private decimalSeparator: string;
+  private readonly decimalSeparator: string;
 
   constructor(decimalSeparator: string) {
     this.decimalSeparator = decimalSeparator;
   }
 
   public getNumberRegExp(): RegExp {
-    return new RegExp("^([0-9]+(?:" + escapeRegExp(this.decimalSeparator) + "[0-9]+)?)\\s*(.*)$");
+    return new RegExp(`^([0-9]+(?:${escapeRegExp(this.decimalSeparator)}[0-9]+)?)\\s*(.*)$`);
   }
 
   public getDateRegExp(): RegExp {

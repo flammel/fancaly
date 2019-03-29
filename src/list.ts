@@ -1,7 +1,7 @@
 type ListItem<T> = { type: "done" } | { type: "notDone"; value: T };
 
 export class List<T> {
-  private arr: T[];
+  private readonly arr: T[];
   private idx: number = -1;
 
   constructor(arr: T[]) {

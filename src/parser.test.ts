@@ -86,7 +86,7 @@ runTest(
     { type: "operator", value: "!" },
     { type: "number", value: "2" },
   ],
-  parserError("Unknown operator !", [{ type: "number", value: new BigNumber("1") }]),
+  parserError('Unknown operator "!".', [{ type: "number", value: new BigNumber("1") }]),
 );
 
 runTest(

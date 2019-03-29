@@ -12,11 +12,11 @@ function dp(num: BigNumber): number {
 }
 
 export class Interpreter {
-  private lexer: Lexer;
-  private parser: Parser;
-  private evaluator: Evaluator;
-  private formatter: Formatter;
-  private units: Units;
+  private readonly lexer: Lexer;
+  private readonly parser: Parser;
+  private readonly evaluator: Evaluator;
+  private readonly formatter: Formatter;
+  private readonly units: Units;
 
   constructor(config: Config) {
     this.lexer = new Lexer(
