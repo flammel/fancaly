@@ -13,9 +13,9 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": "/fancaly/",
+  "start_url": "/",
   "background_color": "#008f95",
   "display": "standalone",
-  "scope": "/fancaly/",
+  "scope": "/",
   "theme_color": "#008f95"
 }
