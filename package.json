@@ -12,7 +12,7 @@
     "lintfix": "tslint --project tsconfig.json --fix -c tslint.json 'src/*.ts' 'app/*.ts' 'tests/*.ts'",
     "build": "parcel build app/index.html --public-url ./",
     "typecheck": "tsc --noEmit -p ./tsconfig.json",
-    "check": "npm run prettier; npm run lintfix; npm run lint; npm run typecheck"
+    "check": "npm run prettier; npm run lint; npm run typecheck"
   },
   "author": "",
   "license": "MIT",
