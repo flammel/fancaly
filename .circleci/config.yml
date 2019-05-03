@@ -1,9 +1,12 @@
-version: 2
-jobs:
-  build:
+version: 2.1
+executors:
+  fancaly-executor:
     docker:
       - image: circleci/node:8
-    working_directory: ~/repo
+    working_directory: ~/fancaly
+jobs:
+  build:
+    executor: fancaly-executor
     steps:
       - checkout
       - restore_cache:
@@ -15,4 +18,39 @@ jobs:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
+      - run: npm run check
       - run: npm run coverage
+      - run: npm run build
+      - persist_to_workspace:
+          root: ~/fancaly
+          paths:
+            - dist
+  deploy:
+    executor: fancaly-executor
+    steps:
+      - attach_workspace:
+          at: ~/fancaly
+      - add_ssh_keys:
+          fingerprints:
+            - "d4:ed:19:7d:e6:bc:77:68:9f:d4:69:99:7f:54:5b:d2"
+      - run:
+          name: Deploy via SFTP
+          command: |
+            echo "${deployment_known_hosts}" >> ~/.ssh/known_hosts
+            scp ~/fancaly/dist/* ${deployment_username}@${deployment_hostname}:${deployment_path}
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - build:
+        filters:
+          tags:
+            only: /.*/
+      - deploy:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /^\d+\.\d+\.\d+$/
+            branches:
+              only: master
