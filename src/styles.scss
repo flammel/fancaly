@@ -1,3 +1,50 @@
+html,
 body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+body {
+    padding: 1rem;
+}
+
+*,
+*:before,
+*:after {
+    box-sizing: border-box;
+}
+
+#container {
+    margin: 0 auto;
+    display: flex;
+    border: 1px solid #000;
+    max-width: 800px;
+    height: 100%;
+}
+
+#input,
+#output {
+    font-size: 1rem;
     font-family: monospace;
+    line-height: 1.2;
+    padding: 0.5rem;
+    border: none;
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: scroll;
+    &:focus {
+        outline: none;
+    }
+}
+
+#input {
+    resize: horizontal;
+    width: 80%;
+}
+
+#output {
+    resize: none;
+    border-left: 1px solid #aaa;
+    flex-grow: 1;
 }

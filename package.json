@@ -8,9 +8,11 @@
         "build": "parcel build",
         "lint": "eslint --ext .ts src && npm run format:check",
         "check": "tsc --noEmit",
+        "check:watch": "tsc --noEmit --watch",
         "test": "jest",
-        "format:check": "prettier --check src/**/* .eslintrc.js .prettierrc.js jsconfig.json package.json tsconfig.json",
-        "format": "prettier --write src/**/* .eslintrc.js .prettierrc.js jsconfig.json package.json tsconfig.json",
+        "test:watch": "jest --watch",
+        "format": "prettier --write src/**/* .eslintrc.js .prettierrc.js jest.config.js jsconfig.json package.json tsconfig.json",
+        "format:check": "prettier --check src/**/* .eslintrc.js .prettierrc.js jest.config.js jsconfig.json package.json tsconfig.json",
         "ci": "npm run build && npm run test && npm run lint && npm run check"
     },
     "repository": {
@@ -27,6 +29,7 @@
         "@parcel/transformer-sass": "^2.7.0",
         "@typescript-eslint/eslint-plugin": "^5.39.0",
         "@typescript-eslint/parser": "^5.39.0",
+        "buffer": "^6.0.3",
         "eslint": "^8.25.0",
         "eslint-config-prettier": "^8.5.0",
         "eslint-plugin-prettier": "^4.2.1",
@@ -35,5 +38,11 @@
         "prettier": "^2.7.1",
         "ts-jest": "^29.0.3",
         "typescript": "^4.8.4"
+    },
+    "dependencies": {
+        "@badrap/result": "^0.2.12",
+        "@types/bignumber.js": "^5.0.0",
+        "bignumber.js": "^9.1.0",
+        "js-base64": "^3.7.2"
     }
 }
