@@ -1,8 +1,9 @@
+import { Result } from '@badrap/result';
 import BigNumber from 'bignumber.js';
-import { AST } from './AST';
 import { Environment } from './Environment';
-import { Token, Tokens, TokenType } from './Token';
-import { value } from './Value';
+import { Token, Tokens, TokenType } from './lex';
+import { AST } from './parse';
+import { Value } from './Value';
 
 function token(type: TokenType, value: string): Token {
     return { type, value };
@@ -37,7 +38,7 @@ type TestDataItem = {
     tokens: Tokens;
     ast: AST;
     result: string;
-    variables?: Environment['variables'];
+    outputEnvironment?: Environment;
 };
 export const testData: TestDataItem[] = [
     {
@@ -118,17 +119,16 @@ export const testData: TestDataItem[] = [
             expression: binOp('+', binOp('+', 2, 3), 4),
         },
         result: '9',
-        variables: new Map([['x', value(9)]]),
+        outputEnvironment: new Environment(new Map([['x', new Value(9)]])),
     },
     {
         input: 'x = y + z',
-        inputEnvironment: {
-            variables: new Map([
-                ['y', value(2)],
-                ['z', value(3)],
+        inputEnvironment: new Environment(
+            new Map([
+                ['y', new Value(2)],
+                ['z', new Value(3)],
             ]),
-            lines: [],
-        },
+        ),
         tokens: [
             token('identifier', 'x'),
             token('assignment', '='),
@@ -142,14 +142,22 @@ export const testData: TestDataItem[] = [
             expression: binOp('+', 'y', 'z'),
         },
         result: '5',
-        variables: new Map([['x', value(5)]]),
+        outputEnvironment: new Environment(
+            new Map([
+                ['y', new Value(2)],
+                ['z', new Value(3)],
+                ['x', new Value(5)],
+            ]),
+        ),
     },
     {
         input: 'sum',
-        inputEnvironment: {
-            variables: new Map([]),
-            lines: [value(1), undefined, value(2), value(3)],
-        },
+        inputEnvironment: new Environment(new Map(), [
+            Result.ok(new Value(1)),
+            Result.err(new Error()),
+            Result.ok(new Value(2)),
+            Result.ok(new Value(3)),
+        ]),
         tokens: [token('identifier', 'sum')],
         ast: {
             type: 'variable',

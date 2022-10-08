@@ -1,18 +1,104 @@
+import { Result } from '@badrap/result';
 import BigNumber from 'bignumber.js';
 
-export type Value = {
-    bignum: BigNumber;
-    unit?: string;
+export type Unit = {
+    name: string;
+    group: 'weight' | 'length' | 'volume';
+    multiplier: number;
 };
 
-export function value(bignum: BigNumber.Value, unit?: string): Value {
-    return { bignum: new BigNumber(bignum), unit };
-}
+export class Value {
+    public readonly bignum: BigNumber;
 
-export function formatValue(value: Value): string {
-    return value.bignum.toString() + (value.unit ? ` ${value.unit}` : '');
-}
+    public constructor(bignum: BigNumber.Value, public readonly unit?: Unit) {
+        this.bignum = new BigNumber(bignum);
+    }
 
-export function negateValue(toNegate: Value): Value {
-    return value(toNegate.bignum.negated(), toNegate.unit);
+    public toString(): string {
+        return this.bignum.toString() + (this.unit ? ` ${this.unit.name}` : '');
+    }
+
+    public plus(other: Value): Result<Value, Error> {
+        if (this.unit === undefined || other.unit === undefined) {
+            return Result.ok(new Value(this.bignum.plus(other.bignum), this.unit ?? other.unit));
+        }
+
+        if (this.unit.group !== other.unit.group) {
+            return Result.err(new Error('Cannot addd ' + other.unit.name + ' to ' + this.unit.name));
+        }
+
+        return Result.ok(
+            new Value(
+                this.bignum
+                    .times(this.unit.multiplier)
+                    .plus(other.bignum.times(other.unit.multiplier))
+                    .dividedBy(this.unit.multiplier),
+                this.unit,
+            ),
+        );
+    }
+
+    public minus(other: Value): Result<Value, Error> {
+        if (this.unit === undefined || other.unit === undefined) {
+            return Result.ok(new Value(this.bignum.minus(other.bignum), this.unit ?? other.unit));
+        }
+
+        if (this.unit.group !== other.unit.group) {
+            return Result.err(new Error('Cannot subtract ' + other.unit.name + ' from ' + this.unit.name));
+        }
+
+        return Result.ok(
+            new Value(
+                this.bignum
+                    .times(this.unit.multiplier)
+                    .minus(other.bignum.times(other.unit.multiplier))
+                    .dividedBy(this.unit.multiplier),
+                this.unit,
+            ),
+        );
+    }
+
+    public times(other: Value): Result<Value, Error> {
+        if (this.unit !== undefined || other.unit !== undefined) {
+            return Result.err(new Error('Cannot multiply values with units'));
+        }
+        return Result.ok(new Value(this.bignum.times(other.bignum), this.unit));
+    }
+
+    public dividedBy(other: Value): Result<Value, Error> {
+        if (this.unit !== undefined || other.unit !== undefined) {
+            return Result.err(new Error('Cannot divide values with units'));
+        }
+        return Result.ok(new Value(this.bignum.dividedBy(other.bignum), this.unit));
+    }
+
+    public pow(other: Value): Result<Value, Error> {
+        if (this.unit !== undefined || other.unit !== undefined) {
+            return Result.err(new Error('Cannot pow values with units'));
+        }
+        return Result.ok(new Value(this.bignum.pow(other.bignum), this.unit));
+    }
+
+    public negated(): Result<Value, Error> {
+        if (this.unit !== undefined) {
+            return Result.err(new Error('Cannot negate value with unit'));
+        }
+        return Result.ok(new Value(this.bignum.negated(), this.unit));
+    }
+
+    public static sum(values: Value[]): Result<Value, Error> {
+        let result = undefined;
+        for (const value of values) {
+            if (result === undefined) {
+                result = Result.ok(value);
+            } else {
+                result = result.chain((prev) => prev.plus(value));
+            }
+        }
+        return result === undefined ? Result.err(new Error('No values')) : result;
+    }
+
+    public static average(values: Value[]): Result<Value, Error> {
+        return Value.sum(values).chain((value) => value.dividedBy(new Value(values.length)));
+    }
 }

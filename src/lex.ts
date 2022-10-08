@@ -1,5 +1,8 @@
 import { Result } from '@badrap/result';
-import { Token, Tokens, TokenType } from './Token';
+
+export type TokenType = 'literal' | 'operator' | 'assignment' | 'lparen' | 'rparen' | 'identifier';
+export type Token = { type: TokenType; value: string };
+export type Tokens = Token[];
 
 type Scanner = (input: string) => [Token, string] | null;
 

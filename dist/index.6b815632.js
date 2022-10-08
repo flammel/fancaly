@@ -560,25 +560,17 @@ var _parse = require("./parse");
 var _evaluate = require("./evaluate");
 var _context = require("./Context");
 var _environment = require("./Environment");
-var _value = require("./Value");
 function execute(input) {
     const lines = input.split("\n");
-    const environment = (0, _environment.emptyEnvironment)();
-    const output = [];
+    const environment = new (0, _environment.Environment);
     for (const line of lines){
         const result = (0, _lex.lex)(line).chain((0, _parse.parse)).chain((ast)=>(0, _evaluate.evaluate)((0, _context.defaultContext), environment, ast));
-        if (result.isOk) {
-            environment.lines.push(result.value);
-            output.push((0, _value.formatValue)(result.value));
-        } else {
-            environment.lines.push(undefined);
-            output.push(result.error.message);
-        }
+        environment.addResult(result);
     }
-    return output.join("\n");
+    return environment.getOutput().join("\n");
 }
 
-},{"./lex":"16xgm","./parse":"dddDq","./evaluate":"80V3z","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./Context":"iMQ69","./Environment":"6bSA7","./Value":"911Zn"}],"16xgm":[function(require,module,exports) {
+},{"./lex":"16xgm","./parse":"dddDq","./evaluate":"80V3z","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./Context":"iMQ69","./Environment":"6bSA7"}],"16xgm":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "lex", ()=>lex);
@@ -955,7 +947,6 @@ var _bignumberJs = require("bignumber.js");
 var _bignumberJsDefault = parcelHelpers.interopDefault(_bignumberJs);
 var _assertNever = require("./assertNever");
 var _value = require("./Value");
-var _notEmpty = require("./notEmpty");
 function evaluate(context, environment, ast) {
     switch(ast.type){
         case "number":
@@ -991,24 +982,22 @@ function evaluateNegation(context, environment, ast) {
 function evaluateAssignment(context, environment, ast) {
     const value = evaluate(context, environment, ast.expression);
     if (value.isErr) return value;
-    environment.variables.set(ast.variableName, value.value);
+    environment.setVariable(ast.variableName, value.value);
     return (0, _result.Result).ok(value.value);
 }
 function evaluateVariable(context, environment, ast) {
     const aggregator = context.aggregators.get(ast.name);
     if (aggregator !== undefined) {
-        const lastUndefinedIndex = environment.lines.lastIndexOf(undefined);
-        const lines = lastUndefinedIndex === -1 ? environment.lines : environment.lines.slice(lastUndefinedIndex + 1);
-        const filteredLines = lines.filter((0, _notEmpty.notEmpty));
-        if (filteredLines.length === 0) return (0, _result.Result).err(new Error("No lines"));
-        return (0, _result.Result).ok(aggregator.operation(filteredLines));
+        const values = environment.getAggregatorValues();
+        if (values.length === 0) return (0, _result.Result).err(new Error("No values"));
+        return (0, _result.Result).ok(aggregator.operation(values));
     }
-    const value = environment.variables.get(ast.name);
+    const value = environment.getVariable(ast.name);
     if (value === undefined) return (0, _result.Result).err(new Error("Undefined variable " + ast.name));
     return (0, _result.Result).ok(value);
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","@badrap/result":"jmsn1","bignumber.js":"57qkX","./assertNever":"hMdRz","./notEmpty":"22V27","./Value":"911Zn"}],"57qkX":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","@badrap/result":"jmsn1","bignumber.js":"57qkX","./assertNever":"hMdRz","./Value":"911Zn"}],"57qkX":[function(require,module,exports) {
 (function(globalObject) {
     "use strict";
     /*
@@ -3084,36 +3073,24 @@ function evaluateVariable(context, environment, ast) {
     }
 })(this);
 
-},{}],"22V27":[function(require,module,exports) {
+},{}],"911Zn":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "notEmpty", ()=>notEmpty);
-function notEmpty(value) {
-    return value !== null && value !== undefined;
+parcelHelpers.export(exports, "Value", ()=>Value);
+class Value {
+    constructor(bignum, unit){
+        this.bignum = bignum;
+        this.unit = unit;
+    }
+    toString() {
+        return this.bignum.toString() + (this.unit ? ` ${this.unit}` : "");
+    }
+    negate() {
+        return new Value(this.bignum.negated(), this.unit);
+    }
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"911Zn":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "value", ()=>value);
-parcelHelpers.export(exports, "formatValue", ()=>formatValue);
-parcelHelpers.export(exports, "negateValue", ()=>negateValue);
-var _bignumberJs = require("bignumber.js");
-var _bignumberJsDefault = parcelHelpers.interopDefault(_bignumberJs);
-function value(bignum, unit) {
-    return {
-        bignum: new (0, _bignumberJsDefault.default)(bignum),
-        unit
-    };
-}
-function formatValue(value) {
-    return value.bignum.toString() + (value.unit ? ` ${value.unit}` : "");
-}
-function negateValue(toNegate) {
-    return value(toNegate.bignum.negated(), toNegate.unit);
-}
-
-},{"bignumber.js":"57qkX","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"iMQ69":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"iMQ69":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "defaultContext", ()=>defaultContext);
@@ -3233,15 +3210,31 @@ function withSameUnit(lhs, rhs, operation) {
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","bignumber.js":"57qkX","./Value":"911Zn","@badrap/result":"jmsn1"}],"6bSA7":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "emptyEnvironment", ()=>emptyEnvironment);
-function emptyEnvironment() {
-    return {
-        variables: new Map(),
-        lines: []
-    };
+parcelHelpers.export(exports, "Environment", ()=>Environment);
+var _value = require("./Value");
+class Environment {
+    variables = new Map();
+    results = [];
+    setVariable(name, value) {
+        this.variables.set(name, value);
+    }
+    getVariable(name) {
+        return this.variables.get(name);
+    }
+    addResult(result) {
+        this.results.push(result);
+    }
+    getOutput() {
+        return this.results.map((result)=>result.isOk ? (0, _value.formatValue)(result.value) : result.error.message);
+    }
+    getAggregatorValues() {
+        const lastUndefinedIndex = environment.lines.lastIndexOf(undefined);
+        const lines = lastUndefinedIndex === -1 ? environment.lines : environment.lines.slice(lastUndefinedIndex + 1);
+        const filteredLines = lines.filter(notEmpty);
+    }
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9GjXb":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./Value":"911Zn"}],"9GjXb":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 // makecjs:CUT //
