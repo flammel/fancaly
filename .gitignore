@@ -1,6 +1,2 @@
 node_modules
-dist
-.cache
-coverage
-.notes.md
-cron.php
+.parcel-cache

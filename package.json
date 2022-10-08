@@ -1,52 +1,39 @@
 {
-  "name": "fancaly",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "start": "parcel app/index.html",
-    "prettier": "prettier --write .babelrc *.json lib/*.ts app/*.ts app/*.scss tests/*.ts app/manifest.webmanifest",
-    "test": "TZ=UTC jest",
-    "coverage": "jest --coverage",
-    "lint": "tslint --project tsconfig.json -c tslint.json 'lib/*.ts' 'app/*.ts' 'tests/*.ts'",
-    "lintfix": "tslint --project tsconfig.json --fix -c tslint.json 'src/*.ts' 'app/*.ts' 'tests/*.ts'",
-    "build": "parcel build app/index.html --public-url ./",
-    "typecheck": "tsc --noEmit -p ./tsconfig.json",
-    "check": "npm run prettier; npm run lint; npm run typecheck"
-  },
-  "author": "",
-  "license": "MIT",
-  "devDependencies": {
-    "@types/jest": "^22.2.3",
-    "babel-core": "^6.26.3",
-    "babel-preset-env": "^1.7.0",
-    "codecov": "^3.2.0",
-    "jest": "^24.5.0",
-    "jest-date-mock": "^1.0.7",
-    "node-sass": "^4.11.0",
-    "parcel-bundler": "^1.12.3",
-    "prettier": "^1.16.4",
-    "ts-jest": "^24.0.0",
-    "tslint": "^5.14.0",
-    "tslint-sonarts": "^1.9",
-    "typescript": "^3.3"
-  },
-  "jest": {
-    "transform": {
-      "^.+\\.tsx?$": "ts-jest"
+    "name": "fancaly",
+    "version": "2.0.0",
+    "description": "A fancy calculator",
+    "source": "src/index.html",
+    "scripts": {
+        "start": "parcel",
+        "build": "parcel build",
+        "lint": "eslint --ext .ts src && npm run format:check",
+        "check": "tsc --noEmit",
+        "test": "jest",
+        "format:check": "prettier --check src/**/* .eslintrc.js .prettierrc.js jsconfig.json package.json tsconfig.json",
+        "format": "prettier --write src/**/* .eslintrc.js .prettierrc.js jsconfig.json package.json tsconfig.json",
+        "ci": "npm run build && npm run test && npm run lint && npm run check"
     },
-    "testURL": "http://localhost/",
-    "testRegex": "(/tests/.*\\.test\\.ts)$",
-    "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js",
-      "jsx",
-      "json",
-      "node"
-    ]
-  },
-  "dependencies": {
-    "bignumber.js": "^6.0.0"
-  }
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/flammel/fancaly.git"
+    },
+    "author": "Florian Lammel",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/flammel/fancaly/issues"
+    },
+    "homepage": "https://github.com/flammel/fancaly#readme",
+    "devDependencies": {
+        "@parcel/transformer-sass": "^2.7.0",
+        "@typescript-eslint/eslint-plugin": "^5.39.0",
+        "@typescript-eslint/parser": "^5.39.0",
+        "eslint": "^8.25.0",
+        "eslint-config-prettier": "^8.5.0",
+        "eslint-plugin-prettier": "^4.2.1",
+        "jest": "^29.1.2",
+        "parcel": "^2.7.0",
+        "prettier": "^2.7.1",
+        "ts-jest": "^29.0.3",
+        "typescript": "^4.8.4"
+    }
 }
