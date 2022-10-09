@@ -2446,46 +2446,101 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "lex", ()=>lex);
 var _result = require("@badrap/result");
-const scanners = [
-    regexScanner(/^([0-9]+(?:[,.][0-9]+)?)\s*(.*)$/, "literal"),
-    regexScanner(/^([+\-^*/])\s*(.*)$/, "operator"),
-    regexScanner(/^([(])\s*(.*)$/, "lparen"),
-    regexScanner(/^([)])\s*(.*)$/, "rparen"),
-    regexScanner(/^([:=])\s*(.*)$/, "assignment"),
-    regexScanner(/^([a-zA-Z\u00C0-\u024F_][a-zA-Z0-9\u00C0-\u024F_]*)\s*(.*)$/, "identifier"), 
-];
 function lex(line) {
     const tokens = [];
-    line = line.trim();
-    while(line.length > 0){
-        const result = tryScanners(scanners, line);
-        if (result === null) return (0, _result.Result).err(new Error("Cannot lex " + line));
-        else {
-            tokens.push(result[0]);
-            line = result[1];
+    const scanNumber = (startIndex)=>{
+        let endIndex = startIndex + 1;
+        let char;
+        while(char = line.at(endIndex)){
+            if ("0123456789,._".includes(char)) endIndex++;
+            else break;
+        }
+        tokens.push({
+            type: "literal",
+            value: line.slice(startIndex, endIndex)
+        });
+        return endIndex - 1;
+    };
+    const scanWord = (startIndex)=>{
+        let endIndex = startIndex + 1;
+        let char;
+        while(char = line.at(endIndex)){
+            if (/[_a-zA-Z0-9$€\u00C0-\u024F]/.test(char)) endIndex++;
+            else break;
+        }
+        tokens.push({
+            type: "identifier",
+            value: line.slice(startIndex, endIndex)
+        });
+        return endIndex - 1;
+    };
+    for(let index = 0; index < line.length; index++){
+        const char = line.at(index);
+        switch(char){
+            case undefined:
+                break;
+            case "=":
+            case ":":
+                tokens.push({
+                    type: "assignment",
+                    value: char
+                });
+                break;
+            case "%":
+                tokens.push({
+                    type: "percent",
+                    value: char
+                });
+                break;
+            case "(":
+                tokens.push({
+                    type: "lparen",
+                    value: char
+                });
+                break;
+            case ")":
+                tokens.push({
+                    type: "rparen",
+                    value: char
+                });
+                break;
+            case "+":
+            case "-":
+            case "/":
+            case "^":
+                tokens.push({
+                    type: "operator",
+                    value: char
+                });
+                break;
+            case "*":
+                if (line.at(index + 1) === "*") {
+                    tokens.push({
+                        type: "operator",
+                        value: "**"
+                    });
+                    index++;
+                } else tokens.push({
+                    type: "operator",
+                    value: "*"
+                });
+                break;
+            case "0":
+            case "1":
+            case "2":
+            case "3":
+            case "4":
+            case "5":
+            case "6":
+            case "8":
+            case "9":
+                index = scanNumber(index);
+                break;
+            default:
+                index = /\s/.test(char) ? index : scanWord(index);
         }
     }
     return (0, _result.Result).ok(tokens);
-}
-function tryScanners(scanners, line) {
-    for (const scanner of scanners){
-        const result = scanner(line);
-        if (result !== null) return result;
-    }
-    return null;
-}
-function regexScanner(regex, type) {
-    return (input)=>{
-        const matched = input.match(regex);
-        if (matched !== null) return [
-            {
-                type,
-                value: matched[1]
-            },
-            matched[2]
-        ];
-        return null;
-    };
 }
 
 },{"@badrap/result":"jmsn1","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"jmsn1":[function(require,module,exports) {
@@ -2603,6 +2658,8 @@ function tryParsers(state, token) {
             return parseIdentifier(state, token.value);
         case "assignment":
             return parseAssignment(state);
+        case "percent":
+            return state;
         default:
             (0, _assertNever.assertNever)(token.type);
     }
@@ -2610,7 +2667,7 @@ function tryParsers(state, token) {
 function parseLiteral(state, literal) {
     let unit = undefined;
     const nextToken = state.tokens[state.index + 1];
-    if (nextToken?.type === "identifier") {
+    if (nextToken?.type === "identifier" || nextToken?.type === "percent") {
         unit = nextToken.value;
         state.index++;
     }
@@ -2628,14 +2685,16 @@ function parseOperator(state, operatorSymbol) {
         "-": 100,
         "*": 200,
         "/": 200,
-        "^": 300
+        "^": 300,
+        "**": 300
     }[operatorSymbol];
     const associativity = {
         "+": "left",
         "-": "left",
         "*": "left",
         "/": "left",
-        "^": "right"
+        "^": "right",
+        "**": "right"
     }[operatorSymbol];
     if (precedence === undefined || associativity === undefined) {
         state.error = "Missing precedence/associativity for " + operatorSymbol;
@@ -2789,15 +2848,13 @@ var _value = require("./Value");
 function evaluate(context, environment, ast) {
     switch(ast.type){
         case "number":
-            return ast.unit === undefined ? (0, _result.Result).ok(new (0, _value.Value)(ast.value.replace(",", "."))) : context.getUnit(ast.unit).map((unit)=>new (0, _value.Value)(ast.value.replace(",", "."), unit));
+            return ast.unit === undefined ? (0, _value.Value).fromString(ast.value) : context.getUnit(ast.unit).chain((unit)=>(0, _value.Value).fromString(ast.value, unit));
         case "operator":
-            return context.getOperator(ast.operator).chain((operator)=>{
-                const lhs = evaluate(context, environment, ast.lhs);
-                if (lhs.isErr) return lhs;
-                const rhs = evaluate(context, environment, ast.rhs);
-                if (rhs.isErr) return rhs;
-                return operator.operation(lhs.value, rhs.value);
-            });
+            return (0, _result.Result).all([
+                context.getOperator(ast.operator),
+                evaluate(context, environment, ast.lhs),
+                evaluate(context, environment, ast.rhs), 
+            ]).chain(([operator, lhs, rhs])=>operator.operation(lhs, rhs));
         case "negation":
             return evaluate(context, environment, ast.operand).chain((value)=>value.negated());
         case "assignment":
@@ -2807,6 +2864,11 @@ function evaluate(context, environment, ast) {
             });
         case "variable":
             return context.getAggregator(ast.name).chain((aggregator)=>aggregator.operation(environment.getAggregatorValues()), ()=>environment.getVariable(ast.name));
+        case "conversion":
+            return (0, _result.Result).all([
+                context.getUnit(ast.unit),
+                evaluate(context, environment, ast.expression)
+            ]).chain(([unit, value])=>value.convertTo(unit));
         case "empty":
             return (0, _result.Result).err(new Error(""));
         default:
@@ -2830,16 +2892,19 @@ class Value {
         return this.bignum.toString() + (this.unit ? ` ${this.unit.name}` : "");
     }
     plus(other) {
+        if (this.unit?.group !== "percent" && other.unit?.group === "percent") return (0, _result.Result).ok(new Value(this.bignum.plus(this.bignum.dividedBy(100).times(other.bignum)), this.unit));
         if (this.unit === undefined || other.unit === undefined) return (0, _result.Result).ok(new Value(this.bignum.plus(other.bignum), this.unit ?? other.unit));
         if (this.unit.group !== other.unit.group) return (0, _result.Result).err(new Error("Cannot addd " + other.unit.name + " to " + this.unit.name));
         return (0, _result.Result).ok(new Value(this.bignum.times(this.unit.multiplier).plus(other.bignum.times(other.unit.multiplier)).dividedBy(this.unit.multiplier), this.unit));
     }
     minus(other) {
+        if (this.unit?.group !== "percent" && other.unit?.group === "percent") return (0, _result.Result).ok(new Value(this.bignum.minus(this.bignum.dividedBy(100).times(other.bignum)), this.unit));
         if (this.unit === undefined || other.unit === undefined) return (0, _result.Result).ok(new Value(this.bignum.minus(other.bignum), this.unit ?? other.unit));
         if (this.unit.group !== other.unit.group) return (0, _result.Result).err(new Error("Cannot subtract " + other.unit.name + " from " + this.unit.name));
         return (0, _result.Result).ok(new Value(this.bignum.times(this.unit.multiplier).minus(other.bignum.times(other.unit.multiplier)).dividedBy(this.unit.multiplier), this.unit));
     }
     times(other) {
+        if (this.unit?.group !== "percent" && other.unit?.group === "percent") return (0, _result.Result).ok(new Value(this.bignum.dividedBy(100).times(other.bignum), this.unit));
         if (this.unit !== undefined || other.unit !== undefined) return (0, _result.Result).err(new Error("Cannot multiply values with units"));
         return (0, _result.Result).ok(new Value(this.bignum.times(other.bignum), this.unit));
     }
@@ -2855,6 +2920,11 @@ class Value {
         if (this.unit !== undefined) return (0, _result.Result).err(new Error("Cannot negate value with unit"));
         return (0, _result.Result).ok(new Value(this.bignum.negated(), this.unit));
     }
+    convertTo(unit) {
+        if (this.unit === undefined) return (0, _result.Result).ok(new Value(this.bignum, unit));
+        if (this.unit.group !== unit.group) return (0, _result.Result).err(new Error("Cannot convert " + this.unit.name + " to " + unit.name));
+        return (0, _result.Result).ok(new Value(this.bignum.times(this.unit.multiplier).dividedBy(unit.multiplier), unit));
+    }
     static sum(values) {
         let result = undefined;
         for (const value of values)if (result === undefined) result = (0, _result.Result).ok(value);
@@ -2863,6 +2933,9 @@ class Value {
     }
     static average(values) {
         return Value.sum(values).chain((value)=>value.dividedBy(new Value(values.length)));
+    }
+    static fromString(value, unit) {
+        return (0, _result.Result).ok(new Value(new (0, _bignumberJsDefault.default)(value.replace(",", ".").replace("_", "")), unit));
     }
 }
 
@@ -4972,32 +5045,38 @@ const defaultContext = new Context([
     {
         name: "mm",
         group: "length",
-        multiplier: 1
+        multiplier: 1,
+        exponent: 1
     },
     {
         name: "cm",
         group: "length",
-        multiplier: 10
+        multiplier: 10,
+        exponent: 1
     },
     {
         name: "m",
         group: "length",
-        multiplier: 1000
+        multiplier: 1000,
+        exponent: 1
     },
     {
         name: "km",
         group: "length",
-        multiplier: 1000000
+        multiplier: 1000000,
+        exponent: 1
     },
     {
         name: "in",
         group: "length",
-        multiplier: 25.4
+        multiplier: 25.4,
+        exponent: 1
     },
     {
         name: "ft",
         group: "length",
-        multiplier: 304.8
+        multiplier: 304.8,
+        exponent: 1
     },
     {
         name: "g",
@@ -5023,6 +5102,31 @@ const defaultContext = new Context([
         name: "oz",
         group: "weight",
         multiplier: 28.3495
+    },
+    {
+        name: "%",
+        group: "percent",
+        multiplier: 1
+    },
+    {
+        name: "$",
+        group: "currency",
+        multiplier: 1
+    },
+    {
+        name: "€",
+        group: "currency",
+        multiplier: 1
+    },
+    {
+        name: "EUR",
+        group: "currency",
+        multiplier: 1
+    },
+    {
+        name: "USD",
+        group: "currency",
+        multiplier: 1
     }, 
 ], [
     {
@@ -5043,6 +5147,10 @@ const defaultContext = new Context([
     },
     {
         name: "^",
+        operation: (a, b)=>a.pow(b)
+    },
+    {
+        name: "**",
         operation: (a, b)=>a.pow(b)
     }, 
 ], [
