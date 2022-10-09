@@ -13,7 +13,7 @@
         "test:watch": "jest --watch",
         "format": "prettier --write src/**/* .eslintrc.js .prettierrc.js jest.config.js jsconfig.json package.json tsconfig.json",
         "format:check": "prettier --check src/**/* .eslintrc.js .prettierrc.js jest.config.js jsconfig.json package.json tsconfig.json",
-        "ci": "npm run build && npm run test && npm run lint && npm run check"
+        "ci": "npm run lint && npm run check && npm run test && npm run build"
     },
     "repository": {
         "type": "git",

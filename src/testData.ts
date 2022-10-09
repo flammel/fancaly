@@ -1,6 +1,5 @@
 import { Result } from '@badrap/result';
 import BigNumber from 'bignumber.js';
-import { defaultContext } from './Context';
 import { Environment } from './Environment';
 import { Token, Tokens, TokenType } from './lex';
 import { AST } from './parse';
@@ -19,9 +18,9 @@ function binOp(operator: string, lhs: AST | number | string, rhs: AST | number |
     };
 }
 
-function convert(value: AST, unit: string): AST {
-    return { type: 'conversion', expression: value, unit };
-}
+// function convert(value: AST, unit: string): AST {
+//     return { type: 'conversion', expression: value, unit };
+// }
 
 function num(value: number, unit?: string): AST {
     return { type: 'number', value: new BigNumber(value).toString(), unit: unit };
@@ -110,12 +109,12 @@ export const testData: TestDataItem[] = [
         ast: binOp('*', 100, num(10, '%')),
         result: '10',
     },
-    {
-        input: '1 m to mm',
-        tokens: [token('literal', '1'), token('identifier', 'm'), token('identifier', 'to'), token('identifier', 'mm')],
-        ast: convert(num(1, 'm'), 'mm'),
-        result: '1000 mm',
-    },
+    // {
+    //     input: '1 m to mm',
+    //     tokens: [token('literal', '1'), token('identifier', 'm'), token('identifier', 'to'), token('identifier', 'mm')],
+    //     ast: convert(num(1, 'm'), 'mm'),
+    //     result: '1000 mm',
+    // },
     // {
     //     input: '2 * -3 * -(-4 + -5 - -6)',
     //     tokens: [
