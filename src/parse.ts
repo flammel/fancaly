@@ -8,6 +8,7 @@ export type ASTNode =
     | { type: 'assignment'; variableName: string; expression: ASTNode }
     | { type: 'number'; value: string; unit?: string }
     | { type: 'variable'; name: string }
+    | { type: 'conversion'; unit: string; expression: ASTNode }
     | { type: 'empty' };
 
 export type AST = ASTNode;
@@ -68,6 +69,8 @@ function tryParsers(state: ParserState, token: Token): ParserState {
             return parseIdentifier(state, token.value);
         case 'assignment':
             return parseAssignment(state);
+        case 'percent':
+            return state;
         default:
             assertNever(token.type);
     }
@@ -76,7 +79,7 @@ function tryParsers(state: ParserState, token: Token): ParserState {
 function parseLiteral(state: ParserState, literal: string): ParserState {
     let unit = undefined;
     const nextToken = state.tokens[state.index + 1];
-    if (nextToken?.type === 'identifier') {
+    if (nextToken?.type === 'identifier' || nextToken?.type === 'percent') {
         unit = nextToken.value;
         state.index++;
     }
@@ -92,6 +95,7 @@ function parseOperator(state: ParserState, operatorSymbol: string): ParserState 
         '*': 200,
         '/': 200,
         '^': 300,
+        '**': 300,
     }[operatorSymbol];
     const associativity = {
         '+': 'left',
@@ -99,6 +103,7 @@ function parseOperator(state: ParserState, operatorSymbol: string): ParserState 
         '*': 'left',
         '/': 'left',
         '^': 'right',
+        '**': 'right',
     }[operatorSymbol];
     if (precedence === undefined || associativity === undefined) {
         state.error = 'Missing precedence/associativity for ' + operatorSymbol;

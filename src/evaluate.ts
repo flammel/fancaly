@@ -9,20 +9,14 @@ export function evaluate(context: Context, environment: Environment, ast: AST): 
     switch (ast.type) {
         case 'number':
             return ast.unit === undefined
-                ? Result.ok(new Value(ast.value.replace(',', '.')))
-                : context.getUnit(ast.unit).map((unit) => new Value(ast.value.replace(',', '.'), unit));
+                ? Value.fromString(ast.value)
+                : context.getUnit(ast.unit).chain((unit) => Value.fromString(ast.value, unit));
         case 'operator':
-            return context.getOperator(ast.operator).chain((operator) => {
-                const lhs = evaluate(context, environment, ast.lhs);
-                if (lhs.isErr) {
-                    return lhs;
-                }
-                const rhs = evaluate(context, environment, ast.rhs);
-                if (rhs.isErr) {
-                    return rhs;
-                }
-                return operator.operation(lhs.value, rhs.value);
-            });
+            return Result.all([
+                context.getOperator(ast.operator),
+                evaluate(context, environment, ast.lhs),
+                evaluate(context, environment, ast.rhs),
+            ]).chain(([operator, lhs, rhs]) => operator.operation(lhs, rhs));
         case 'negation':
             return evaluate(context, environment, ast.operand).chain((value) => value.negated());
         case 'assignment':
@@ -34,6 +28,10 @@ export function evaluate(context: Context, environment: Environment, ast: AST): 
             return context.getAggregator(ast.name).chain(
                 (aggregator) => aggregator.operation(environment.getAggregatorValues()),
                 () => environment.getVariable(ast.name),
+            );
+        case 'conversion':
+            return Result.all([context.getUnit(ast.unit), evaluate(context, environment, ast.expression)]).chain(
+                ([unit, value]) => value.convertTo(unit),
             );
         case 'empty':
             return Result.err(new Error(''));

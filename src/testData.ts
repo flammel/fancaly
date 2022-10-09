@@ -1,5 +1,6 @@
 import { Result } from '@badrap/result';
 import BigNumber from 'bignumber.js';
+import { defaultContext } from './Context';
 import { Environment } from './Environment';
 import { Token, Tokens, TokenType } from './lex';
 import { AST } from './parse';
@@ -18,8 +19,12 @@ function binOp(operator: string, lhs: AST | number | string, rhs: AST | number |
     };
 }
 
-function num(value: number): AST {
-    return { type: 'number', value: new BigNumber(value).toString() };
+function convert(value: AST, unit: string): AST {
+    return { type: 'conversion', expression: value, unit };
+}
+
+function num(value: number, unit?: string): AST {
+    return { type: 'number', value: new BigNumber(value).toString(), unit: unit };
 }
 
 function toAst(value: AST | number | string): AST {
@@ -56,6 +61,18 @@ export const testData: TestDataItem[] = [
         result: '163',
     },
     {
+        input: '4**3**2',
+        tokens: [
+            token('literal', '4'),
+            token('operator', '**'),
+            token('literal', '3'),
+            token('operator', '**'),
+            token('literal', '2'),
+        ],
+        ast: binOp('**', 4, binOp('**', 3, 2)),
+        result: '262144',
+    },
+    {
         input: '(1 + 2) * 3',
         tokens: [
             token('lparen', '('),
@@ -68,6 +85,36 @@ export const testData: TestDataItem[] = [
         ],
         ast: binOp('*', binOp('+', 1, 2), 3),
         result: '9',
+    },
+    {
+        input: '100 + 10 %',
+        tokens: [token('literal', '100'), token('operator', '+'), token('literal', '10'), token('percent', '%')],
+        ast: binOp('+', 100, num(10, '%')),
+        result: '110',
+    },
+    {
+        input: '100 mm - 10 %',
+        tokens: [
+            token('literal', '100'),
+            token('identifier', 'mm'),
+            token('operator', '-'),
+            token('literal', '10'),
+            token('percent', '%'),
+        ],
+        ast: binOp('-', num(100, 'mm'), num(10, '%')),
+        result: '90 mm',
+    },
+    {
+        input: '100 * 10 %',
+        tokens: [token('literal', '100'), token('operator', '*'), token('literal', '10'), token('percent', '%')],
+        ast: binOp('*', 100, num(10, '%')),
+        result: '10',
+    },
+    {
+        input: '1 m to mm',
+        tokens: [token('literal', '1'), token('identifier', 'm'), token('identifier', 'to'), token('identifier', 'mm')],
+        ast: convert(num(1, 'm'), 'mm'),
+        result: '1000 mm',
     },
     // {
     //     input: '2 * -3 * -(-4 + -5 - -6)',

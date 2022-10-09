@@ -36,18 +36,25 @@ export class Context {
 
 export const defaultContext = new Context(
     [
-        { name: 'mm', group: 'length', multiplier: 1 },
-        { name: 'cm', group: 'length', multiplier: 10 },
-        { name: 'm', group: 'length', multiplier: 1000 },
-        { name: 'km', group: 'length', multiplier: 1000000 },
-        { name: 'in', group: 'length', multiplier: 25.4 },
-        { name: 'ft', group: 'length', multiplier: 304.8 },
+        { name: 'mm', group: 'length', multiplier: 1, exponent: 1 },
+        { name: 'cm', group: 'length', multiplier: 10, exponent: 1 },
+        { name: 'm', group: 'length', multiplier: 1000, exponent: 1 },
+        { name: 'km', group: 'length', multiplier: 1000000, exponent: 1 },
+        { name: 'in', group: 'length', multiplier: 25.4, exponent: 1 },
+        { name: 'ft', group: 'length', multiplier: 304.8, exponent: 1 },
 
         { name: 'g', group: 'weight', multiplier: 1 },
         { name: 'dkg', group: 'weight', multiplier: 10 },
         { name: 'kg', group: 'weight', multiplier: 1000 },
         { name: 't', group: 'weight', multiplier: 1000000 },
         { name: 'oz', group: 'weight', multiplier: 28.3495 },
+
+        { name: '%', group: 'percent', multiplier: 1 },
+
+        { name: '$', group: 'currency', multiplier: 1 },
+        { name: '€', group: 'currency', multiplier: 1 },
+        { name: 'EUR', group: 'currency', multiplier: 1 },
+        { name: 'USD', group: 'currency', multiplier: 1 },
     ],
     [
         { name: '+', operation: (a, b) => a.plus(b) },
@@ -55,6 +62,7 @@ export const defaultContext = new Context(
         { name: '*', operation: (a, b) => a.times(b) },
         { name: '/', operation: (a, b) => a.dividedBy(b) },
         { name: '^', operation: (a, b) => a.pow(b) },
+        { name: '**', operation: (a, b) => a.pow(b) },
     ],
     [
         { name: 'sum', operation: (xs) => Value.sum(xs) },

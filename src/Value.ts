@@ -3,8 +3,9 @@ import BigNumber from 'bignumber.js';
 
 export type Unit = {
     name: string;
-    group: 'weight' | 'length' | 'volume';
+    group: 'weight' | 'length' | 'percent' | 'currency';
     multiplier: number;
+    exponent?: number;
 };
 
 export class Value {
@@ -19,6 +20,10 @@ export class Value {
     }
 
     public plus(other: Value): Result<Value, Error> {
+        if (this.unit?.group !== 'percent' && other.unit?.group === 'percent') {
+            return Result.ok(new Value(this.bignum.plus(this.bignum.dividedBy(100).times(other.bignum)), this.unit));
+        }
+
         if (this.unit === undefined || other.unit === undefined) {
             return Result.ok(new Value(this.bignum.plus(other.bignum), this.unit ?? other.unit));
         }
@@ -39,6 +44,10 @@ export class Value {
     }
 
     public minus(other: Value): Result<Value, Error> {
+        if (this.unit?.group !== 'percent' && other.unit?.group === 'percent') {
+            return Result.ok(new Value(this.bignum.minus(this.bignum.dividedBy(100).times(other.bignum)), this.unit));
+        }
+
         if (this.unit === undefined || other.unit === undefined) {
             return Result.ok(new Value(this.bignum.minus(other.bignum), this.unit ?? other.unit));
         }
@@ -59,9 +68,14 @@ export class Value {
     }
 
     public times(other: Value): Result<Value, Error> {
+        if (this.unit?.group !== 'percent' && other.unit?.group === 'percent') {
+            return Result.ok(new Value(this.bignum.dividedBy(100).times(other.bignum), this.unit));
+        }
+
         if (this.unit !== undefined || other.unit !== undefined) {
             return Result.err(new Error('Cannot multiply values with units'));
         }
+
         return Result.ok(new Value(this.bignum.times(other.bignum), this.unit));
     }
 
@@ -86,6 +100,16 @@ export class Value {
         return Result.ok(new Value(this.bignum.negated(), this.unit));
     }
 
+    public convertTo(unit: Unit): Result<Value, Error> {
+        if (this.unit === undefined) {
+            return Result.ok(new Value(this.bignum, unit));
+        }
+        if (this.unit.group !== unit.group) {
+            return Result.err(new Error('Cannot convert ' + this.unit.name + ' to ' + unit.name));
+        }
+        return Result.ok(new Value(this.bignum.times(this.unit.multiplier).dividedBy(unit.multiplier), unit));
+    }
+
     public static sum(values: Value[]): Result<Value, Error> {
         let result = undefined;
         for (const value of values) {
@@ -100,5 +124,9 @@ export class Value {
 
     public static average(values: Value[]): Result<Value, Error> {
         return Value.sum(values).chain((value) => value.dividedBy(new Value(values.length)));
+    }
+
+    public static fromString(value: string, unit?: Unit): Result<Value, Error> {
+        return Result.ok(new Value(new BigNumber(value.replace(',', '.').replace('_', '')), unit));
     }
 }
