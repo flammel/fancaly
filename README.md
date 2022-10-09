@@ -1,0 +1,3 @@
+# Fancaly
+
+A fancy calculator.
