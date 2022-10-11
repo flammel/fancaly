@@ -4,83 +4,39 @@ export type TokenType = 'literal' | 'operator' | 'assignment' | 'lparen' | 'rpar
 export type Token = { type: TokenType; value: string };
 export type Tokens = Token[];
 
+type ScannerRule = [TokenType, RegExp];
+const scannerRules: ScannerRule[] = [
+    ['literal', /^[0-9][0-9_]*([,.][0-9]+)?/g],
+    ['operator', /^(\+|\-|\*\*|\*|\/|\^)/g],
+    ['lparen', /^\(/g],
+    ['rparen', /^\)/g],
+    ['percent', /^%/g],
+    ['assignment', /^(=|:)/g],
+    ['identifier', /^[a-zA-Z\u00C0-\u024F_][a-zA-Z0-9\u00C0-\u024F_]*/g],
+];
+
 export function lex(line: string): Result<Tokens, Error> {
     const tokens: Tokens = [];
-
-    const scanNumber = (startIndex: number): number => {
-        let endIndex = startIndex + 1;
-        let char;
-        while ((char = line.at(endIndex))) {
-            if ('0123456789,._'.includes(char)) {
-                endIndex++;
-            } else {
-                break;
-            }
-        }
-        tokens.push({ type: 'literal', value: line.slice(startIndex, endIndex) });
-        return endIndex - 1;
-    };
-
-    const scanWord = (startIndex: number): number => {
-        let endIndex = startIndex + 1;
-        let char;
-        while ((char = line.at(endIndex))) {
-            if (/[_a-zA-Z0-9$€\u00C0-\u024F]/.test(char)) {
-                endIndex++;
-            } else {
-                break;
-            }
-        }
-        tokens.push({ type: 'identifier', value: line.slice(startIndex, endIndex) });
-        return endIndex - 1;
-    };
-
-    for (let index = 0; index < line.length; index++) {
-        const char = line.at(index);
-        switch (char) {
-            case undefined:
-                break;
-            case '=':
-            case ':':
-                tokens.push({ type: 'assignment', value: char });
-                break;
-            case '%':
-                tokens.push({ type: 'percent', value: char });
-                break;
-            case '(':
-                tokens.push({ type: 'lparen', value: char });
-                break;
-            case ')':
-                tokens.push({ type: 'rparen', value: char });
-                break;
-            case '+':
-            case '-':
-            case '/':
-            case '^':
-                tokens.push({ type: 'operator', value: char });
-                break;
-            case '*':
-                if (line.at(index + 1) === '*') {
-                    tokens.push({ type: 'operator', value: '**' });
-                    index++;
-                } else {
-                    tokens.push({ type: 'operator', value: '*' });
-                }
-                break;
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '8':
-            case '9':
-                index = scanNumber(index);
-                break;
-            default:
-                index = /\s/.test(char) ? index : scanWord(index);
+    line = line.trim();
+    while (line.length > 0) {
+        const result = scan(line.trim());
+        if (result === null) {
+            return Result.err(new Error('Cannot lex ' + line));
+        } else {
+            tokens.push(result[0]);
+            line = result[1];
         }
     }
     return Result.ok(tokens);
+}
+
+function scan(line: string): [Token, string] | null {
+    for (const scannerRule of scannerRules) {
+        scannerRule[1].lastIndex = 0;
+        scannerRule[1].test(line);
+        if (scannerRule[1].lastIndex !== 0) {
+            return [{type: scannerRule[0], value: line.substring(0, scannerRule[1].lastIndex)}, line.substring(scannerRule[1].lastIndex)];
+        }
+    }
+    return null;
 }
