@@ -6,6 +6,7 @@ export type Unit = {
     group: 'weight' | 'length' | 'percent' | 'currency';
     multiplier: number;
     exponent?: number;
+    synonyms?: string[];
 };
 
 export class Value {
@@ -127,6 +128,6 @@ export class Value {
     }
 
     public static fromString(value: string, unit?: Unit): Result<Value, Error> {
-        return Result.ok(new Value(new BigNumber(value.replace(',', '.').replace('_', '')), unit));
+        return Result.ok(new Value(new BigNumber(value.replace(',', '.').replaceAll('_', '')), unit));
     }
 }

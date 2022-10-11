@@ -2,12 +2,16 @@ import { Result } from '@badrap/result';
 import { assertNever } from './assertNever';
 import { Token, Tokens } from './lex';
 
+type OperatorName = '+' | '-' | '*' | '/' | '^' | '**';
+type AggregationName = 'sum' | 'total' | 'average' | 'avg' | 'mean';
+
 export type ASTNode =
-    | { type: 'operator'; operator: string; lhs: ASTNode; rhs: ASTNode }
-    | { type: 'negation'; operand: ASTNode }
+    | { type: 'operator'; operator: OperatorName; lhs: ASTNode; rhs: ASTNode }
+    | { type: 'negation'; expression: ASTNode }
     | { type: 'assignment'; variableName: string; expression: ASTNode }
     | { type: 'number'; value: string; unit?: string }
     | { type: 'variable'; name: string }
+    | { type: 'aggregation'; name: AggregationName }
     | { type: 'conversion'; unit: string; expression: ASTNode }
     | { type: 'empty' };
 
@@ -15,7 +19,7 @@ export type AST = ASTNode;
 
 type StackItem =
     | { type: 'lparen' }
-    | { type: 'operator'; operator: string; precedence: number }
+    | { type: 'operator'; operator: OperatorName; precedence: number }
     | { type: 'negation' }
     | { type: 'assignment' };
 
@@ -71,6 +75,8 @@ function tryParsers(state: ParserState, token: Token): ParserState {
             return parseAssignment(state);
         case 'percent':
             return state;
+        case 'conversion':
+            return parseConversion(state, token.value);
         default:
             assertNever(token.type);
     }
@@ -88,34 +94,81 @@ function parseLiteral(state: ParserState, literal: string): ParserState {
     return state;
 }
 
+type OperatorConfig = {
+    name: OperatorName;
+    precedence: number;
+    associativity: 'left' | 'right';
+};
+function operatorConfig(operatorSymbol: string): OperatorConfig | undefined {
+    switch (operatorSymbol) {
+        case '+':
+            return { name: '+', precedence: 100, associativity: 'left' };
+        case '-':
+            return { name: '-', precedence: 100, associativity: 'left' };
+        case '*':
+            return { name: '*', precedence: 200, associativity: 'left' };
+        case '/':
+            return { name: '/', precedence: 200, associativity: 'left' };
+        case '^':
+            return { name: '^', precedence: 300, associativity: 'right' };
+        case '**':
+            return { name: '**', precedence: 300, associativity: 'right' };
+        default:
+            return undefined;
+    }
+}
+
 function parseOperator(state: ParserState, operatorSymbol: string): ParserState {
-    const precedence = {
-        '+': 100,
-        '-': 100,
-        '*': 200,
-        '/': 200,
-        '^': 300,
-        '**': 300,
-    }[operatorSymbol];
-    const associativity = {
-        '+': 'left',
-        '-': 'left',
-        '*': 'left',
-        '/': 'left',
-        '^': 'right',
-        '**': 'right',
-    }[operatorSymbol];
-    if (precedence === undefined || associativity === undefined) {
-        state.error = 'Missing precedence/associativity for ' + operatorSymbol;
+    const config = operatorConfig(operatorSymbol);
+    if (config === undefined) {
+        state.error = 'Unknown operator ' + operatorSymbol;
+        return state;
+    }
+
+    if (operatorSymbol === '-' && state.nextMinus === 'unary') {
+        state.nextMinus = 'binary';
+        state.operators.push({
+            type: 'negation',
+        });
         return state;
     }
 
     state.nextMinus = 'unary';
+    state = consumeOperators(state, operatorSymbol, config.precedence, config.associativity);
+    state.operators.push({
+        type: 'operator',
+        operator: config.name,
+        precedence: config.precedence,
+    });
+    return state;
+}
+
+function consumeOperators(
+    state: ParserState,
+    operatorSymbol: string,
+    precedence: number,
+    associativity: string,
+): ParserState {
     let stackTop = peek(state.operators);
     while (
-        stackTop?.type === 'operator' &&
-        (stackTop.precedence > precedence || (stackTop.precedence === precedence && associativity === 'left'))
+        (stackTop?.type === 'operator' &&
+            (stackTop.precedence > precedence || (stackTop.precedence === precedence && associativity === 'left'))) ||
+        stackTop?.type === 'negation'
     ) {
+        if (stackTop.type === 'negation') {
+            state.operators.pop();
+            const expression = state.operands.pop();
+            if (expression === undefined) {
+                state.error = 'Not enough arguments for unary -';
+                return state;
+            }
+            state.operands.push({
+                type: 'negation',
+                expression,
+            });
+            stackTop = peek(state.operators);
+            continue;
+        }
         state.operators.pop();
         const rhs = state.operands.pop();
         const lhs = state.operands.pop();
@@ -131,11 +184,6 @@ function parseOperator(state: ParserState, operatorSymbol: string): ParserState 
         });
         stackTop = peek(state.operators);
     }
-    state.operators.push({
-        type: 'operator',
-        operator: operatorSymbol,
-        precedence: precedence,
-    });
     return state;
 }
 
@@ -147,30 +195,13 @@ function parseLeftParen(state: ParserState): ParserState {
 
 function parseRightParen(state: ParserState): ParserState {
     state.nextMinus = 'binary';
-    let stackTop = peek(state.operators);
-    while (stackTop?.type === 'operator') {
-        state.operators.pop();
-        const rhs = state.operands.pop();
-        const lhs = state.operands.pop();
-        if (lhs === undefined || rhs === undefined) {
-            state.error = 'Not enough arguments for ' + stackTop.operator;
-            return state;
-        }
-        state.operands.push({
-            type: 'operator',
-            operator: stackTop.operator,
-            lhs,
-            rhs,
-        });
-        stackTop = peek(state.operators);
-    }
+    state = consumeOperators(state, ')', 0, 'left');
 
+    const stackTop = state.operators.pop();
     if (stackTop?.type !== 'lparen') {
         state.error = 'Unbalanced left parens';
         return state;
     }
-
-    state.operators.pop();
 
     return state;
 }
@@ -183,9 +214,45 @@ function parseAssignment(state: ParserState): ParserState {
 }
 
 function parseIdentifier(state: ParserState, identifier: string): ParserState {
+    if (
+        identifier === 'sum' ||
+        identifier === 'total' ||
+        identifier === 'average' ||
+        identifier === 'avg' ||
+        identifier === 'mean'
+    ) {
+        state.operands.push({
+            type: 'aggregation',
+            name: identifier,
+        });
+        return state;
+    }
     state.operands.push({
         type: 'variable',
         name: identifier,
+    });
+    return state;
+}
+
+function parseConversion(state: ParserState, name: string): ParserState {
+    const nextToken = state.tokens[state.index + 1];
+    if (nextToken?.type !== 'identifier') {
+        state.error = 'No unit for conversion';
+        return state;
+    }
+    state.index++;
+
+    state = consumeOperators(state, name, 0, 'left');
+
+    const expression = state.operands.pop();
+    if (expression === undefined) {
+        state.error = 'Nothing to convert';
+        return state;
+    }
+    state.operands.push({
+        type: 'conversion',
+        unit: nextToken.value,
+        expression,
     });
     return state;
 }
@@ -201,14 +268,14 @@ function parseRemainingStack(state: ParserState): Result<AST, Error> {
             state.error = 'Unbalanced parens';
             break;
         } else if (stackTop.type === 'negation') {
-            const operand = state.operands.pop();
-            if (operand === undefined) {
+            const expression = state.operands.pop();
+            if (expression === undefined) {
                 state.error = 'Not enough arguments for negation';
                 break;
             }
             state.operands.push({
                 type: 'negation',
-                operand,
+                expression,
             });
             stackTop = state.operators.pop();
         } else if (stackTop.type === 'assignment') {

@@ -1,7 +1,6 @@
 import { lex } from './lex';
 import { parse } from './parse';
 import { evaluate } from './evaluate';
-import { defaultContext } from './Context';
 import { Environment } from './Environment';
 
 export function execute(input: string): string {
@@ -12,7 +11,7 @@ export function execute(input: string): string {
         environment.addResult(
             lex(line)
                 .chain(parse)
-                .chain((ast) => evaluate(defaultContext, environment, ast)),
+                .chain((ast) => evaluate(environment, ast)),
         );
     }
 
