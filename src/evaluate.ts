@@ -3,13 +3,12 @@ import { Environment } from './Environment';
 import { AST, ASTNode } from './parse';
 import { assertNever } from './assertNever';
 import { Value } from './Value';
+import { findUnit } from './Unit';
 
 export function evaluate(environment: Environment, ast: AST): Result<Value, Error> {
     switch (ast.type) {
-        case 'number':
-            return ast.unit === undefined
-                ? Value.fromString(ast.value)
-                : environment.getUnit(ast.unit).chain((unit) => Value.fromString(ast.value, unit));
+        case 'literal':
+            return Value.fromString(ast.value);
         case 'operator':
             return Result.all([evaluate(environment, ast.lhs), evaluate(environment, ast.rhs)]).chain(([lhs, rhs]) =>
                 operation(ast.operator, lhs, rhs),
@@ -26,8 +25,8 @@ export function evaluate(environment: Environment, ast: AST): Result<Value, Erro
         case 'variable':
             return environment.getVariable(ast.name);
         case 'conversion':
-            return Result.all([environment.getUnit(ast.unit), evaluate(environment, ast.expression)]).chain(
-                ([unit, value]) => value.convertTo(unit),
+            return Result.all([findUnit(ast.unit), evaluate(environment, ast.expression)]).chain(([unit, value]) =>
+                value.convertTo(unit),
             );
         case 'empty':
             return Result.err(new Error(''));
@@ -66,12 +65,24 @@ function aggregation(
     switch (name) {
         case 'sum':
         case 'total':
-            return Value.sum(environment.getAggregatorValues());
+            return Value.sum(getAggregationValues(environment));
         case 'avg':
         case 'average':
         case 'mean':
-            return Value.average(environment.getAggregatorValues());
+            return Value.average(getAggregationValues(environment));
         default:
             assertNever(name);
     }
+}
+
+function getAggregationValues(environment: Environment): Value[] {
+    let values: Value[] = [];
+    for (const result of environment.getResults()) {
+        if (result.isErr) {
+            values = [];
+        } else {
+            values.push(result.value);
+        }
+    }
+    return values;
 }

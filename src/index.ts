@@ -1,5 +1,6 @@
 import { Base64 } from 'js-base64';
 import { execute } from './execute';
+import { helpInput } from './help';
 
 const inputEl = document.getElementById('input') as HTMLTextAreaElement;
 const outputEl = document.getElementById('output') as HTMLTextAreaElement;
@@ -19,5 +20,10 @@ const debouncedListener = debounce(() => {
 
 inputEl.addEventListener('keyup', debouncedListener);
 
-inputEl.value = Base64.decode(window.location.hash.substring(1));
-debouncedListener();
+const hash = window.location.hash.substring(1);
+if (hash === 'help') {
+    inputEl.value = helpInput;
+} else if (hash !== '') {
+    inputEl.value = Base64.decode(hash);
+    debouncedListener();
+}

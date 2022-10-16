@@ -1,6 +1,7 @@
 import { Result } from '@badrap/result';
 import { assertNever } from './assertNever';
 import { Token, Tokens } from './lex';
+import { isUnit } from './Unit';
 
 type OperatorName = '+' | '-' | '*' | '/' | '^' | '**';
 type AggregationName = 'sum' | 'total' | 'average' | 'avg' | 'mean';
@@ -9,7 +10,7 @@ export type ASTNode =
     | { type: 'operator'; operator: OperatorName; lhs: ASTNode; rhs: ASTNode }
     | { type: 'negation'; expression: ASTNode }
     | { type: 'assignment'; variableName: string; expression: ASTNode }
-    | { type: 'number'; value: string; unit?: string }
+    | { type: 'literal'; value: string }
     | { type: 'variable'; name: string }
     | { type: 'aggregation'; name: AggregationName }
     | { type: 'conversion'; unit: string; expression: ASTNode }
@@ -73,7 +74,7 @@ function tryParsers(state: ParserState, token: Token): ParserState {
             return parseIdentifier(state, token.value);
         case 'assignment':
             return parseAssignment(state);
-        case 'percent':
+        case 'comment':
             return state;
         case 'conversion':
             return parseConversion(state, token.value);
@@ -83,14 +84,8 @@ function tryParsers(state: ParserState, token: Token): ParserState {
 }
 
 function parseLiteral(state: ParserState, literal: string): ParserState {
-    let unit = undefined;
-    const nextToken = state.tokens[state.index + 1];
-    if (nextToken?.type === 'identifier' || nextToken?.type === 'percent') {
-        unit = nextToken.value;
-        state.index++;
-    }
     state.nextMinus = 'binary';
-    state.operands.push({ type: 'number', value: literal, unit });
+    state.operands.push({ type: 'literal', value: literal });
     return state;
 }
 
@@ -206,7 +201,25 @@ function parseRightParen(state: ParserState): ParserState {
     return state;
 }
 
+function parseUnit(state: ParserState, unit: string): ParserState {
+    state.nextMinus = 'binary';
+    state = consumeOperators(state, unit, 500, 'left');
+
+    const expression = state.operands.pop();
+    if (expression === undefined) {
+        state.error = 'No argument for unit';
+        return state;
+    }
+    state.operands.push({
+        type: 'conversion',
+        unit,
+        expression,
+    });
+    return state;
+}
+
 function parseAssignment(state: ParserState): ParserState {
+    state.nextMinus = 'unary';
     state.operators.push({
         type: 'assignment',
     });
@@ -214,6 +227,10 @@ function parseAssignment(state: ParserState): ParserState {
 }
 
 function parseIdentifier(state: ParserState, identifier: string): ParserState {
+    if (isUnit(identifier)) {
+        return parseUnit(state, identifier);
+    }
+
     if (
         identifier === 'sum' ||
         identifier === 'total' ||
@@ -221,12 +238,15 @@ function parseIdentifier(state: ParserState, identifier: string): ParserState {
         identifier === 'avg' ||
         identifier === 'mean'
     ) {
+        state.nextMinus = 'binary';
         state.operands.push({
             type: 'aggregation',
             name: identifier,
         });
         return state;
     }
+
+    state.nextMinus = 'binary';
     state.operands.push({
         type: 'variable',
         name: identifier,

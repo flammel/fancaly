@@ -30,8 +30,8 @@ function neg(expression: AST): AST {
     return { type: 'negation', expression };
 }
 
-function num(value: number, unit?: string): AST {
-    return { type: 'number', value: new BigNumber(value).toString(), unit: unit };
+function num(value: number): AST {
+    return { type: 'literal', value: new BigNumber(value).toString() };
 }
 
 function toAst(value: AST | number | string): AST {
@@ -95,8 +95,8 @@ export const testData: TestDataItem[] = [
     },
     {
         input: '100 + 10 %',
-        tokens: [token('literal', '100'), token('operator', '+'), token('literal', '10'), token('percent', '%')],
-        ast: binOp('+', 100, num(10, '%')),
+        tokens: [token('literal', '100'), token('operator', '+'), token('literal', '10'), token('identifier', '%')],
+        ast: binOp('+', 100, convert(num(10), '%')),
         result: '110',
     },
     {
@@ -106,15 +106,15 @@ export const testData: TestDataItem[] = [
             token('identifier', 'mm'),
             token('operator', '-'),
             token('literal', '10'),
-            token('percent', '%'),
+            token('identifier', '%'),
         ],
-        ast: binOp('-', num(100, 'mm'), num(10, '%')),
+        ast: binOp('-', convert(num(100), 'mm'), convert(num(10), '%')),
         result: '90 mm',
     },
     {
         input: '100 * 10 %',
-        tokens: [token('literal', '100'), token('operator', '*'), token('literal', '10'), token('percent', '%')],
-        ast: binOp('*', 100, num(10, '%')),
+        tokens: [token('literal', '100'), token('operator', '*'), token('literal', '10'), token('identifier', '%')],
+        ast: binOp('*', 100, convert(num(10), '%')),
         result: '10',
     },
     {
@@ -128,7 +128,7 @@ export const testData: TestDataItem[] = [
             token('conversion', 'to'),
             token('identifier', 'mm'),
         ],
-        ast: convert(binOp('+', num(1, 'm'), num(1, 'cm')), 'mm'),
+        ast: convert(binOp('+', convert(num(1), 'm'), convert(num(1), 'cm')), 'mm'),
         result: '1010 mm',
     },
     {
@@ -207,18 +207,22 @@ export const testData: TestDataItem[] = [
         ),
     },
     {
-        input: 'sum',
+        input: 'sum - 1',
         inputEnvironment: new Environment(new Map(), [
             Result.ok(new Value(1)),
             Result.err(new Error()),
             Result.ok(new Value(2)),
             Result.ok(new Value(3)),
         ]),
-        tokens: [token('identifier', 'sum')],
-        ast: {
-            type: 'aggregation',
-            name: 'sum',
-        },
-        result: '5',
+        tokens: [token('identifier', 'sum'), token('operator', '-'), token('literal', '1')],
+        ast: binOp(
+            '-',
+            {
+                type: 'aggregation',
+                name: 'sum',
+            },
+            num(1),
+        ),
+        result: '4',
     },
 ];

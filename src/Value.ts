@@ -1,13 +1,6 @@
 import { Result } from '@badrap/result';
 import BigNumber from 'bignumber.js';
-
-export type Unit = {
-    name: string;
-    group: 'weight' | 'length' | 'percent' | 'currency';
-    multiplier: number;
-    exponent?: number;
-    synonyms?: string[];
-};
+import { Unit } from './Unit';
 
 export class Value {
     public readonly bignum: BigNumber;
