@@ -23,6 +23,7 @@ inputEl.addEventListener('keyup', debouncedListener);
 const hash = window.location.hash.substring(1);
 if (hash === 'help') {
     inputEl.value = helpInput;
+    debouncedListener();
 } else if (hash !== '') {
     inputEl.value = Base64.decode(hash);
     debouncedListener();

@@ -15,12 +15,12 @@ export type Tokens = Token[];
 type Scanner = (line: string) => [Token, string] | null;
 
 const scanners: Scanner[] = [
-    regexScanner('literal', /^[0-9][0-9_]*([,.][0-9]+)?/g),
+    regexScanner('literal', /^[0-9]([0-9]|_[0-9]| [0-9])*([,.][0-9]+)?([0-9]|_[0-9]| [0-9])*/g),
     regexScanner('comment', /^#.*/g),
     regexScanner('lparen', /^\(/g),
     regexScanner('rparen', /^\)/g),
     regexScanner('assignment', /^(=|:)/gi),
-    regexScanner('conversion', /^(->|to|as|in)/gi),
+    regexScanner('conversion', /^(->|to\s)/gi),
     regexScanner('operator', /^(\+|-|\*\*|\*|\/|\^)/gi),
     regexScanner('identifier', /^(%|\$|€|[a-zA-Z\u00C0-\u024F_][a-zA-Z0-9\u00C0-\u024F_]*)/g),
 ];
@@ -56,7 +56,10 @@ function regexScanner(tokenType: TokenType, regex: RegExp): Scanner {
         regex.lastIndex = 0;
         regex.test(line);
         if (regex.lastIndex !== 0) {
-            return [{ type: tokenType, value: line.substring(0, regex.lastIndex) }, line.substring(regex.lastIndex)];
+            return [
+                { type: tokenType, value: line.substring(0, regex.lastIndex).trim() },
+                line.substring(regex.lastIndex),
+            ];
         }
         return null;
     };

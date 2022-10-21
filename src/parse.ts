@@ -38,6 +38,10 @@ export function parse(tokens: Tokens): Result<AST, Error> {
         return Result.ok({ type: 'empty' });
     }
 
+    if (tokens.at(0)?.type === 'comment') {
+        return Result.ok({ type: 'empty' });
+    }
+
     let state: ParserState = {
         tokens,
         index: 0,

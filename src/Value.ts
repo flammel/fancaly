@@ -10,7 +10,14 @@ export class Value {
     }
 
     public toString(): string {
-        return this.bignum.toString() + (this.unit ? ` ${this.unit.name}` : '');
+        return this.bignum.decimalPlaces(12).toFormat({
+            decimalSeparator: '.',
+            groupSeparator: ' ',
+            groupSize: 3,
+            suffix: this.unit ? ' ' + this.unit.name : undefined,
+            fractionGroupSeparator: ' ',
+            fractionGroupSize: 4,
+        });
     }
 
     public plus(other: Value): Result<Value, Error> {
@@ -121,6 +128,8 @@ export class Value {
     }
 
     public static fromString(value: string, unit?: Unit): Result<Value, Error> {
-        return Result.ok(new Value(new BigNumber(value.replace(',', '.').replaceAll('_', '')), unit));
+        return Result.ok(
+            new Value(new BigNumber(value.replace(',', '.').replaceAll('_', '').replaceAll(' ', '')), unit),
+        );
     }
 }

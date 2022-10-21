@@ -77,7 +77,7 @@ export const testData: TestDataItem[] = [
             token('literal', '2'),
         ],
         ast: binOp('**', 4, binOp('**', 3, 2)),
-        result: '262144',
+        result: '262 144',
     },
     {
         input: '(1 + 2) * 3',
@@ -129,7 +129,7 @@ export const testData: TestDataItem[] = [
             token('identifier', 'mm'),
         ],
         ast: convert(binOp('+', convert(num(1), 'm'), convert(num(1), 'cm')), 'mm'),
-        result: '1010 mm',
+        result: '1 010 mm',
     },
     {
         input: '2 * -3 * -(-4 + -5 - -6)',
