@@ -2,7 +2,7 @@ import { Result } from '@badrap/result';
 
 export type Unit = {
     name: string;
-    group: 'weight' | 'length' | 'percent' | 'currency';
+    group: 'weight' | 'length' | 'percent' | 'currency' | 'time';
     multiplier: number;
     exponent?: number;
     synonyms?: string[];
@@ -21,6 +21,13 @@ export const units: Unit[] = [
     { name: 'kg', group: 'weight', multiplier: 1000 },
     { name: 't', group: 'weight', multiplier: 1000000 },
     { name: 'oz', group: 'weight', multiplier: 28.3495 },
+
+    { name: 'ns', group: 'time', multiplier: 0.000000001 },
+    { name: 'ms', group: 'time', multiplier: 0.001 },
+    { name: 's', group: 'time', multiplier: 1, synonyms: ['sec'] },
+    { name: 'min', group: 'time', multiplier: 60 },
+    { name: 'h', group: 'time', multiplier: 3600, synonyms: ['hour', 'hours'] },
+    { name: 'd', group: 'time', multiplier: 25200, synonyms: ['day', 'days'] },
 
     { name: '%', group: 'percent', multiplier: 1 },
 
