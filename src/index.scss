@@ -2,13 +2,16 @@ html,
 body {
     margin: 0;
     padding: 0;
-    height: 100%;
+    min-height: 100vh;
     font-family: monospace;
     font-size: 16px;
 }
 
 body {
     padding: 0.5rem;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
 }
 
 *,
@@ -18,9 +21,7 @@ body {
 }
 
 #container {
-    margin: 0 auto;
-    max-width: 800px;
-    height: 100%;
+    flex-basis: 800px;
     display: flex;
     flex-direction: column;
 }
@@ -38,7 +39,7 @@ body {
     font-size: 0.75rem;
 }
 
-#editor {
+#main {
     display: flex;
     border: 1px solid #000;
     flex-grow: 1;
@@ -53,18 +54,28 @@ body {
     border: none;
     white-space: pre;
     overflow-wrap: normal;
+    overflow: hidden;
+    resize: none;
     &:focus {
         outline: none;
     }
 }
 
 #input {
-    resize: horizontal;
+    padding-right: 0;
     width: 80%;
+    min-height: 100%;
 }
 
 #output {
-    resize: none;
-    border-left: 1px solid #aaa;
+    padding-left: 0;
     flex-grow: 1;
+}
+
+#separator {
+    width: calc(1rem + 1px);
+    background-color: #aaa;
+    cursor: e-resize;
+    border-left: 0.5rem solid #fff;
+    border-right: 0.5rem solid #fff;
 }
