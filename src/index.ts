@@ -71,3 +71,13 @@ if (hash === 'help') {
     resizeInput();
     debouncedListener();
 }
+
+//
+// Service Worker
+//
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register(new URL('./serviceWorker.js', import.meta.url), { type: 'module' });
+    });
+}

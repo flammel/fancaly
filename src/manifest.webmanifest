@@ -1,0 +1,15 @@
+{
+    "name": "Fancaly",
+    "short_name": "Fancaly",
+    "description": "A fancy calculator",
+    "start_url": "/",
+    "background_color": "#373aab",
+    "theme_color": "#373aab",
+    "display": "standalone",
+    "icons": [
+        {
+            "src": "../icons/fancaly.svg",
+            "sizes": "any"
+        }
+    ]
+}
