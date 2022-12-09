@@ -47,9 +47,6 @@ body {
 
 #input,
 #output {
-    font-size: 1rem;
-    font-family: monospace;
-    line-height: 1.2;
     padding: 0.5rem;
     border: none;
     white-space: pre;
@@ -78,4 +75,22 @@ body {
     cursor: e-resize;
     border-left: 0.5rem solid #fff;
     border-right: 0.5rem solid #fff;
+}
+
+#input .cm-content, #output {
+    font-size: 1rem;
+    font-family: monospace;
+    line-height: 1.2;
+}
+
+#input .cm-content, #input .cm-line {
+    padding: 0;
+}
+
+#input .cm-editor.cm-focused {
+    outline: none;
+}
+
+#input .cm-editor, #input .cm-scroller, #input .cm-content {
+    height: 100%;
 }
