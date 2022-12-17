@@ -11,7 +11,7 @@ export const helpData = `
 
 # The output will be rounded to 12 decimal places:
 
-10 / 3 | 3.3333 3333 3333
+10 / 3 * 2 | 6.6666 6666 6667
 
 # Use underscores or spaces to format large numbers:
 
@@ -41,9 +41,9 @@ total | 7
 6 | 6
 avg | 5.5
 
-# Use "to" or "->" to convert units:
+# Use "to", "in" or "->" to convert units:
 
-3 ft to m | 0.9144 m
+3 ft in m | 0.9144 m
 1 oz -> g | 28.3495 g
 (1 cm + 1 in) to mm | 35.4 mm
 

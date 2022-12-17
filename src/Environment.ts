@@ -25,6 +25,6 @@ export class Environment {
     }
 
     public getOutput(): string[] {
-        return this.results.map((result) => (result.isOk ? result.value.toString() : result.error.message));
+        return this.results.map((result) => (result.isOk ? result.value.toString() : ''));
     }
 }
