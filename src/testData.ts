@@ -238,4 +238,10 @@ export const testData: TestDataItem[] = [
         ast: ast.conversion('g', ast.conversion('kg', ast.literal('1'))),
         result: '1 000 g',
     },
+    {
+        input: '4^0.5',
+        tokens: [token('literal', '4'), token('operator', '^'), token('literal', '0.5')],
+        ast: ast.operator('^', ast.literal('4'), ast.literal('0.5')),
+        result: '2',
+    },
 ];

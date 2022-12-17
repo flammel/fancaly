@@ -73,11 +73,11 @@ export class Value {
             return Result.ok(new Value(this.bignum.dividedBy(100).times(other.bignum), this.unit));
         }
 
-        if (this.unit !== undefined || other.unit !== undefined) {
+        if (this.unit !== undefined && other.unit !== undefined) {
             return Result.err(new Error('Cannot multiply values with units'));
         }
 
-        return Result.ok(new Value(this.bignum.times(other.bignum), this.unit));
+        return Result.ok(new Value(this.bignum.times(other.bignum), this.unit ?? other.unit));
     }
 
     public dividedBy(other: Value): Result<Value, Error> {
@@ -91,13 +91,15 @@ export class Value {
         if (this.unit !== undefined || other.unit !== undefined) {
             return Result.err(new Error('Cannot pow values with units'));
         }
-        return Result.ok(new Value(this.bignum.pow(other.bignum), this.unit));
+        if (other.bignum.isInteger()) {
+            return Result.ok(new Value(this.bignum.pow(other.bignum), this.unit));
+        } else {
+            // BigNumber.js does not support non-integer exponents.
+            return Result.ok(new Value(Math.pow(this.bignum.toNumber(), other.bignum.toNumber()), this.unit));
+        }
     }
 
     public negated(): Result<Value, Error> {
-        if (this.unit !== undefined) {
-            return Result.err(new Error('Cannot negate value with unit'));
-        }
         return Result.ok(new Value(this.bignum.negated(), this.unit));
     }
 

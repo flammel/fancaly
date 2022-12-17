@@ -54,9 +54,12 @@ const highlighting = ViewPlugin.define(
 
 const notazaLinter = linter((view) => {
     let offset = 0;
-    let diagnostics: Diagnostic[] = [];
+    const diagnostics: Diagnostic[] = [];
     const environment = new Environment();
     for (const line of view.state.doc.toString().split('\n')) {
+        if (line.trim().length === 0) {
+            continue;
+        }
         const result = lex(line)
             .chain(parse)
             .chain((ast) => evaluate(environment, ast));
