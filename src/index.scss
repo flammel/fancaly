@@ -49,7 +49,6 @@ body {
 #output {
     padding: 0.5rem;
     border: none;
-    white-space: pre;
     overflow-wrap: normal;
     overflow: hidden;
     resize: none;
@@ -67,6 +66,9 @@ body {
 #output {
     padding-left: 0;
     flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    white-space: pre;
 }
 
 #separator {
@@ -78,9 +80,9 @@ body {
 }
 
 #input .cm-content, #output {
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-family: monospace;
-    line-height: 1.2;
+    line-height: 1.3;
 }
 
 #input .cm-content, #input .cm-line {
