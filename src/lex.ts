@@ -11,7 +11,7 @@ const scanners: Scanner[] = [
     regexScanner('lparen', /^\(/g),
     regexScanner('rparen', /^\)/g),
     regexScanner('assignment', /^(=|:)/g),
-    regexScanner('conversion', /^(->)/gi),
+    regexScanner('conversion', /^(->)/g),
     regexScanner('operator', /^(\+|-|\*\*|\*|\/|\^)/g),
     regexScanner('identifier', /^(%|\$|€|[a-zA-Z\u00C0-\u024F_][a-zA-Z0-9\u00C0-\u024F_]*)/g),
 ];
