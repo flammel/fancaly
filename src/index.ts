@@ -1,3 +1,6 @@
+import { EditorState } from '@codemirror/state';
+import { Decoration, EditorView, MatchDecorator, ViewPlugin } from '@codemirror/view';
+import { history } from '@codemirror/commands';
 import { Base64 } from 'js-base64';
 import { execute } from './execute';
 import { helpInput } from './help';
@@ -7,14 +10,63 @@ const outputEl = document.getElementById('output') as HTMLTextAreaElement;
 const separatorEl = document.getElementById('separator') as HTMLDivElement;
 
 //
-// Automatic resizing of input element to show all lines
+// Editor
 //
 
-function resizeInput(): void {
-    inputEl.style.height = '0';
-    inputEl.style.height = inputEl.scrollHeight + 'px';
-}
-inputEl.addEventListener('input', resizeInput);
+const numMark = Decoration.mark({ class: 'num' });
+const numMDecorator = new MatchDecorator({
+    regexp: /\d+/g,
+    decoration: () => numMark,
+});
+const highlighting = ViewPlugin.define(
+    (view) => ({
+        decorations: numMDecorator.createDeco(view),
+        update(update) {
+            console.log(update.state.doc.toString());
+            // this.decorations = Decoration.set([numMark.range(0, 10)]);
+            this.decorations = numMDecorator.updateDeco(update, this.decorations);
+        },
+    }),
+    {
+        decorations: (v) => v.decorations,
+    },
+);
+
+// const notazaStyle = HighlightStyle.define([
+//     { tag: tags.lineComment, color: '#1e293b' },
+//     { tag: tags.variableName, color: 'rgb(16 185 129)' },
+//     { tag: tags.number, color: '#3a3daa' },
+//     { tag: tags.operator, color: '#c544d4' },
+//     { tag: tags.operatorKeyword, color: '#f8af41' },
+//     { tag: tags.typeName, color: 'rgb(59 130 246)' },
+//     { tag: tags.paren, color: '#c544d4' },
+// ]);
+
+const editor = new EditorView({
+    parent: document.getElementById('input') as HTMLDivElement,
+    state: EditorState.create({
+        extensions: [
+            history(),
+            highlighting,
+            // syntaxHighlighting(notazaStyle),
+            // new LanguageSupport(notazaLanguage),
+            EditorView.updateListener.of((update) => {
+                if (update.docChanged) {
+                    const input = update.state.doc.toString();
+                    window.location.hash = Base64.encode(input);
+                    outputEl.innerHTML = execute(input)
+                        .map((line) => `<span>${line}</span>`)
+                        .join('');
+                }
+            }),
+        ],
+    }),
+});
+
+const hash = window.location.hash.substring(1);
+const initialDoc = hash === 'help' ? helpInput : hash === '' ? '' : Base64.decode(hash);
+editor.dispatch({ changes: { from: 0, insert: initialDoc } });
+editor.focus();
 
 //
 // Separator drag and drop (resizing input element)
@@ -37,40 +89,6 @@ function doDrag(event: MouseEvent): void {
     inputEl.style.width = startWidth + event.clientX - startX + 'px';
 }
 separatorEl.addEventListener('mousedown', startDrag, false);
-
-//
-// Compute output when input changes
-//
-
-const debounce = (fn: () => unknown, ms: number) => {
-    let timeoutId: number;
-    return () => {
-        clearTimeout(timeoutId);
-        timeoutId = window.setTimeout(fn, ms);
-    };
-};
-
-const debouncedListener = debounce(() => {
-    outputEl.value = execute(inputEl.value);
-    window.location.hash = Base64.encode(inputEl.value);
-}, 100);
-
-inputEl.addEventListener('keyup', debouncedListener);
-
-//
-// Load input from url
-//
-
-const hash = window.location.hash.substring(1);
-if (hash === 'help') {
-    inputEl.value = helpInput;
-    resizeInput();
-    debouncedListener();
-} else if (hash !== '') {
-    inputEl.value = Base64.decode(hash);
-    resizeInput();
-    debouncedListener();
-}
 
 //
 // Service Worker

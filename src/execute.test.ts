@@ -21,5 +21,5 @@ test.each(
         .filter((x) => x)
         .map((line) => line.split('|').map((x) => x.trim())),
 )('%s', (input, output) => {
-    expect(execute(input)).toEqual(output);
+    expect(execute(input)).toEqual([output]);
 });

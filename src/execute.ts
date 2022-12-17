@@ -3,7 +3,7 @@ import { parse } from './parse';
 import { evaluate } from './evaluate';
 import { Environment } from './Environment';
 
-export function execute(input: string): string {
+export function execute(input: string): string[] {
     const lines = input.split('\n');
     const environment = new Environment();
 
@@ -15,5 +15,5 @@ export function execute(input: string): string {
         );
     }
 
-    return environment.getOutput().join('\n');
+    return environment.getOutput();
 }

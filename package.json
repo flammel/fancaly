@@ -44,6 +44,10 @@
     },
     "dependencies": {
         "@badrap/result": "^0.2.12",
+        "@codemirror/commands": "^6.1.2",
+        "@codemirror/lint": "^6.1.0",
+        "@codemirror/state": "^6.1.4",
+        "@codemirror/view": "^6.7.1",
         "@types/bignumber.js": "^5.0.0",
         "bignumber.js": "^9.1.0",
         "js-base64": "^3.7.2"

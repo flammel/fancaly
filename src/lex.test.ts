@@ -1,8 +1,7 @@
 import { expect, test } from '@jest/globals';
 import { lex } from './lex';
 import { testData } from './testData';
-import { Result } from '@badrap/result';
 
 test.each(testData)('$input', (item) => {
-    expect(lex(item.input)).toEqual(Result.ok(item.tokens));
+    expect(lex(item.input).unwrap().map((t) => ({type: t.type, value: t.value}))).toEqual(item.tokens);
 });

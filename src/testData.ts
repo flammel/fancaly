@@ -1,58 +1,90 @@
 import { Result } from '@badrap/result';
-import BigNumber from 'bignumber.js';
 import { Environment } from './Environment';
-import { Token, Tokens, TokenType } from './lex';
-import { AST, ASTNode } from './parse';
+import { Token } from './lex';
+import { ast, AST } from './parse';
 import { Value } from './Value';
 
-function token(type: TokenType, value: string): Token {
+type TokenWithoutPosition = Omit<Token, 'from' | 'to'>;
+function token(type: Token['type'], value: string): TokenWithoutPosition {
     return { type, value };
-}
-
-function binOp(
-    operator: Extract<ASTNode, { type: 'operator' }>['operator'],
-    lhs: AST | number | string,
-    rhs: AST | number | string,
-): AST {
-    return {
-        type: 'operator',
-        operator,
-        lhs: toAst(lhs),
-        rhs: toAst(rhs),
-    };
-}
-
-function convert(value: AST, unit: string): AST {
-    return { type: 'conversion', expression: value, unit };
-}
-
-function neg(expression: AST): AST {
-    return { type: 'negation', expression };
-}
-
-function num(value: number): AST {
-    return { type: 'literal', value: new BigNumber(value).toString() };
-}
-
-function toAst(value: AST | number | string): AST {
-    if (typeof value === 'number') {
-        return num(value);
-    }
-    if (typeof value === 'string') {
-        return { type: 'variable', name: value };
-    }
-    return value;
 }
 
 type TestDataItem = {
     inputEnvironment?: Environment;
     input: string;
-    tokens: Tokens;
+    tokens: TokenWithoutPosition[];
     ast: AST;
     result: string;
     outputEnvironment?: Environment;
 };
+
 export const testData: TestDataItem[] = [
+    {
+        input: '1',
+        tokens: [token('literal', '1')],
+        ast: ast.literal('1'),
+        result: '1',
+    },
+    {
+        input: '1+2',
+        tokens: [token('literal', '1'), token('operator', '+'), token('literal', '2')],
+        ast: ast.operator('+', ast.literal('1'), ast.literal('2')),
+        result: '3',
+    },
+    {
+        input: '1+2*3',
+        tokens: [
+            token('literal', '1'),
+            token('operator', '+'),
+            token('literal', '2'),
+            token('operator', '*'),
+            token('literal', '3'),
+        ],
+        ast: ast.operator('+', ast.literal('1'), ast.operator('*', ast.literal('2'), ast.literal('3'))),
+        result: '7',
+    },
+    {
+        input: '1*2+3',
+        tokens: [
+            token('literal', '1'),
+            token('operator', '*'),
+            token('literal', '2'),
+            token('operator', '+'),
+            token('literal', '3'),
+        ],
+        ast: ast.operator('+', ast.operator('*', ast.literal('1'), ast.literal('2')), ast.literal('3')),
+        result: '5',
+    },
+    {
+        input: '1+2+3',
+        tokens: [
+            token('literal', '1'),
+            token('operator', '+'),
+            token('literal', '2'),
+            token('operator', '+'),
+            token('literal', '3'),
+        ],
+        ast: ast.operator('+', ast.operator('+', ast.literal('1'), ast.literal('2')), ast.literal('3')),
+        result: '6',
+    },
+    {
+        input: '4^3**2',
+        tokens: [
+            token('literal', '4'),
+            token('operator', '^'),
+            token('literal', '3'),
+            token('operator', '**'),
+            token('literal', '2'),
+        ],
+        ast: ast.operator('^', ast.literal('4'), ast.operator('**', ast.literal('3'), ast.literal('2'))),
+        result: '262 144',
+    },
+    {
+        input: '1+-2',
+        tokens: [token('literal', '1'), token('operator', '+'), token('operator', '-'), token('literal', '2')],
+        ast: ast.operator('+', ast.literal('1'), ast.unary('-', ast.literal('2'))),
+        result: '-1',
+    },
     {
         input: '1 + 2 * 3 ^ 4',
         tokens: [
@@ -64,20 +96,12 @@ export const testData: TestDataItem[] = [
             token('operator', '^'),
             token('literal', '4'),
         ],
-        ast: binOp('+', 1, binOp('*', 2, binOp('^', 3, 4))),
+        ast: ast.operator(
+            '+',
+            ast.literal('1'),
+            ast.operator('*', ast.literal('2'), ast.operator('^', ast.literal('3'), ast.literal('4'))),
+        ),
         result: '163',
-    },
-    {
-        input: '4**3**2',
-        tokens: [
-            token('literal', '4'),
-            token('operator', '**'),
-            token('literal', '3'),
-            token('operator', '**'),
-            token('literal', '2'),
-        ],
-        ast: binOp('**', 4, binOp('**', 3, 2)),
-        result: '262 144',
     },
     {
         input: '(1 + 2) * 3',
@@ -90,13 +114,26 @@ export const testData: TestDataItem[] = [
             token('operator', '*'),
             token('literal', '3'),
         ],
-        ast: binOp('*', binOp('+', 1, 2), 3),
+        ast: ast.operator('*', ast.operator('+', ast.literal('1'), ast.literal('2')), ast.literal('3')),
         result: '9',
+    },
+    {
+        input: 'x = 2 - 3',
+        tokens: [
+            token('identifier', 'x'),
+            token('assignment', '='),
+            token('literal', '2'),
+            token('operator', '-'),
+            token('literal', '3'),
+        ],
+        ast: ast.assignment('x', ast.operator('-', ast.literal('2'), ast.literal('3'))),
+        result: '-1',
+        outputEnvironment: new Environment(new Map([['x', new Value(-1)]])),
     },
     {
         input: '100 + 10 %',
         tokens: [token('literal', '100'), token('operator', '+'), token('literal', '10'), token('identifier', '%')],
-        ast: binOp('+', 100, convert(num(10), '%')),
+        ast: ast.operator('+', ast.literal('100'), ast.conversion('%', ast.literal('10'))),
         result: '110',
     },
     {
@@ -108,13 +145,13 @@ export const testData: TestDataItem[] = [
             token('literal', '10'),
             token('identifier', '%'),
         ],
-        ast: binOp('-', convert(num(100), 'mm'), convert(num(10), '%')),
+        ast: ast.operator('-', ast.conversion('mm', ast.literal('100')), ast.conversion('%', ast.literal('10'))),
         result: '90 mm',
     },
     {
         input: '100 * 10 %',
         tokens: [token('literal', '100'), token('operator', '*'), token('literal', '10'), token('identifier', '%')],
-        ast: binOp('*', 100, convert(num(10), '%')),
+        ast: ast.operator('*', ast.literal('100'), ast.conversion('%', ast.literal('10'))),
         result: '10',
     },
     {
@@ -125,57 +162,14 @@ export const testData: TestDataItem[] = [
             token('operator', '+'),
             token('literal', '1'),
             token('identifier', 'cm'),
-            token('conversion', 'to'),
+            token('identifier', 'to'),
             token('identifier', 'mm'),
         ],
-        ast: convert(binOp('+', convert(num(1), 'm'), convert(num(1), 'cm')), 'mm'),
-        result: '1 010 mm',
-    },
-    {
-        input: '2 * -3 * -(-4 + -5 - -6)',
-        tokens: [
-            token('literal', '2'),
-            token('operator', '*'),
-            token('operator', '-'),
-            token('literal', '3'),
-            token('operator', '*'),
-            token('operator', '-'),
-            token('lparen', '('),
-            token('operator', '-'),
-            token('literal', '4'),
-            token('operator', '+'),
-            token('operator', '-'),
-            token('literal', '5'),
-            token('operator', '-'),
-            token('operator', '-'),
-            token('literal', '6'),
-            token('rparen', ')'),
-        ],
-        ast: binOp(
-            '*',
-            binOp('*', num(2), neg(num(3))),
-            neg(binOp('-', binOp('+', neg(num(4)), neg(num(5))), neg(num(6)))),
+        ast: ast.conversion(
+            'mm',
+            ast.operator('+', ast.conversion('m', ast.literal('1')), ast.conversion('cm', ast.literal('1'))),
         ),
-        result: '-18',
-    },
-    {
-        input: 'x = 2 + 3 + 4',
-        tokens: [
-            token('identifier', 'x'),
-            token('assignment', '='),
-            token('literal', '2'),
-            token('operator', '+'),
-            token('literal', '3'),
-            token('operator', '+'),
-            token('literal', '4'),
-        ],
-        ast: {
-            type: 'assignment',
-            variableName: 'x',
-            expression: binOp('+', binOp('+', 2, 3), 4),
-        },
-        result: '9',
-        outputEnvironment: new Environment(new Map([['x', new Value(9)]])),
+        result: '1 010 mm',
     },
     {
         input: 'x = y + z',
@@ -192,11 +186,7 @@ export const testData: TestDataItem[] = [
             token('operator', '+'),
             token('identifier', 'z'),
         ],
-        ast: {
-            type: 'assignment',
-            variableName: 'x',
-            expression: binOp('+', 'y', 'z'),
-        },
+        ast: ast.assignment('x', ast.operator('+', ast.variable('y'), ast.variable('z'))),
         result: '5',
         outputEnvironment: new Environment(
             new Map([
@@ -215,14 +205,42 @@ export const testData: TestDataItem[] = [
             Result.ok(new Value(3)),
         ]),
         tokens: [token('identifier', 'sum'), token('operator', '-'), token('literal', '1')],
-        ast: binOp(
-            '-',
-            {
-                type: 'aggregation',
-                name: 'sum',
-            },
-            num(1),
-        ),
+        ast: ast.operator('-', ast.aggregation('sum'), ast.literal('1')),
         result: '4',
     },
+    {
+        input: 'total',
+        inputEnvironment: new Environment(new Map(), [
+            Result.ok(new Value(2)),
+            Result.ok(new Value(3)),
+        ]),
+        tokens: [token('identifier', 'total')],
+        ast: ast.aggregation('total'),
+        result: '5',
+    },
+    {
+        input: '1 cm + 2 in to mm',
+        tokens: [
+            token('literal', '1'),
+            token('identifier', 'cm'),
+            token('operator', '+'),
+            token('literal', '2'),
+            token('identifier', 'in'),
+            token('identifier', 'to'),
+            token('identifier', 'mm'),
+        ],
+        ast: ast.conversion('mm', ast.operator('+', ast.conversion('cm', ast.literal('1')), ast.conversion('in', ast.literal('2')))),
+        result: '60.8 mm'
+    },
+    {
+        input: '1 kg -> g',
+        tokens: [
+            token('literal', '1'),
+            token('identifier', 'kg'),
+            token('conversion', '->'),
+            token('identifier', 'g'),
+        ],
+        ast: ast.conversion('g', ast.conversion('kg', ast.literal('1'))),
+        result: '1 000 g'
+    }
 ];

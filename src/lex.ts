@@ -1,6 +1,6 @@
 import { Result } from '@badrap/result';
 
-export type TokenType =
+type TokenType =
     | 'literal'
     | 'comment'
     | 'lparen'
@@ -9,40 +9,43 @@ export type TokenType =
     | 'conversion'
     | 'operator'
     | 'identifier';
-export type Token = { type: TokenType; value: string };
-export type Tokens = Token[];
+export type Token = { type: TokenType; value: string; from: number; to: number };
 
-type Scanner = (line: string) => [Token, string] | null;
+type Scanner = (input: string, position: number) => Token | null;
 
 const scanners: Scanner[] = [
     regexScanner('literal', /^[0-9]([0-9]|_[0-9]| [0-9])*([,.][0-9]+)?([0-9]|_[0-9]| [0-9])*/g),
     regexScanner('comment', /^#.*/g),
     regexScanner('lparen', /^\(/g),
     regexScanner('rparen', /^\)/g),
-    regexScanner('assignment', /^(=|:)/gi),
-    regexScanner('conversion', /^(->|to\s)/gi),
-    regexScanner('operator', /^(\+|-|\*\*|\*|\/|\^)/gi),
+    regexScanner('assignment', /^(=|:)/g),
+    regexScanner('conversion', /^(->)/gi),
+    regexScanner('operator', /^(\+|-|\*\*|\*|\/|\^)/g),
     regexScanner('identifier', /^(%|\$|€|[a-zA-Z\u00C0-\u024F_][a-zA-Z0-9\u00C0-\u024F_]*)/g),
 ];
 
-export function lex(line: string): Result<Tokens, Error> {
-    const tokens: Tokens = [];
-    line = line.trim();
-    while (line.length > 0) {
-        const result = scan(line.trim());
+export function lex(input: string): Result<Token[], Error> {
+    const tokens: Token[] = [];
+    let position = 0;
+    while (position < input.length) {
+        if (input.at(position) === ' ') {
+            position++;
+            continue;
+        }
+        const result = scan(input, position);
         if (result === null) {
-            return Result.err(new Error('Cannot lex ' + line));
+            return Result.err(new Error('Cannot lex ' + input.substring(position)));
         } else {
-            tokens.push(result[0]);
-            line = result[1];
+            tokens.push(result);
+            position = position + result.value.length;
         }
     }
     return Result.ok(tokens);
 }
 
-function scan(line: string): [Token, string] | null {
+function scan(input: string, position: number): Token | null {
     for (const scanner of scanners) {
-        const result = scanner(line);
+        const result = scanner(input, position);
         if (result !== null) {
             return result;
         }
@@ -51,15 +54,16 @@ function scan(line: string): [Token, string] | null {
 }
 
 function regexScanner(tokenType: TokenType, regex: RegExp): Scanner {
-    return (line) => {
-        line = line.trim();
+    return (input, position) => {
         regex.lastIndex = 0;
-        regex.test(line);
+        regex.test(input.substring(position));
         if (regex.lastIndex !== 0) {
-            return [
-                { type: tokenType, value: line.substring(0, regex.lastIndex).trim() },
-                line.substring(regex.lastIndex),
-            ];
+            return {
+                type: tokenType,
+                value: input.substring(position, position + regex.lastIndex),
+                from: position,
+                to: position + regex.lastIndex,
+            };
         }
         return null;
     };

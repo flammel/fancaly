@@ -1,6 +1,6 @@
 import { Result } from '@badrap/result';
 import { Environment } from './Environment';
-import { AST, ASTNode } from './parse';
+import { AST } from './parse';
 import { assertNever } from './assertNever';
 import { Value } from './Value';
 import { findUnit } from './Unit';
@@ -13,8 +13,8 @@ export function evaluate(environment: Environment, ast: AST): Result<Value, Erro
             return Result.all([evaluate(environment, ast.lhs), evaluate(environment, ast.rhs)]).chain(([lhs, rhs]) =>
                 operation(ast.operator, lhs, rhs),
             );
-        case 'negation':
-            return evaluate(environment, ast.expression).chain((value) => value.negated());
+        case 'unary':
+            return evaluate(environment, ast.expression).chain((value) => ast.operator === '-' ? value.negated() : Result.ok(value));
         case 'assignment':
             return evaluate(environment, ast.expression).map((value) => {
                 environment.setVariable(ast.variableName, value);
@@ -25,7 +25,7 @@ export function evaluate(environment: Environment, ast: AST): Result<Value, Erro
         case 'variable':
             return environment.getVariable(ast.name);
         case 'conversion':
-            return Result.all([findUnit(ast.unit), evaluate(environment, ast.expression)]).chain(([unit, value]) =>
+            return Result.all([findUnit(ast.unitName), evaluate(environment, ast.expression)]).chain(([unit, value]) =>
                 value.convertTo(unit),
             );
         case 'empty':
@@ -36,7 +36,7 @@ export function evaluate(environment: Environment, ast: AST): Result<Value, Erro
 }
 
 function operation(
-    name: Extract<ASTNode, { type: 'operator' }>['operator'],
+    name: Extract<AST, { type: 'operator' }>['operator'],
     lhs: Value,
     rhs: Value,
 ): Result<Value, Error> {
@@ -60,7 +60,7 @@ function operation(
 
 function aggregation(
     environment: Environment,
-    name: Extract<ASTNode, { type: 'aggregation' }>['name'],
+    name: Extract<AST, { type: 'aggregation' }>['name'],
 ): Result<Value, Error> {
     switch (name) {
         case 'sum':

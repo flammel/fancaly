@@ -1,39 +1,62 @@
 import { Result } from '@badrap/result';
-import { assertNever } from './assertNever';
-import { Token, Tokens } from './lex';
-import { isUnit } from './Unit';
+import { Token } from './lex';
+import { findUnit } from './Unit';
 
-type OperatorName = '+' | '-' | '*' | '/' | '^' | '**';
-type AggregationName = 'sum' | 'total' | 'average' | 'avg' | 'mean';
+const aggregationNames = ['sum', 'total', 'average', 'avg', 'mean'] as const;
+type AggregationName = typeof aggregationNames[number];
 
-export type ASTNode =
-    | { type: 'operator'; operator: OperatorName; lhs: ASTNode; rhs: ASTNode }
-    | { type: 'negation'; expression: ASTNode }
-    | { type: 'assignment'; variableName: string; expression: ASTNode }
+const binaryOperators = ['+', '-', '*', '/', '^', '**'] as const;
+type BinaryOperator = typeof binaryOperators[number];
+
+const prefixOperators = ['+', '-'] as const;
+type PrefixOperator = typeof prefixOperators[number];
+
+const conversionOperators = ['->', 'to', 'in'] as const;
+type ConversionOperator = typeof conversionOperators[number];
+
+export type AST =
+    | { type: 'operator'; operator: BinaryOperator; lhs: AST; rhs: AST }
+    | { type: 'unary'; operator: PrefixOperator; expression: AST }
+    | { type: 'assignment'; variableName: string; expression: AST }
     | { type: 'literal'; value: string }
     | { type: 'variable'; name: string }
     | { type: 'aggregation'; name: AggregationName }
-    | { type: 'conversion'; unit: string; expression: ASTNode }
+    | { type: 'conversion'; unitName: string; expression: AST }
     | { type: 'empty' };
 
-export type AST = ASTNode;
-
-type StackItem =
-    | { type: 'lparen' }
-    | { type: 'operator'; operator: OperatorName; precedence: number }
-    | { type: 'negation' }
-    | { type: 'assignment' };
-
-type ParserState = {
-    tokens: Tokens;
-    index: number;
-    operators: StackItem[];
-    operands: ASTNode[];
-    error: string | null;
-    nextMinus: 'unary' | 'binary';
+export const ast = {
+    operator(operator: Extract<AST, { type: 'operator' }>['operator'], lhs: AST, rhs: AST): AST {
+        return {
+            type: 'operator',
+            operator,
+            lhs,
+            rhs,
+        };
+    },
+    unary(operator: Extract<AST, { type: 'unary' }>['operator'], expression: AST): AST {
+        return { type: 'unary', operator, expression };
+    },
+    assignment(variableName: string, expression: AST): AST {
+        return { type: 'assignment', variableName, expression };
+    },
+    literal(value: string): AST {
+        return { type: 'literal', value };
+    },
+    variable(name: string): AST {
+        return { type: 'variable', name };
+    },
+    aggregation(name: Extract<AST, { type: 'aggregation' }>['name']): AST {
+        return { type: 'aggregation', name };
+    },
+    conversion(unitName: string, expression: AST): AST {
+        return { type: 'conversion', unitName, expression };
+    },
+    empty(): AST {
+        return { type: 'empty' };
+    },
 };
 
-export function parse(tokens: Tokens): Result<AST, Error> {
+export function parse(tokens: Token[]): Result<AST> {
     if (tokens.length === 0) {
         return Result.ok({ type: 'empty' });
     }
@@ -42,310 +65,203 @@ export function parse(tokens: Tokens): Result<AST, Error> {
         return Result.ok({ type: 'empty' });
     }
 
-    let state: ParserState = {
-        tokens,
-        index: 0,
-        operators: [],
-        operands: [],
-        error: null,
-        nextMinus: 'unary',
-    };
-    let token = state.tokens[state.index];
-    while (token !== undefined && state.error === null) {
-        state = tryParsers(state, token);
-        state.index++;
-        token = state.tokens[state.index];
+    const assignment = parseAssignment(tokens);
+    if (assignment.isOk) {
+        return assignment;
     }
 
-    if (state.error !== null) {
-        return Result.err(new Error(state.error));
-    }
-
-    return parseRemainingStack(state);
+    return parseRecursive(new TokenStream(tokens), 0);
 }
 
-function tryParsers(state: ParserState, token: Token): ParserState {
-    switch (token.type) {
-        case 'literal':
-            return parseLiteral(state, token.value);
-        case 'operator':
-            return parseOperator(state, token.value);
-        case 'lparen':
-            return parseLeftParen(state);
-        case 'rparen':
-            return parseRightParen(state);
-        case 'identifier':
-            return parseIdentifier(state, token.value);
-        case 'assignment':
-            return parseAssignment(state);
-        case 'comment':
-            return state;
-        case 'conversion':
-            return parseConversion(state, token.value);
-        default:
-            assertNever(token.type);
-    }
-}
-
-function parseLiteral(state: ParserState, literal: string): ParserState {
-    state.nextMinus = 'binary';
-    state.operands.push({ type: 'literal', value: literal });
-    return state;
-}
-
-type OperatorConfig = {
-    name: OperatorName;
-    precedence: number;
-    associativity: 'left' | 'right';
-};
-function operatorConfig(operatorSymbol: string): OperatorConfig | undefined {
-    switch (operatorSymbol) {
-        case '+':
-            return { name: '+', precedence: 100, associativity: 'left' };
-        case '-':
-            return { name: '-', precedence: 100, associativity: 'left' };
-        case '*':
-            return { name: '*', precedence: 200, associativity: 'left' };
-        case '/':
-            return { name: '/', precedence: 200, associativity: 'left' };
-        case '^':
-            return { name: '^', precedence: 300, associativity: 'right' };
-        case '**':
-            return { name: '**', precedence: 300, associativity: 'right' };
-        default:
-            return undefined;
-    }
-}
-
-function parseOperator(state: ParserState, operatorSymbol: string): ParserState {
-    const config = operatorConfig(operatorSymbol);
-    if (config === undefined) {
-        state.error = 'Unknown operator ' + operatorSymbol;
-        return state;
-    }
-
-    if (operatorSymbol === '-' && state.nextMinus === 'unary') {
-        state.nextMinus = 'binary';
-        state.operators.push({
-            type: 'negation',
-        });
-        return state;
-    }
-
-    state.nextMinus = 'unary';
-    state = consumeOperators(state, operatorSymbol, config.precedence, config.associativity);
-    state.operators.push({
-        type: 'operator',
-        operator: config.name,
-        precedence: config.precedence,
-    });
-    return state;
-}
-
-function consumeOperators(
-    state: ParserState,
-    operatorSymbol: string,
-    precedence: number,
-    associativity: string,
-): ParserState {
-    let stackTop = peek(state.operators);
-    while (
-        (stackTop?.type === 'operator' &&
-            (stackTop.precedence > precedence || (stackTop.precedence === precedence && associativity === 'left'))) ||
-        stackTop?.type === 'negation'
-    ) {
-        if (stackTop.type === 'negation') {
-            state.operators.pop();
-            const expression = state.operands.pop();
-            if (expression === undefined) {
-                state.error = 'Not enough arguments for unary -';
-                return state;
-            }
-            state.operands.push({
-                type: 'negation',
+function parseAssignment(tokens: Token[]): Result<AST> {
+    const variableName = tokens.at(0);
+    if (variableName?.type === 'identifier' && tokens.at(1)?.type === 'assignment') {
+        return parseRecursive(new TokenStream(tokens.slice(2)), 0).map(
+            (expression) => ({
+                type: 'assignment',
+                variableName: variableName.value,
                 expression,
-            });
-            stackTop = peek(state.operators);
+            })
+        );
+    }
+    return makeError('Not an assignment');
+}
+
+function parseRecursive(tokens: TokenStream, minimumBindingPower: number): Result<AST> {
+    const leftResult = parseLeft(tokens);
+    if (leftResult.isErr) {
+        return leftResult;
+    }
+    let lhs = leftResult.value;
+
+    while (true) {
+        const peekedToken = tokens.peek();
+        if (peekedToken === undefined) {
+            break;
+        }
+
+        if (peekedToken.type === 'rparen') {
+            break;
+        }
+
+        const binaryOperator = parseBinaryOperator(peekedToken);
+        if (binaryOperator.isOk) {
+            if (binaryOperator.value.leftBindingPower < minimumBindingPower) {
+                break;
+            }
+
+            tokens.next();
+            const rhs = parseRecursive(tokens, binaryOperator.value.rightBindingPower);
+            if (rhs.isOk) {
+                lhs = { type: 'operator', operator: binaryOperator.value.operator, lhs, rhs: rhs.value };
+            }
             continue;
         }
-        state.operators.pop();
-        const rhs = state.operands.pop();
-        const lhs = state.operands.pop();
-        if (lhs === undefined || rhs === undefined) {
-            state.error = 'Not enough arguments for ' + operatorSymbol;
-            return state;
+
+        const unit = parseUnit(peekedToken);
+        if (unit.isOk) {
+            tokens.next();
+            lhs = { type: 'conversion', unitName: peekedToken.value, expression: lhs };
+            continue;
         }
-        state.operands.push({
-            type: 'operator',
-            operator: stackTop.operator,
-            lhs,
-            rhs,
-        });
-        stackTop = peek(state.operators);
-    }
-    return state;
-}
 
-function parseLeftParen(state: ParserState): ParserState {
-    state.nextMinus = 'unary';
-    state.operators.push({ type: 'lparen' });
-    return state;
-}
-
-function parseRightParen(state: ParserState): ParserState {
-    state.nextMinus = 'binary';
-    state = consumeOperators(state, ')', 0, 'left');
-
-    const stackTop = state.operators.pop();
-    if (stackTop?.type !== 'lparen') {
-        state.error = 'Unbalanced left parens';
-        return state;
-    }
-
-    return state;
-}
-
-function parseUnit(state: ParserState, unit: string): ParserState {
-    state.nextMinus = 'binary';
-    state = consumeOperators(state, unit, 500, 'left');
-
-    const expression = state.operands.pop();
-    if (expression === undefined) {
-        state.error = 'No argument for unit';
-        return state;
-    }
-    state.operands.push({
-        type: 'conversion',
-        unit,
-        expression,
-    });
-    return state;
-}
-
-function parseAssignment(state: ParserState): ParserState {
-    state.nextMinus = 'unary';
-    state.operators.push({
-        type: 'assignment',
-    });
-    return state;
-}
-
-function parseIdentifier(state: ParserState, identifier: string): ParserState {
-    if (isUnit(identifier)) {
-        return parseUnit(state, identifier);
-    }
-
-    if (
-        identifier === 'sum' ||
-        identifier === 'total' ||
-        identifier === 'average' ||
-        identifier === 'avg' ||
-        identifier === 'mean'
-    ) {
-        state.nextMinus = 'binary';
-        state.operands.push({
-            type: 'aggregation',
-            name: identifier,
-        });
-        return state;
-    }
-
-    state.nextMinus = 'binary';
-    state.operands.push({
-        type: 'variable',
-        name: identifier,
-    });
-    return state;
-}
-
-function parseConversion(state: ParserState, name: string): ParserState {
-    const nextToken = state.tokens[state.index + 1];
-    if (nextToken?.type !== 'identifier') {
-        state.error = 'No unit for conversion';
-        return state;
-    }
-    state.index++;
-
-    state = consumeOperators(state, name, 0, 'left');
-
-    const expression = state.operands.pop();
-    if (expression === undefined) {
-        state.error = 'Nothing to convert';
-        return state;
-    }
-    state.operands.push({
-        type: 'conversion',
-        unit: nextToken.value,
-        expression,
-    });
-    return state;
-}
-
-function peek<T>(xs: T[]): T | undefined {
-    return xs[xs.length - 1];
-}
-
-function parseRemainingStack(state: ParserState): Result<AST, Error> {
-    let stackTop = state.operators.pop();
-    while (stackTop !== undefined) {
-        if (stackTop.type === 'lparen') {
-            state.error = 'Unbalanced parens';
-            break;
-        } else if (stackTop.type === 'negation') {
-            const expression = state.operands.pop();
-            if (expression === undefined) {
-                state.error = 'Not enough arguments for negation';
+        const conversionOperator = parseConversionOperator(peekedToken);
+        if (conversionOperator.isOk) {
+            if (conversionOperator.value.bindingPower < minimumBindingPower) {
                 break;
             }
-            state.operands.push({
-                type: 'negation',
-                expression,
-            });
-            stackTop = state.operators.pop();
-        } else if (stackTop.type === 'assignment') {
-            const expression = state.operands.pop();
-            if (expression === undefined) {
-                state.error = 'No value for assignment';
-                break;
+
+            tokens.next();
+            const unitName = tokens.next();
+            if (unitName !== undefined) {
+                lhs = { type: 'conversion', unitName: unitName.value, expression: lhs };
             }
-            const variableNode = state.operands.pop();
-            if (variableNode?.type !== 'variable') {
-                state.error = 'No name for assignment, instead ' + variableNode?.type;
-                break;
-            }
-            state.operands.push({
-                type: 'assignment',
-                variableName: variableNode.name,
-                expression,
-            });
-            stackTop = state.operators.pop();
-        } else if (stackTop.type === 'operator') {
-            const rhs = state.operands.pop();
-            const lhs = state.operands.pop();
-            if (lhs === undefined || rhs === undefined) {
-                state.error = 'Not enough arguments for ' + stackTop.operator;
-                break;
-            }
-            state.operands.push({
-                type: 'operator',
-                operator: stackTop.operator,
-                lhs,
-                rhs,
-            });
-            stackTop = state.operators.pop();
-        } else {
-            assertNever(stackTop);
+            continue;
         }
+
+        return makeError('Unhandled token ' + JSON.stringify(peekedToken));
     }
 
-    if (state.error !== null) {
-        return Result.err(new Error(state.error));
+    return Result.ok(lhs);
+}
+
+function parseLeft(tokens: TokenStream): Result<AST> {
+    const token = tokens.next();
+    if (token === undefined) {
+        return makeError('LHS EOF');
     }
 
-    const result = state.operands.pop();
-    if (result === undefined) {
-        return Result.err(new Error('No operands left'));
+    if (token.type === 'literal') {
+        return Result.ok({ type: 'literal', value: token.value });
     }
 
-    return Result.ok(result);
+    if (token.type === 'identifier') {
+        // if (
+        //     tokens.peek()?.type === 'identifier'
+        //     || tokens.peek()?.type === 'literal'
+        //     || tokens.peek()?.type === 'lparen'
+        // ) {
+        //     tokens.next();
+        //     return parseLeft(tokens);
+        // }
+
+        return parseAggregationName(token).unwrap(
+            (name) => Result.ok({ type: 'aggregation', name }),
+            () => Result.ok({ type: 'variable', name: token.value }),
+        );
+    }
+
+    if (token.type === 'lparen') {
+        const result = parseRecursive(tokens, 0);
+        tokens.next();
+        return result;
+    }
+
+    const prefixOperator = parsePrefixOperator(token);
+    if (prefixOperator.isOk) {
+        return parseRecursive(tokens, prefixOperator.value.bindingPower).map((expression) => ({
+            type: 'unary',
+            operator: prefixOperator.value.operator,
+            expression,
+        }));
+    }
+
+    return makeError('Unhandled left token ' + JSON.stringify(token));
+}
+
+function parseBinaryOperator(
+    token: Token,
+): Result<{ operator: BinaryOperator; leftBindingPower: number; rightBindingPower: number }> {
+    const operator = binaryOperators.find((operator) => operator === token.value);
+    if (operator === undefined) {
+        return makeError('Unknown binary operator ' + token.value);
+    }
+
+    const bindingPowers: Record<BinaryOperator, [number, number]> = {
+        '+': [5, 6],
+        '-': [5, 6],
+        '*': [7, 8],
+        '/': [7, 8],
+        '^': [10, 9],
+        '**': [10, 9],
+    };
+
+    return Result.ok({
+        operator: operator,
+        leftBindingPower: bindingPowers[operator][0],
+        rightBindingPower: bindingPowers[operator][1],
+    });
+}
+
+function parsePrefixOperator(token: Token): Result<{ operator: PrefixOperator; bindingPower: number }> {
+    const operator = prefixOperators.find((operator) => operator === token.value);
+    if (operator === undefined) {
+        return makeError('Unknown prefix operator ' + token.value);
+    }
+
+    return Result.ok({ operator, bindingPower: 9 });
+}
+
+function parseAggregationName(token: Token): Result<AggregationName> {
+    const name = aggregationNames.find((name) => name.toLocaleLowerCase() === token.value.toLocaleLowerCase());
+    if (name === undefined) {
+        return makeError('Unknown aggregation ' + token.value);
+    }
+
+    return Result.ok(name);
+}
+
+function parseConversionOperator(token: Token): Result<{operator: ConversionOperator, bindingPower: number}> {
+    const operator = conversionOperators.find((operator) => operator.toLocaleLowerCase() === token.value.toLocaleLowerCase());
+    if (operator === undefined) {
+        return makeError('Unknown conversion ' + token.value);
+    }
+
+    return Result.ok({ operator, bindingPower: 4});
+}
+
+function parseUnit(token: Token): Result<string> {
+    return findUnit(token.value).map((unit) => unit.name);
+}
+
+function makeError<ValueType>(message: string): Result<ValueType> {
+    return Result.err(new Error(message));
+}
+
+class TokenStream {
+    private readonly tokens: Token[];
+    private position: number;
+
+    public constructor(tokens: Token[]) {
+        this.tokens = tokens;
+        this.position = 0;
+    }
+
+    public next(): Token | undefined {
+        return this.tokens.at(this.position++);
+    }
+
+    public peek(): Token | undefined {
+        return this.tokens.at(this.position);
+    }
 }
