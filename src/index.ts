@@ -1,9 +1,11 @@
 import { EditorState } from '@codemirror/state';
-import { Decoration, EditorView, MatchDecorator, ViewPlugin } from '@codemirror/view';
-import { history } from '@codemirror/commands';
+import { Decoration, DecorationSet, EditorView, keymap, ViewPlugin } from '@codemirror/view';
+import { history, redo, undo } from '@codemirror/commands';
 import { Base64 } from 'js-base64';
 import { execute } from './execute';
 import { helpInput } from './help';
+import { lex } from './lex';
+import { findUnit } from './Unit';
 
 const inputEl = document.getElementById('input') as HTMLTextAreaElement;
 const outputEl = document.getElementById('output') as HTMLTextAreaElement;
@@ -13,18 +15,42 @@ const separatorEl = document.getElementById('separator') as HTMLDivElement;
 // Editor
 //
 
-const numMark = Decoration.mark({ class: 'num' });
-const numMDecorator = new MatchDecorator({
-    regexp: /\d+/g,
-    decoration: () => numMark,
-});
+const marks = {
+    literal: Decoration.mark({ class: 'notaza-literal' }),
+    operator: Decoration.mark({ class: 'notaza-operator' }),
+    unit: Decoration.mark({ class: 'notaza-unit' }),
+    identifier: Decoration.mark({ class: 'notaza-identifier' }),
+};
+function makeDecorations(input: string): DecorationSet {
+    const lines = input.split('\n');
+    let offset = 0;
+    const decorations = [];
+    for (const line of lines) {
+        const tokens = lex(line);
+        if (tokens.isOk) {
+            for (const token of tokens.value) {
+                if (token.type === 'literal') {
+                    decorations.push(marks.literal.range(offset + token.from, offset + token.to));
+                } else if (token.type === 'operator' || token.type === 'lparen' || token.type === 'rparen') {
+                    decorations.push(marks.operator.range(offset + token.from, offset + token.to));
+                } else if (token.type === 'identifier') {
+                    if (findUnit(token.value).isOk) {
+                        decorations.push(marks.unit.range(offset + token.from, offset + token.to));
+                    } else {
+                        decorations.push(marks.identifier.range(offset + token.from, offset + token.to));
+                    }
+                }
+            }
+        }
+        offset = offset + line.length + 1;
+    }
+    return Decoration.set(decorations);
+}
 const highlighting = ViewPlugin.define(
     (view) => ({
-        decorations: numMDecorator.createDeco(view),
+        decorations: makeDecorations(view.state.doc.toString()),
         update(update) {
-            console.log(update.state.doc.toString());
-            // this.decorations = Decoration.set([numMark.range(0, 10)]);
-            this.decorations = numMDecorator.updateDeco(update, this.decorations);
+            this.decorations = makeDecorations(update.state.doc.toString());
         },
     }),
     {
@@ -32,30 +58,23 @@ const highlighting = ViewPlugin.define(
     },
 );
 
-// const notazaStyle = HighlightStyle.define([
-//     { tag: tags.lineComment, color: '#1e293b' },
-//     { tag: tags.variableName, color: 'rgb(16 185 129)' },
-//     { tag: tags.number, color: '#3a3daa' },
-//     { tag: tags.operator, color: '#c544d4' },
-//     { tag: tags.operatorKeyword, color: '#f8af41' },
-//     { tag: tags.typeName, color: 'rgb(59 130 246)' },
-//     { tag: tags.paren, color: '#c544d4' },
-// ]);
-
 const editor = new EditorView({
     parent: document.getElementById('input') as HTMLDivElement,
     state: EditorState.create({
         extensions: [
             history(),
+            keymap.of([
+                { key: 'Mod-z', run: undo, preventDefault: true },
+                { key: 'Mod-y', mac: 'Mod-Shift-z', run: redo, preventDefault: true },
+                { key: 'Ctrl-Shift-z', run: redo, preventDefault: true },
+            ]),
             highlighting,
-            // syntaxHighlighting(notazaStyle),
-            // new LanguageSupport(notazaLanguage),
             EditorView.updateListener.of((update) => {
                 if (update.docChanged) {
                     const input = update.state.doc.toString();
                     window.location.hash = Base64.encode(input);
                     outputEl.innerHTML = execute(input)
-                        .map((line) => `<span>${line}</span>`)
+                        .map((line) => `<span>${line === '' ? '&nbsp;' : line}</span>`)
                         .join('');
                 }
             }),

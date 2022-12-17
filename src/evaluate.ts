@@ -14,7 +14,9 @@ export function evaluate(environment: Environment, ast: AST): Result<Value, Erro
                 operation(ast.operator, lhs, rhs),
             );
         case 'unary':
-            return evaluate(environment, ast.expression).chain((value) => ast.operator === '-' ? value.negated() : Result.ok(value));
+            return evaluate(environment, ast.expression).chain((value) =>
+                ast.operator === '-' ? value.negated() : Result.ok(value),
+            );
         case 'assignment':
             return evaluate(environment, ast.expression).map((value) => {
                 environment.setVariable(ast.variableName, value);
@@ -35,11 +37,7 @@ export function evaluate(environment: Environment, ast: AST): Result<Value, Erro
     }
 }
 
-function operation(
-    name: Extract<AST, { type: 'operator' }>['operator'],
-    lhs: Value,
-    rhs: Value,
-): Result<Value, Error> {
+function operation(name: Extract<AST, { type: 'operator' }>['operator'], lhs: Value, rhs: Value): Result<Value, Error> {
     switch (name) {
         case '+':
             return lhs.plus(rhs);

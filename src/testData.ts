@@ -210,10 +210,7 @@ export const testData: TestDataItem[] = [
     },
     {
         input: 'total',
-        inputEnvironment: new Environment(new Map(), [
-            Result.ok(new Value(2)),
-            Result.ok(new Value(3)),
-        ]),
+        inputEnvironment: new Environment(new Map(), [Result.ok(new Value(2)), Result.ok(new Value(3))]),
         tokens: [token('identifier', 'total')],
         ast: ast.aggregation('total'),
         result: '5',
@@ -229,18 +226,16 @@ export const testData: TestDataItem[] = [
             token('identifier', 'to'),
             token('identifier', 'mm'),
         ],
-        ast: ast.conversion('mm', ast.operator('+', ast.conversion('cm', ast.literal('1')), ast.conversion('in', ast.literal('2')))),
-        result: '60.8 mm'
+        ast: ast.conversion(
+            'mm',
+            ast.operator('+', ast.conversion('cm', ast.literal('1')), ast.conversion('in', ast.literal('2'))),
+        ),
+        result: '60.8 mm',
     },
     {
         input: '1 kg -> g',
-        tokens: [
-            token('literal', '1'),
-            token('identifier', 'kg'),
-            token('conversion', '->'),
-            token('identifier', 'g'),
-        ],
+        tokens: [token('literal', '1'), token('identifier', 'kg'), token('conversion', '->'), token('identifier', 'g')],
         ast: ast.conversion('g', ast.conversion('kg', ast.literal('1'))),
-        result: '1 000 g'
-    }
+        result: '1 000 g',
+    },
 ];

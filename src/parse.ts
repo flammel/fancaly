@@ -56,6 +56,7 @@ export const ast = {
     },
 };
 
+// https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html
 export function parse(tokens: Token[]): Result<AST> {
     if (tokens.length === 0) {
         return Result.ok({ type: 'empty' });
@@ -76,13 +77,11 @@ export function parse(tokens: Token[]): Result<AST> {
 function parseAssignment(tokens: Token[]): Result<AST> {
     const variableName = tokens.at(0);
     if (variableName?.type === 'identifier' && tokens.at(1)?.type === 'assignment') {
-        return parseRecursive(new TokenStream(tokens.slice(2)), 0).map(
-            (expression) => ({
-                type: 'assignment',
-                variableName: variableName.value,
-                expression,
-            })
-        );
+        return parseRecursive(new TokenStream(tokens.slice(2)), 0).map((expression) => ({
+            type: 'assignment',
+            variableName: variableName.value,
+            expression,
+        }));
     }
     return makeError('Not an assignment');
 }
@@ -94,7 +93,7 @@ function parseRecursive(tokens: TokenStream, minimumBindingPower: number): Resul
     }
     let lhs = leftResult.value;
 
-    while (true) {
+    for (;;) {
         const peekedToken = tokens.peek();
         if (peekedToken === undefined) {
             break;
@@ -139,7 +138,7 @@ function parseRecursive(tokens: TokenStream, minimumBindingPower: number): Resul
             continue;
         }
 
-        return makeError('Unhandled token ' + JSON.stringify(peekedToken));
+        return makeError('Unhandled right token ' + JSON.stringify(peekedToken));
     }
 
     return Result.ok(lhs);
@@ -156,15 +155,6 @@ function parseLeft(tokens: TokenStream): Result<AST> {
     }
 
     if (token.type === 'identifier') {
-        // if (
-        //     tokens.peek()?.type === 'identifier'
-        //     || tokens.peek()?.type === 'literal'
-        //     || tokens.peek()?.type === 'lparen'
-        // ) {
-        //     tokens.next();
-        //     return parseLeft(tokens);
-        // }
-
         return parseAggregationName(token).unwrap(
             (name) => Result.ok({ type: 'aggregation', name }),
             () => Result.ok({ type: 'variable', name: token.value }),
@@ -231,13 +221,15 @@ function parseAggregationName(token: Token): Result<AggregationName> {
     return Result.ok(name);
 }
 
-function parseConversionOperator(token: Token): Result<{operator: ConversionOperator, bindingPower: number}> {
-    const operator = conversionOperators.find((operator) => operator.toLocaleLowerCase() === token.value.toLocaleLowerCase());
+function parseConversionOperator(token: Token): Result<{ operator: ConversionOperator; bindingPower: number }> {
+    const operator = conversionOperators.find(
+        (operator) => operator.toLocaleLowerCase() === token.value.toLocaleLowerCase(),
+    );
     if (operator === undefined) {
         return makeError('Unknown conversion ' + token.value);
     }
 
-    return Result.ok({ operator, bindingPower: 4});
+    return Result.ok({ operator, bindingPower: 4 });
 }
 
 function parseUnit(token: Token): Result<string> {

@@ -35,10 +35,6 @@ export const units: Unit[] = [
     { name: 'USD', group: 'currency', multiplier: 1, synonyms: ['$'] },
 ];
 
-export function isUnit(name: string): boolean {
-    return findUnit(name).isOk;
-}
-
 export function findUnit(name: string): Result<Unit, Error> {
     const unit = units.find(
         (unit) => unit.name.toLowerCase() === name.toLowerCase() || unit.synonyms?.includes(name.toLowerCase()),
