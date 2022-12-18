@@ -114,19 +114,38 @@ export class Value {
     }
 
     public static sum(values: Value[]): Result<Value, Error> {
-        let result = undefined;
-        for (const value of values) {
-            if (result === undefined) {
-                result = Result.ok(value);
-            } else {
-                result = result.chain((prev) => prev.plus(value));
-            }
-        }
-        return result === undefined ? Result.err(new Error('No values')) : result;
+        const unit = values.find((value) => value.unit !== undefined)?.unit;
+        const converted = unit === undefined ? Result.ok(values) : Value.convertAll(values, unit);
+        return converted.map((values) => new Value(BigNumber.sum(...values.map((value) => value.bignum)), unit));
     }
 
     public static average(values: Value[]): Result<Value, Error> {
         return Value.sum(values).chain((value) => value.dividedBy(new Value(values.length)));
+    }
+
+    public static minimum(values: Value[]): Result<Value, Error> {
+        const unit = values.find((value) => value.unit !== undefined)?.unit;
+        const converted = unit === undefined ? Result.ok(values) : Value.convertAll(values, unit);
+        return converted.map((values) => new Value(BigNumber.minimum(...values.map((value) => value.bignum)), unit));
+    }
+
+    public static maximum(values: Value[]): Result<Value, Error> {
+        const unit = values.find((value) => value.unit !== undefined)?.unit;
+        const converted = unit === undefined ? Result.ok(values) : Value.convertAll(values, unit);
+        return converted.map((values) => new Value(BigNumber.maximum(...values.map((value) => value.bignum)), unit));
+    }
+
+    public static convertAll(values: Value[], unit: Unit): Result<Value[], Error> {
+        const converted = [];
+        for (const value of values) {
+            const convertedValue = value.convertTo(unit);
+            if (convertedValue.isOk) {
+                converted.push(convertedValue.value);
+            } else {
+                return Result.err(convertedValue.error);
+            }
+        }
+        return Result.ok(converted);
     }
 
     public static fromString(value: string, unit?: Unit): Result<Value, Error> {

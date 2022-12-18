@@ -2,6 +2,7 @@ import { Result } from '@badrap/result';
 import { Environment } from './Environment';
 import { Token } from './lex';
 import { ast, AST } from './parse';
+import { units } from './Unit';
 import { Value } from './Value';
 
 type TokenWithoutPosition = Omit<Token, 'from' | 'to'>;
@@ -214,6 +215,26 @@ export const testData: TestDataItem[] = [
         tokens: [token('identifier', 'total')],
         ast: ast.aggregation('total'),
         result: '5',
+    },
+    {
+        input: 'min',
+        inputEnvironment: new Environment(new Map(), [
+            Result.ok(
+                new Value(
+                    100,
+                    units.find((u) => u.name === 'mm'),
+                ),
+            ),
+            Result.ok(
+                new Value(
+                    1,
+                    units.find((u) => u.name === 'm'),
+                ),
+            ),
+        ]),
+        tokens: [token('identifier', 'min')],
+        ast: ast.aggregation('min'),
+        result: '100 mm',
     },
     {
         input: '1 cm + 2 in to mm',

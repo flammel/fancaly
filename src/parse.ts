@@ -2,7 +2,7 @@ import { Result } from '@badrap/result';
 import { Token } from './lex';
 import { findUnit } from './Unit';
 
-const aggregationNames = ['sum', 'total', 'average', 'avg', 'mean'] as const;
+const aggregationNames = ['sum', 'total', 'average', 'avg', 'mean', 'min', 'max', 'minimum', 'maximum'] as const;
 type AggregationName = typeof aggregationNames[number];
 
 const binaryOperators = ['+', '-', '*', '/', '^', '**'] as const;

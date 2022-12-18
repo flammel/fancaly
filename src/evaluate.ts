@@ -68,6 +68,12 @@ function aggregation(
         case 'average':
         case 'mean':
             return Value.average(getAggregationValues(environment));
+        case 'min':
+        case 'minimum':
+            return Value.minimum(getAggregationValues(environment));
+        case 'max':
+        case 'maximum':
+            return Value.maximum(getAggregationValues(environment));
         default:
             assertNever(name);
     }
