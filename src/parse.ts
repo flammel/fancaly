@@ -30,6 +30,9 @@ type PrefixOperator = typeof prefixOperators[number];
 const conversionOperators = ['->', 'to', 'in'] as const;
 type ConversionOperator = typeof conversionOperators[number];
 
+type HighlightTokenType = 'operator' | 'function' | 'variable' | 'literal' | 'unit';
+export type HighlightToken = { type: HighlightTokenType; from: number; to: number };
+
 export type AST =
     | { type: 'operator'; operator: BinaryOperator; lhs: AST; rhs: AST }
     | { type: 'unary'; operator: PrefixOperator; expression: AST }
@@ -77,27 +80,34 @@ export const ast = {
 };
 
 // https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html
-export function parse(tokens: Token[]): Result<AST> {
+export function parse(tokens: Token[]): Result<{ ast: AST; highlightTokens: HighlightToken[] }> {
     if (tokens.length === 0) {
-        return Result.ok({ type: 'empty' });
+        return Result.ok({ ast: ast.empty(), highlightTokens: [] });
     }
 
     if (tokens.at(0)?.type === 'comment') {
-        return Result.ok({ type: 'empty' });
+        return Result.ok({ ast: ast.empty(), highlightTokens: [] });
     }
 
-    const assignment = parseAssignment(tokens);
+    const tokenStream = new TokenStream(tokens);
+
+    const assignment = parseAssignment(tokenStream);
     if (assignment.isOk) {
-        return assignment;
+        return Result.ok({
+            ast: assignment.value,
+            highlightTokens: tokenStream.highlightTokens,
+        });
     }
 
-    return parseRecursive(new TokenStream(tokens), 0);
+    return parseRecursive(tokenStream, 0).map((ast) => ({ ast, highlightTokens: tokenStream.highlightTokens }));
 }
 
-function parseAssignment(tokens: Token[]): Result<AST> {
-    const variableName = tokens.at(0);
-    if (variableName?.type === 'identifier' && tokens.at(1)?.type === 'assignment') {
-        return parseRecursive(new TokenStream(tokens.slice(2)), 0).map((expression) => ({
+function parseAssignment(tokens: TokenStream): Result<AST> {
+    const variableName = tokens.peek();
+    if (variableName?.type === 'identifier' && tokens.peek(1)?.type === 'assignment') {
+        tokens.next('variable');
+        tokens.next('operator');
+        return parseRecursive(tokens, 0).map((expression) => ({
             type: 'assignment',
             variableName: variableName.value,
             expression,
@@ -129,7 +139,7 @@ function parseRecursive(tokens: TokenStream, minimumBindingPower: number): Resul
                 break;
             }
 
-            tokens.next();
+            tokens.next('operator');
             const rhs = parseRecursive(tokens, binaryOperator.value.rightBindingPower);
             if (rhs.isOk) {
                 lhs = { type: 'operator', operator: binaryOperator.value.operator, lhs, rhs: rhs.value };
@@ -137,24 +147,27 @@ function parseRecursive(tokens: TokenStream, minimumBindingPower: number): Resul
             continue;
         }
 
-        const unit = parseUnit(peekedToken);
-        if (unit.isOk) {
-            tokens.next();
-            lhs = { type: 'conversion', unitName: peekedToken.value, expression: lhs };
-            continue;
-        }
-
         const conversionOperator = parseConversionOperator(peekedToken);
         if (conversionOperator.isOk) {
-            if (conversionOperator.value.bindingPower < minimumBindingPower) {
-                break;
-            }
-
-            tokens.next();
-            const unitName = tokens.next();
+            const unitName = tokens.peek(1);
             if (unitName !== undefined) {
-                lhs = { type: 'conversion', unitName: unitName.value, expression: lhs };
+                const unit = parseUnit(unitName);
+                if (unit.isOk) {
+                    if (conversionOperator.value.bindingPower < minimumBindingPower) {
+                        break;
+                    }
+                    tokens.next('operator');
+                    tokens.next('unit');
+                    lhs = { type: 'conversion', unitName: unit.value, expression: lhs };
+                    continue;
+                }
             }
+        }
+
+        const unit = parseUnit(peekedToken);
+        if (unit.isOk) {
+            tokens.next('unit');
+            lhs = { type: 'conversion', unitName: unit.value, expression: lhs };
             continue;
         }
 
@@ -165,28 +178,32 @@ function parseRecursive(tokens: TokenStream, minimumBindingPower: number): Resul
 }
 
 function parseLeft(tokens: TokenStream): Result<AST> {
-    const token = tokens.next();
+    const token = tokens.peek();
     if (token === undefined) {
         return makeError('LHS EOF');
     }
 
     if (token.type === 'literal') {
+        tokens.next('literal');
         return Result.ok({ type: 'literal', value: token.value });
     }
 
     if (token.type === 'lparen') {
+        tokens.next('operator');
         const result = parseRecursive(tokens, 0);
-        tokens.next();
+        tokens.next('operator');
         return result;
     }
 
     const aggregation = parseAggregationName(token);
     if (aggregation.isOk) {
+        tokens.next('operator');
         return Result.ok({ type: 'aggregation', name: aggregation.value });
     }
 
     const functionName = parseFunctionName(token);
     if (functionName.isOk) {
+        tokens.next('function');
         return parseRecursive(tokens, functionName.value.bindingPower).map((expression) => ({
             type: 'function',
             name: functionName.value.name,
@@ -196,6 +213,7 @@ function parseLeft(tokens: TokenStream): Result<AST> {
 
     const prefixOperator = parsePrefixOperator(token);
     if (prefixOperator.isOk) {
+        tokens.next('operator');
         return parseRecursive(tokens, prefixOperator.value.bindingPower).map((expression) => ({
             type: 'unary',
             operator: prefixOperator.value.operator,
@@ -204,6 +222,7 @@ function parseLeft(tokens: TokenStream): Result<AST> {
     }
 
     if (token.type === 'identifier') {
+        tokens.next('variable');
         return Result.ok({ type: 'variable', name: token.value });
     }
 
@@ -283,17 +302,32 @@ function makeError<ValueType>(message: string): Result<ValueType> {
 class TokenStream {
     private readonly tokens: Token[];
     private position: number;
+    public highlightTokens: HighlightToken[] = [];
 
     public constructor(tokens: Token[]) {
         this.tokens = tokens;
         this.position = 0;
     }
 
-    public next(): Token | undefined {
+    public next(useCurrentAs?: HighlightTokenType): Token | undefined {
+        if (useCurrentAs !== undefined) {
+            this.use(useCurrentAs);
+        }
         return this.tokens.at(this.position++);
     }
 
-    public peek(): Token | undefined {
-        return this.tokens.at(this.position);
+    public peek(offset = 0): Token | undefined {
+        return this.tokens.at(this.position + offset);
+    }
+
+    private use(type: HighlightTokenType): void {
+        const token = this.peek();
+        if (token !== undefined) {
+            this.highlightTokens.push({
+                type,
+                from: token.from,
+                to: token.to,
+            });
+        }
     }
 }

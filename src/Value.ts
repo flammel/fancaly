@@ -114,6 +114,9 @@ export class Value {
     }
 
     public static sum(values: Value[]): Result<Value, Error> {
+        if (values.length === 0) {
+            return Result.err(new Error('No values'));
+        }
         const unit = values.find((value) => value.unit !== undefined)?.unit;
         const converted = unit === undefined ? Result.ok(values) : Value.convertAll(values, unit);
         return converted.map((values) => new Value(BigNumber.sum(...values.map((value) => value.bignum)), unit));
@@ -124,12 +127,18 @@ export class Value {
     }
 
     public static minimum(values: Value[]): Result<Value, Error> {
+        if (values.length === 0) {
+            return Result.err(new Error('No values'));
+        }
         const unit = values.find((value) => value.unit !== undefined)?.unit;
         const converted = unit === undefined ? Result.ok(values) : Value.convertAll(values, unit);
         return converted.map((values) => new Value(BigNumber.minimum(...values.map((value) => value.bignum)), unit));
     }
 
     public static maximum(values: Value[]): Result<Value, Error> {
+        if (values.length === 0) {
+            return Result.err(new Error('No values'));
+        }
         const unit = values.find((value) => value.unit !== undefined)?.unit;
         const converted = unit === undefined ? Result.ok(values) : Value.convertAll(values, unit);
         return converted.map((values) => new Value(BigNumber.maximum(...values.map((value) => value.bignum)), unit));

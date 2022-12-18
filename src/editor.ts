@@ -1,14 +1,8 @@
 import { EditorState, StateField } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view';
 import { history, redo, undo } from '@codemirror/commands';
-import { lex, Token } from './lex';
-import { findUnit } from './Unit';
-import { Diagnostic, linter } from '@codemirror/lint';
-import { parse } from './parse';
-import { Environment } from './Environment';
-import { evaluate } from './evaluate';
-import { Result } from '@badrap/result';
-import { Value } from './Value';
+import { linter } from '@codemirror/lint';
+import { execute, ExecutionResult } from './execute';
 
 const notazaHighlighter = ViewPlugin.fromClass(
     class {
@@ -16,7 +10,8 @@ const notazaHighlighter = ViewPlugin.fromClass(
             literal: Decoration.mark({ class: 'notaza-literal' }),
             operator: Decoration.mark({ class: 'notaza-operator' }),
             unit: Decoration.mark({ class: 'notaza-unit' }),
-            identifier: Decoration.mark({ class: 'notaza-identifier' }),
+            variable: Decoration.mark({ class: 'notaza-variable' }),
+            function: Decoration.mark({ class: 'notaza-function' }),
             comment: Decoration.mark({ class: 'notaza-comment' }),
         };
         public decorations: DecorationSet;
@@ -26,24 +21,19 @@ const notazaHighlighter = ViewPlugin.fromClass(
         public update(update: ViewUpdate) {
             this.decorations = this.makeDecorations(update.state.field(notazaState).highlightingTokens);
         }
-        private makeDecorations(tokens: Token[]): DecorationSet {
+        private makeDecorations(tokens: ExecutionResult['highlightingTokens']): DecorationSet {
             return Decoration.set(
                 tokens.map((token) => {
                     if (token.type === 'literal') {
                         return this.marks.literal.range(token.from, token.to);
-                    } else if (
-                        token.type === 'operator' ||
-                        token.type === 'lparen' ||
-                        token.type === 'rparen' ||
-                        token.type === 'conversion'
-                    ) {
+                    } else if (token.type === 'operator') {
                         return this.marks.operator.range(token.from, token.to);
-                    } else if (token.type === 'identifier') {
-                        if (findUnit(token.value).isOk) {
-                            return this.marks.unit.range(token.from, token.to);
-                        } else {
-                            return this.marks.identifier.range(token.from, token.to);
-                        }
+                    } else if (token.type === 'unit') {
+                        return this.marks.unit.range(token.from, token.to);
+                    } else if (token.type === 'variable') {
+                        return this.marks.variable.range(token.from, token.to);
+                    } else if (token.type === 'function') {
+                        return this.marks.function.range(token.from, token.to);
                     }
                     return this.marks.comment.range(token.from, token.to);
                 }),
@@ -55,63 +45,23 @@ const notazaHighlighter = ViewPlugin.fromClass(
     },
 );
 
-const notazaLinter = linter((view) => view.state.field(notazaState).errors);
+const notazaLinter = linter((view) =>
+    view.state.field(notazaState).errors.map((error) => ({ ...error, severity: 'error' })),
+);
 
-type NotazaState = Readonly<{
-    input: string;
-    output: string[];
-    highlightingTokens: Token[];
-    errors: Diagnostic[];
-    results: Array<Result<Value, Error>>;
-}>;
-
-const notazaState = StateField.define<NotazaState>({
+const notazaState = StateField.define<ExecutionResult>({
     create(state) {
-        const input = state.doc.toString();
-        const environment = new Environment();
-        const highlightingTokens: Token[] = [];
-        const errors: Diagnostic[] = [];
-        let offset = 0;
-
-        for (const line of input.split('\n')) {
-            const tokens = lex(line);
-            if (tokens.isOk) {
-                highlightingTokens.push(
-                    ...tokens.value.map((token) => ({ ...token, from: token.from + offset, to: token.to + offset })),
-                );
-            }
-
-            const result = tokens.chain(parse).chain((ast) => evaluate(environment, ast));
-            environment.addResult(result);
-            if (result.isErr && line.trim().length > 0) {
-                errors.push({
-                    message: result.error.message,
-                    from: offset,
-                    to: offset + line.length,
-                    severity: 'error',
-                });
-            }
-
-            offset = offset + line.length + 1;
-        }
-
-        return {
-            input,
-            output: environment.getOutput(),
-            highlightingTokens,
-            errors,
-            results: environment.getResults(),
-        };
+        return execute(state.doc.toString());
     },
     update(value, transaction) {
         if (transaction.docChanged) {
-            return this.create(transaction.state);
+            return execute(transaction.state.doc.toString());
         }
         return value;
     },
 });
 
-export function makeEditor(onUpdate: (value: NotazaState) => unknown): EditorView {
+export function makeEditor(onUpdate: (value: ExecutionResult) => unknown): EditorView {
     return new EditorView({
         parent: document.getElementById('input') as HTMLDivElement,
         state: EditorState.create({

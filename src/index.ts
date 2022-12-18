@@ -12,9 +12,7 @@ const separatorEl = document.getElementById('separator') as HTMLDivElement;
 
 const editor = makeEditor((notazaState) => {
     window.location.hash = Base64.encode(notazaState.input);
-    outputEl.innerHTML = notazaState.output
-        .map((line) => `<span>${line === '' ? '&nbsp;' : line}</span>`)
-        .join('');
+    outputEl.innerHTML = notazaState.output.map((line) => `<span>${line === '' ? '&nbsp;' : line}</span>`).join('');
 });
 const hash = window.location.hash.substring(1);
 const initialDoc = hash === 'help' ? helpInput : hash === '' ? '' : Base64.decode(hash);

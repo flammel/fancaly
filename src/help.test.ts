@@ -3,5 +3,5 @@ import { execute } from './execute';
 import { helpInput, helpOutput } from './help';
 
 test('help', () => {
-    expect(execute(helpInput).join('\n')).toBe(helpOutput);
+    expect(execute(helpInput).output.join('\n')).toBe(helpOutput);
 });
