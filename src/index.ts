@@ -1,5 +1,4 @@
 import { Base64 } from 'js-base64';
-import { execute } from './execute';
 import { helpInput } from './help';
 import { makeEditor } from './editor';
 
@@ -11,9 +10,9 @@ const separatorEl = document.getElementById('separator') as HTMLDivElement;
 // Editor
 //
 
-const editor = makeEditor((input) => {
-    window.location.hash = Base64.encode(input);
-    outputEl.innerHTML = execute(input)
+const editor = makeEditor((notazaState) => {
+    window.location.hash = Base64.encode(notazaState.input);
+    outputEl.innerHTML = notazaState.output
         .map((line) => `<span>${line === '' ? '&nbsp;' : line}</span>`)
         .join('');
 });
