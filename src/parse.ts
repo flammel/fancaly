@@ -5,6 +5,22 @@ import { findUnit } from './Unit';
 const aggregationNames = ['sum', 'total', 'average', 'avg', 'mean', 'min', 'max', 'minimum', 'maximum'] as const;
 type AggregationName = typeof aggregationNames[number];
 
+const functionNames = [
+    'cos',
+    'sin',
+    'tan',
+    'arccos',
+    'arcsin',
+    'arctan',
+    'ln',
+    'lg',
+    'ld',
+    'abs',
+    'sqrt',
+    'round',
+] as const;
+type FunctionName = typeof functionNames[number];
+
 const binaryOperators = ['+', '-', '*', '/', '^', '**'] as const;
 type BinaryOperator = typeof binaryOperators[number];
 
@@ -20,6 +36,7 @@ export type AST =
     | { type: 'assignment'; variableName: string; expression: AST }
     | { type: 'literal'; value: string }
     | { type: 'variable'; name: string }
+    | { type: 'function'; name: FunctionName; argument: AST }
     | { type: 'aggregation'; name: AggregationName }
     | { type: 'conversion'; unitName: string; expression: AST }
     | { type: 'empty' };
@@ -44,6 +61,9 @@ export const ast = {
     },
     variable(name: string): AST {
         return { type: 'variable', name };
+    },
+    function(name: FunctionName, argument: AST): AST {
+        return { type: 'function', name, argument };
     },
     aggregation(name: Extract<AST, { type: 'aggregation' }>['name']): AST {
         return { type: 'aggregation', name };
@@ -154,17 +174,24 @@ function parseLeft(tokens: TokenStream): Result<AST> {
         return Result.ok({ type: 'literal', value: token.value });
     }
 
-    if (token.type === 'identifier') {
-        return parseAggregationName(token).unwrap(
-            (name) => Result.ok({ type: 'aggregation', name }),
-            () => Result.ok({ type: 'variable', name: token.value }),
-        );
-    }
-
     if (token.type === 'lparen') {
         const result = parseRecursive(tokens, 0);
         tokens.next();
         return result;
+    }
+
+    const aggregation = parseAggregationName(token);
+    if (aggregation.isOk) {
+        return Result.ok({ type: 'aggregation', name: aggregation.value });
+    }
+
+    const functionName = parseFunctionName(token);
+    if (functionName.isOk) {
+        return parseRecursive(tokens, functionName.value.bindingPower).map((expression) => ({
+            type: 'function',
+            name: functionName.value.name,
+            argument: expression,
+        }));
     }
 
     const prefixOperator = parsePrefixOperator(token);
@@ -174,6 +201,10 @@ function parseLeft(tokens: TokenStream): Result<AST> {
             operator: prefixOperator.value.operator,
             expression,
         }));
+    }
+
+    if (token.type === 'identifier') {
+        return Result.ok({ type: 'variable', name: token.value });
     }
 
     return makeError('Unhandled left token ' + JSON.stringify(token));
@@ -219,6 +250,15 @@ function parseAggregationName(token: Token): Result<AggregationName> {
     }
 
     return Result.ok(name);
+}
+
+function parseFunctionName(token: Token): Result<{ name: FunctionName; bindingPower: number }> {
+    const name = functionNames.find((name) => name.toLocaleLowerCase() === token.value.toLocaleLowerCase());
+    if (name === undefined) {
+        return makeError('Unknown function ' + token.value);
+    }
+
+    return Result.ok({ name, bindingPower: 11 });
 }
 
 function parseConversionOperator(token: Token): Result<{ operator: ConversionOperator; bindingPower: number }> {

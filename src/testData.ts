@@ -265,4 +265,20 @@ export const testData: TestDataItem[] = [
         ast: ast.operator('^', ast.literal('4'), ast.literal('0.5')),
         result: '2',
     },
+    {
+        input: 'sin(1) + cos(2)',
+        tokens: [
+            token('identifier', 'sin'),
+            token('lparen', '('),
+            token('literal', '1'),
+            token('rparen', ')'),
+            token('operator', '+'),
+            token('identifier', 'cos'),
+            token('lparen', '('),
+            token('literal', '2'),
+            token('rparen', ')'),
+        ],
+        ast: ast.operator('+', ast.function('sin', ast.literal('1')), ast.function('cos', ast.literal('2'))),
+        result: '0.4253 2414 8261',
+    },
 ];

@@ -30,6 +30,8 @@ export function evaluate(environment: Environment, ast: AST): Result<Value, Erro
             return Result.all([findUnit(ast.unitName), evaluate(environment, ast.expression)]).chain(([unit, value]) =>
                 value.convertTo(unit),
             );
+        case 'function':
+            return evaluate(environment, ast.argument).chain((value) => applyFunction(ast.name, value));
         case 'empty':
             return Result.err(new Error(''));
         default:
@@ -74,6 +76,37 @@ function aggregation(
         case 'max':
         case 'maximum':
             return Value.maximum(getAggregationValues(environment));
+        default:
+            assertNever(name);
+    }
+}
+
+function applyFunction(name: Extract<AST, { type: 'function' }>['name'], argument: Value): Result<Value, Error> {
+    switch (name) {
+        case 'cos':
+            return Value.cos(argument);
+        case 'sin':
+            return Value.sin(argument);
+        case 'tan':
+            return Value.tan(argument);
+        case 'arccos':
+            return Value.arccos(argument);
+        case 'arcsin':
+            return Value.arcsin(argument);
+        case 'arctan':
+            return Value.arctan(argument);
+        case 'ln':
+            return Value.ln(argument);
+        case 'lg':
+            return Value.lg(argument);
+        case 'ld':
+            return Value.ld(argument);
+        case 'abs':
+            return Value.abs(argument);
+        case 'sqrt':
+            return Value.sqrt(argument);
+        case 'round':
+            return Value.round(argument);
         default:
             assertNever(name);
     }

@@ -153,4 +153,40 @@ export class Value {
             new Value(new BigNumber(value.replace(',', '.').replaceAll('_', '').replaceAll(' ', '')), unit),
         );
     }
+    public static cos(value: Value): Result<Value, Error> {
+        return Result.ok(new Value(Math.cos(value.bignum.toNumber()), value.unit));
+    }
+    public static sin(value: Value): Result<Value, Error> {
+        return Result.ok(new Value(Math.sin(value.bignum.toNumber()), value.unit));
+    }
+    public static tan(value: Value): Result<Value, Error> {
+        return Result.ok(new Value(Math.tan(value.bignum.toNumber()), value.unit));
+    }
+    public static arccos(value: Value): Result<Value, Error> {
+        return Result.ok(new Value(Math.acos(value.bignum.toNumber()), value.unit));
+    }
+    public static arcsin(value: Value): Result<Value, Error> {
+        return Result.ok(new Value(Math.asin(value.bignum.toNumber()), value.unit));
+    }
+    public static arctan(value: Value): Result<Value, Error> {
+        return Result.ok(new Value(Math.atan(value.bignum.toNumber()), value.unit));
+    }
+    public static ln(value: Value): Result<Value, Error> {
+        return Result.ok(new Value(Math.log(value.bignum.toNumber()), value.unit));
+    }
+    public static lg(value: Value): Result<Value, Error> {
+        return Result.ok(new Value(Math.log10(value.bignum.toNumber()), value.unit));
+    }
+    public static ld(value: Value): Result<Value, Error> {
+        return Result.ok(new Value(Math.log2(value.bignum.toNumber()), value.unit));
+    }
+    public static abs(value: Value): Result<Value, Error> {
+        return Result.ok(new Value(Math.abs(value.bignum.toNumber()), value.unit));
+    }
+    public static sqrt(value: Value): Result<Value, Error> {
+        return Result.ok(new Value(Math.sqrt(value.bignum.toNumber()), value.unit));
+    }
+    public static round(value: Value): Result<Value, Error> {
+        return Result.ok(new Value(Math.round(value.bignum.toNumber()), value.unit));
+    }
 }
