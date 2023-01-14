@@ -16,6 +16,10 @@ export class Environment {
         return value === undefined ? Result.err(new Error('Undefined variable ' + name)) : Result.ok(value);
     }
 
+    public getVariableNames(): string[] {
+        return [...this.variables.keys()];
+    }
+
     public addResult(result: Result<Value | null, Error>): void {
         this.results.push(result);
     }

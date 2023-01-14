@@ -2,7 +2,7 @@ import { Result } from '@badrap/result';
 import { Token } from './lex';
 import { findUnit } from './Unit';
 
-const aggregationNames = ['sum', 'total', 'average', 'avg', 'mean', 'min', 'max', 'minimum', 'maximum'] as const;
+export const aggregationNames = ['sum', 'total', 'average', 'avg', 'mean', 'min', 'max', 'minimum', 'maximum'] as const;
 type AggregationName = typeof aggregationNames[number];
 
 const functionNames = [
@@ -107,6 +107,9 @@ export function parse(tokens: Token[]): Result<{ line: Line; highlightTokens: Hi
 
     const assignment = parseAssignment(tokenStream);
     if (assignment.isOk) {
+        if (aggregationNames.some((aggregationName) => aggregationName === assignment.value.variableName)) {
+            return makeError('Invalid variable name');
+        }
         return Result.ok({
             line: assignment.value,
             highlightTokens: tokenStream.highlightTokens,
@@ -119,7 +122,7 @@ export function parse(tokens: Token[]): Result<{ line: Line; highlightTokens: Hi
     }));
 }
 
-function parseAssignment(tokens: TokenStream): Result<Line> {
+function parseAssignment(tokens: TokenStream): Result<Extract<Line, { type: 'assignment' }>> {
     const variableName = tokens.peek();
     if (variableName?.type === 'identifier' && tokens.peek(1)?.type === 'assignment') {
         tokens.next('variable');

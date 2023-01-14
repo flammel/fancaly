@@ -2,6 +2,7 @@ import { EditorState, StateField } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view';
 import { history, redo, undo } from '@codemirror/commands';
 import { linter } from '@codemirror/lint';
+import { acceptCompletion, autocompletion, CompletionContext, CompletionResult } from '@codemirror/autocomplete';
 import { execute, ExecutionResult } from './execute';
 
 const notazaHighlighter = ViewPlugin.fromClass(
@@ -61,6 +62,23 @@ const notazaState = StateField.define<ExecutionResult>({
     },
 });
 
+function notazaCompletion(context: CompletionContext): CompletionResult | null {
+    const word = context.matchBefore(/\w*/);
+    if (word?.from === word?.to && !context.explicit) {
+        return null;
+    }
+
+    return {
+        from: word?.from ?? context.pos,
+        options: context.state
+            .field(notazaState)
+            .variableNames.filter((variableName) => variableName.startsWith(word?.text ?? ''))
+            .map((variableName) => ({
+                label: variableName,
+            })),
+    };
+}
+
 export function makeEditor(onUpdate: (value: ExecutionResult) => unknown): EditorView {
     return new EditorView({
         parent: document.getElementById('input') as HTMLDivElement,
@@ -71,10 +89,14 @@ export function makeEditor(onUpdate: (value: ExecutionResult) => unknown): Edito
                     { key: 'Mod-z', run: undo, preventDefault: true },
                     { key: 'Mod-y', mac: 'Mod-Shift-z', run: redo, preventDefault: true },
                     { key: 'Ctrl-Shift-z', run: redo, preventDefault: true },
+                    { key: 'Tab', run: acceptCompletion },
                 ]),
                 notazaState,
                 notazaHighlighter,
                 notazaLinter,
+                autocompletion({
+                    override: [notazaCompletion],
+                }),
                 EditorView.updateListener.of((update) => {
                     if (update.docChanged) {
                         onUpdate(update.state.field(notazaState));

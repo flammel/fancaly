@@ -8,22 +8,19 @@ export type ExecutionResult = {
     output: string[];
     highlightingTokens: HighlightToken[];
     errors: { message: string; from: number; to: number }[];
+    variableNames: string[];
 };
 
 export function execute(input: string): ExecutionResult {
     const environment = new Environment();
-    const result: ExecutionResult = {
-        input,
-        output: [],
-        highlightingTokens: [],
-        errors: [],
-    };
+    const errors = [];
+    const highlightingTokens = [];
     let offset = 0;
 
     for (const line of input.split('\n')) {
         const parseResult = lex(line).chain(parse);
         if (parseResult.isOk) {
-            result.highlightingTokens.push(
+            highlightingTokens.push(
                 ...parseResult.value.highlightTokens.map((token) => ({
                     ...token,
                     from: token.from + offset,
@@ -34,9 +31,8 @@ export function execute(input: string): ExecutionResult {
 
         const lineResult = parseResult.chain((result) => evaluate(environment, result.line));
         environment.addResult(lineResult);
-        result.output.push(lineResult.isOk && lineResult.value !== null ? lineResult.value.toString() : '');
         if (lineResult.isErr) {
-            result.errors.push({
+            errors.push({
                 message: lineResult.error.message,
                 from: offset,
                 to: offset + line.length,
@@ -46,5 +42,13 @@ export function execute(input: string): ExecutionResult {
         offset = offset + line.length + 1;
     }
 
-    return result;
+    return {
+        input,
+        output: environment
+            .getResults()
+            .map((result) => (result.isOk && result.value !== null ? result.value.toString() : '')),
+        highlightingTokens,
+        errors,
+        variableNames: environment.getVariableNames(),
+    };
 }
