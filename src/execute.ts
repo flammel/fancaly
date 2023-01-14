@@ -32,10 +32,10 @@ export function execute(input: string): ExecutionResult {
             );
         }
 
-        const lineResult = parseResult.chain((result) => evaluate(environment, result.ast));
+        const lineResult = parseResult.chain((result) => evaluate(environment, result.line));
         environment.addResult(lineResult);
-        result.output.push(lineResult.isOk ? lineResult.value.toString() : '');
-        if (lineResult.isErr && line.trim().length > 0) {
+        result.output.push(lineResult.isOk && lineResult.value !== null ? lineResult.value.toString() : '');
+        if (lineResult.isErr) {
             result.errors.push({
                 message: lineResult.error.message,
                 from: offset,

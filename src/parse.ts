@@ -33,19 +33,39 @@ type ConversionOperator = typeof conversionOperators[number];
 type HighlightTokenType = 'operator' | 'function' | 'variable' | 'literal' | 'unit';
 export type HighlightToken = { type: HighlightTokenType; from: number; to: number };
 
-export type AST =
-    | { type: 'operator'; operator: BinaryOperator; lhs: AST; rhs: AST }
-    | { type: 'unary'; operator: PrefixOperator; expression: AST }
-    | { type: 'assignment'; variableName: string; expression: AST }
-    | { type: 'literal'; value: string }
-    | { type: 'variable'; name: string }
-    | { type: 'function'; name: FunctionName; argument: AST }
-    | { type: 'aggregation'; name: AggregationName }
-    | { type: 'conversion'; unitName: string; expression: AST }
+export type Line =
+    | { type: 'expression'; expression: Expression }
+    | { type: 'assignment'; variableName: string; expression: Expression }
+    | { type: 'comment' }
     | { type: 'empty' };
 
+export type Expression =
+    | { type: 'operator'; operator: BinaryOperator; lhs: Expression; rhs: Expression }
+    | { type: 'unary'; operator: PrefixOperator; expression: Expression }
+    | { type: 'literal'; value: string }
+    | { type: 'variable'; name: string }
+    | { type: 'function'; name: FunctionName; argument: Expression }
+    | { type: 'aggregation'; name: AggregationName }
+    | { type: 'conversion'; unitName: string; expression: Expression };
+
 export const ast = {
-    operator(operator: Extract<AST, { type: 'operator' }>['operator'], lhs: AST, rhs: AST): AST {
+    expression(expression: Expression): Line {
+        return { type: 'expression', expression };
+    },
+    assignment(variableName: string, expression: Expression): Line {
+        return { type: 'assignment', variableName, expression };
+    },
+    comment(): Line {
+        return { type: 'comment' };
+    },
+    empty(): Line {
+        return { type: 'empty' };
+    },
+    operator(
+        operator: Extract<Expression, { type: 'operator' }>['operator'],
+        lhs: Expression,
+        rhs: Expression,
+    ): Expression {
         return {
             type: 'operator',
             operator,
@@ -53,40 +73,34 @@ export const ast = {
             rhs,
         };
     },
-    unary(operator: Extract<AST, { type: 'unary' }>['operator'], expression: AST): AST {
+    unary(operator: Extract<Expression, { type: 'unary' }>['operator'], expression: Expression): Expression {
         return { type: 'unary', operator, expression };
     },
-    assignment(variableName: string, expression: AST): AST {
-        return { type: 'assignment', variableName, expression };
-    },
-    literal(value: string): AST {
+    literal(value: string): Expression {
         return { type: 'literal', value };
     },
-    variable(name: string): AST {
+    variable(name: string): Expression {
         return { type: 'variable', name };
     },
-    function(name: FunctionName, argument: AST): AST {
+    function(name: FunctionName, argument: Expression): Expression {
         return { type: 'function', name, argument };
     },
-    aggregation(name: Extract<AST, { type: 'aggregation' }>['name']): AST {
+    aggregation(name: Extract<Expression, { type: 'aggregation' }>['name']): Expression {
         return { type: 'aggregation', name };
     },
-    conversion(unitName: string, expression: AST): AST {
+    conversion(unitName: string, expression: Expression): Expression {
         return { type: 'conversion', unitName, expression };
-    },
-    empty(): AST {
-        return { type: 'empty' };
     },
 };
 
 // https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html
-export function parse(tokens: Token[]): Result<{ ast: AST; highlightTokens: HighlightToken[] }> {
+export function parse(tokens: Token[]): Result<{ line: Line; highlightTokens: HighlightToken[] }> {
     if (tokens.length === 0) {
-        return Result.ok({ ast: ast.empty(), highlightTokens: [] });
+        return Result.ok({ line: ast.empty(), highlightTokens: [] });
     }
 
     if (tokens.at(0)?.type === 'comment') {
-        return Result.ok({ ast: ast.empty(), highlightTokens: [] });
+        return Result.ok({ line: ast.comment(), highlightTokens: [] });
     }
 
     const tokenStream = new TokenStream(tokens);
@@ -94,15 +108,18 @@ export function parse(tokens: Token[]): Result<{ ast: AST; highlightTokens: High
     const assignment = parseAssignment(tokenStream);
     if (assignment.isOk) {
         return Result.ok({
-            ast: assignment.value,
+            line: assignment.value,
             highlightTokens: tokenStream.highlightTokens,
         });
     }
 
-    return parseRecursive(tokenStream, 0).map((ast) => ({ ast, highlightTokens: tokenStream.highlightTokens }));
+    return parseRecursive(tokenStream, 0).map((expression) => ({
+        line: ast.expression(expression),
+        highlightTokens: tokenStream.highlightTokens,
+    }));
 }
 
-function parseAssignment(tokens: TokenStream): Result<AST> {
+function parseAssignment(tokens: TokenStream): Result<Line> {
     const variableName = tokens.peek();
     if (variableName?.type === 'identifier' && tokens.peek(1)?.type === 'assignment') {
         tokens.next('variable');
@@ -116,7 +133,7 @@ function parseAssignment(tokens: TokenStream): Result<AST> {
     return makeError('Not an assignment');
 }
 
-function parseRecursive(tokens: TokenStream, minimumBindingPower: number): Result<AST> {
+function parseRecursive(tokens: TokenStream, minimumBindingPower: number): Result<Expression> {
     const leftResult = parseLeft(tokens);
     if (leftResult.isErr) {
         return leftResult;
@@ -177,7 +194,7 @@ function parseRecursive(tokens: TokenStream, minimumBindingPower: number): Resul
     return Result.ok(lhs);
 }
 
-function parseLeft(tokens: TokenStream): Result<AST> {
+function parseLeft(tokens: TokenStream): Result<Expression> {
     const token = tokens.peek();
     if (token === undefined) {
         return makeError('LHS EOF');

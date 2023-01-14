@@ -6,7 +6,9 @@ import { Environment } from './Environment';
 
 test.each(testData)('$input', (item) => {
     const environment = item.inputEnvironment ?? new Environment();
-    expect(evaluate(environment, item.ast).map((x) => x.toString())).toEqual(Result.ok(item.result));
+    expect(evaluate(environment, item.line).map((x) => (x === null ? '' : x.toString()))).toEqual(
+        Result.ok(item.result),
+    );
     if (item.outputEnvironment) {
         expect(environment).toEqual(item.outputEnvironment);
     }
