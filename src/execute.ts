@@ -1,7 +1,6 @@
 import { lex } from './lex';
 import { parse, HighlightToken } from './parse';
-import { evaluate } from './evaluate';
-import { Environment } from './Environment';
+import { ErrorWithPosition, evaluate } from './evaluate';
 
 export type ExecutionResult = {
     input: string;
@@ -11,40 +10,38 @@ export type ExecutionResult = {
 };
 
 export function execute(input: string): ExecutionResult {
-    const environment = new Environment();
-    const result: ExecutionResult = {
+    const program = lex(input).map(parse);
+    const environment = program.map(evaluate);
+    if (program.isOk && environment.isOk) {
+        return {
+            input,
+            output: environment.value
+                .getResults()
+                .map((value) => (value.isOk && value.value !== null ? value.value.toString() : '')),
+            highlightingTokens: program.value.highlightTokens,
+            errors: environment.value
+                .getResults()
+                .map((value) =>
+                    value.isErr && value.error instanceof ErrorWithPosition
+                        ? {
+                              message: value.error.message,
+                              from: value.error.from,
+                              to: value.error.to,
+                          }
+                        : undefined,
+                )
+                .filter(notUndefined),
+        };
+    }
+
+    return {
         input,
         output: [],
         highlightingTokens: [],
         errors: [],
     };
-    let offset = 0;
+}
 
-    for (const line of input.split('\n')) {
-        const parseResult = lex(line).chain(parse);
-        if (parseResult.isOk) {
-            result.highlightingTokens.push(
-                ...parseResult.value.highlightTokens.map((token) => ({
-                    ...token,
-                    from: token.from + offset,
-                    to: token.to + offset,
-                })),
-            );
-        }
-
-        const lineResult = parseResult.chain((result) => evaluate(environment, result.ast));
-        environment.addResult(lineResult);
-        result.output.push(lineResult.isOk ? lineResult.value.toString() : '');
-        if (lineResult.isErr && line.trim().length > 0) {
-            result.errors.push({
-                message: lineResult.error.message,
-                from: offset,
-                to: offset + line.length,
-            });
-        }
-
-        offset = offset + line.length + 1;
-    }
-
-    return result;
+function notUndefined<T>(value: T | undefined): value is T {
+    return value !== undefined;
 }

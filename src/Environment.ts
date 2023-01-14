@@ -4,7 +4,7 @@ import { Value } from './Value';
 export class Environment {
     public constructor(
         private readonly variables: Map<string, Value> = new Map(),
-        private readonly results: Array<Result<Value, Error>> = [],
+        private readonly results: Array<Result<Value | null, Error>> = [],
     ) {}
 
     public setVariable(name: string, value: Value): void {
@@ -16,11 +16,11 @@ export class Environment {
         return value === undefined ? Result.err(new Error('Undefined variable ' + name)) : Result.ok(value);
     }
 
-    public addResult(result: Result<Value, Error>): void {
+    public addResult(result: Result<Value | null, Error>): void {
         this.results.push(result);
     }
 
-    public getResults(): Array<Result<Value, Error>> {
+    public getResults(): Array<Result<Value | null, Error>> {
         return this.results;
     }
 }

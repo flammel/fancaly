@@ -1,4 +1,5 @@
 import { Result } from '@badrap/result';
+import { ErrorWithPosition } from './evaluate';
 import { Token } from './lex';
 import { findUnit } from './Unit';
 
@@ -33,19 +34,39 @@ type ConversionOperator = typeof conversionOperators[number];
 type HighlightTokenType = 'operator' | 'function' | 'variable' | 'literal' | 'unit';
 export type HighlightToken = { type: HighlightTokenType; from: number; to: number };
 
-export type AST =
-    | { type: 'operator'; operator: BinaryOperator; lhs: AST; rhs: AST }
-    | { type: 'unary'; operator: PrefixOperator; expression: AST }
-    | { type: 'assignment'; variableName: string; expression: AST }
+export type Program = { statements: Result<Statement>[]; highlightTokens: HighlightToken[]; };
+export type WithPosition<T> = T & { pos: { from: number; to: number } };
+
+export type Statement = WithPosition<
+    | { type: 'expression'; expression: Expression }
+    | { type: 'assignment'; variableName: string; expression: Expression }
+    | { type: 'comment' }
+    | { type: 'empty' }
+>;
+
+export type Expression =
+    | { type: 'operator'; operator: BinaryOperator; lhs: Expression; rhs: Expression }
+    | { type: 'unary'; operator: PrefixOperator; expression: Expression }
     | { type: 'literal'; value: string }
     | { type: 'variable'; name: string }
-    | { type: 'function'; name: FunctionName; argument: AST }
+    | { type: 'function'; name: FunctionName; argument: Expression }
     | { type: 'aggregation'; name: AggregationName }
-    | { type: 'conversion'; unitName: string; expression: AST }
-    | { type: 'empty' };
+    | { type: 'conversion'; unitName: string; expression: Expression };
 
 export const ast = {
-    operator(operator: Extract<AST, { type: 'operator' }>['operator'], lhs: AST, rhs: AST): AST {
+    expression(expression: Expression, from: number, to: number): Statement {
+        return { type: 'expression', expression, pos: { from, to } };
+    },
+    assignment(variableName: string, expression: Expression, from: number, to: number): Statement {
+        return { type: 'assignment', variableName, expression, pos: { from, to } };
+    },
+    comment(from: number, to: number): Statement {
+        return { type: 'comment', pos: { from, to } };
+    },
+    empty(from: number, to: number): Statement {
+        return { type: 'empty', pos: { from, to } };
+    },
+    operator(operator: BinaryOperator, lhs: Expression, rhs: Expression): Expression {
         return {
             type: 'operator',
             operator,
@@ -53,83 +74,137 @@ export const ast = {
             rhs,
         };
     },
-    unary(operator: Extract<AST, { type: 'unary' }>['operator'], expression: AST): AST {
+    unary(operator: PrefixOperator, expression: Expression): Expression {
         return { type: 'unary', operator, expression };
     },
-    assignment(variableName: string, expression: AST): AST {
-        return { type: 'assignment', variableName, expression };
-    },
-    literal(value: string): AST {
+    literal(value: string): Expression {
         return { type: 'literal', value };
     },
-    variable(name: string): AST {
+    variable(name: string): Expression {
         return { type: 'variable', name };
     },
-    function(name: FunctionName, argument: AST): AST {
+    function(name: FunctionName, argument: Expression): Expression {
         return { type: 'function', name, argument };
     },
-    aggregation(name: Extract<AST, { type: 'aggregation' }>['name']): AST {
+    aggregation(name: AggregationName): Expression {
         return { type: 'aggregation', name };
     },
-    conversion(unitName: string, expression: AST): AST {
+    conversion(unitName: string, expression: Expression): Expression {
         return { type: 'conversion', unitName, expression };
-    },
-    empty(): AST {
-        return { type: 'empty' };
     },
 };
 
 // https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html
-export function parse(tokens: Token[]): Result<{ ast: AST; highlightTokens: HighlightToken[] }> {
-    if (tokens.length === 0) {
-        return Result.ok({ ast: ast.empty(), highlightTokens: [] });
-    }
-
-    if (tokens.at(0)?.type === 'comment') {
-        return Result.ok({ ast: ast.empty(), highlightTokens: [] });
-    }
-
-    const tokenStream = new TokenStream(tokens);
-
-    const assignment = parseAssignment(tokenStream);
-    if (assignment.isOk) {
-        return Result.ok({
-            ast: assignment.value,
-            highlightTokens: tokenStream.highlightTokens,
-        });
-    }
-
-    return parseRecursive(tokenStream, 0).map((ast) => ({ ast, highlightTokens: tokenStream.highlightTokens }));
-}
-
-function parseAssignment(tokens: TokenStream): Result<AST> {
-    const variableName = tokens.peek();
-    if (variableName?.type === 'identifier' && tokens.peek(1)?.type === 'assignment') {
-        tokens.next('variable');
-        tokens.next('operator');
-        return parseRecursive(tokens, 0).map((expression) => ({
-            type: 'assignment',
-            variableName: variableName.value,
-            expression,
-        }));
-    }
-    return makeError('Not an assignment');
-}
-
-function parseRecursive(tokens: TokenStream, minimumBindingPower: number): Result<AST> {
-    const leftResult = parseLeft(tokens);
-    if (leftResult.isErr) {
-        return leftResult;
-    }
-    let lhs = leftResult.value;
+export function parse(tokens: Token[]): Program {
+    const stream = new TokenStream(tokens);
+    const statements: Result<Statement>[] = [];
 
     for (;;) {
-        const peekedToken = tokens.peek();
-        if (peekedToken === undefined) {
+        const token = stream.peek();
+        if (token === undefined) {
             break;
         }
 
-        if (peekedToken.type === 'rparen') {
+        if (token.type === 'newline') {
+            if (stream.peek(1)?.type === 'newline') {
+                statements.push(Result.ok(ast.empty(token.from, token.to)));
+                stream.next();
+            }
+            stream.next();
+            continue;
+        }
+
+        if (token.type === 'comment') {
+            statements.push(Result.ok(ast.comment(token.from, token.to)));
+            stream.next();
+            continue;
+        }
+
+        if (token.type === 'identifier' && stream.peek(1)?.type === 'assignment') {
+            stream.next('variable');
+            stream.next('operator');
+            const expression = parseRecursive(stream, 0);
+            if (expression.isOk) {
+                statements.push(Result.ok(ast.assignment(token.value, expression.value, token.from, stream.pos())));
+            } else {
+                stream.nextUntil((token) => token.type === 'newline');
+                statements.push(Result.err(new ErrorWithPosition(expression.error.message, token.from, stream.pos())));
+            }
+            continue;
+        }
+
+        const expression = parseRecursive(stream, 0);
+        if (expression.isOk) {
+            statements.push(Result.ok(ast.expression(expression.value, token.from, stream.pos())));
+        } else {
+            stream.nextUntil((token) => token.type === 'newline');
+            statements.push(Result.err(new ErrorWithPosition(expression.error.message, token.from, stream.pos())));
+        }
+    }
+
+    return { statements, highlightTokens: stream.highlightTokens };
+}
+
+function parseRecursive(tokens: TokenStream, minimumBindingPower: number): Result<Expression> {
+    return parseLeft(tokens).chain((lhs) => parseRight(tokens, minimumBindingPower, lhs));
+}
+
+function parseLeft(tokens: TokenStream): Result<Expression> {
+    const token = tokens.peek();
+    if (token === undefined) {
+        return makeError('LHS EOF');
+    }
+
+    if (token.type === 'newline') {
+        return makeError('LHS newline');
+    }
+
+    if (token.type === 'literal') {
+        tokens.next('literal');
+        return Result.ok(ast.literal(token.value));
+    }
+
+    if (token.type === 'lparen') {
+        tokens.next('operator');
+        const result = parseRecursive(tokens, 0);
+        tokens.next('operator');
+        return result;
+    }
+
+    const aggregation = parseAggregationName(token);
+    if (aggregation.isOk) {
+        tokens.next('operator');
+        return Result.ok(ast.aggregation(aggregation.value));
+    }
+
+    const functionName = parseFunctionName(token);
+    if (functionName.isOk) {
+        tokens.next('function');
+        return parseRecursive(tokens, functionName.value.bindingPower).map((expression) =>
+            ast.function(functionName.value.name, expression),
+        );
+    }
+
+    const prefixOperator = parsePrefixOperator(token);
+    if (prefixOperator.isOk) {
+        tokens.next('operator');
+        return parseRecursive(tokens, prefixOperator.value.bindingPower).map((expression) =>
+            ast.unary(prefixOperator.value.operator, expression),
+        );
+    }
+
+    if (token.type === 'identifier') {
+        tokens.next('variable');
+        return Result.ok(ast.variable(token.value));
+    }
+
+    return makeError('Unhandled left token ' + JSON.stringify(token));
+}
+
+function parseRight(tokens: TokenStream, minimumBindingPower: number, lhs: Expression): Result<Expression> {
+    for (;;) {
+        const peekedToken = tokens.peek();
+        if (peekedToken === undefined || peekedToken.type === 'rparen' || peekedToken.type === 'newline') {
             break;
         }
 
@@ -142,7 +217,7 @@ function parseRecursive(tokens: TokenStream, minimumBindingPower: number): Resul
             tokens.next('operator');
             const rhs = parseRecursive(tokens, binaryOperator.value.rightBindingPower);
             if (rhs.isOk) {
-                lhs = { type: 'operator', operator: binaryOperator.value.operator, lhs, rhs: rhs.value };
+                lhs = ast.operator(binaryOperator.value.operator, lhs, rhs.value);
             }
             continue;
         }
@@ -158,7 +233,7 @@ function parseRecursive(tokens: TokenStream, minimumBindingPower: number): Resul
                     }
                     tokens.next('operator');
                     tokens.next('unit');
-                    lhs = { type: 'conversion', unitName: unit.value, expression: lhs };
+                    lhs = ast.conversion(unit.value, lhs);
                     continue;
                 }
             }
@@ -167,7 +242,7 @@ function parseRecursive(tokens: TokenStream, minimumBindingPower: number): Resul
         const unit = parseUnit(peekedToken);
         if (unit.isOk) {
             tokens.next('unit');
-            lhs = { type: 'conversion', unitName: unit.value, expression: lhs };
+            lhs = ast.conversion(unit.value, lhs);
             continue;
         }
 
@@ -175,58 +250,6 @@ function parseRecursive(tokens: TokenStream, minimumBindingPower: number): Resul
     }
 
     return Result.ok(lhs);
-}
-
-function parseLeft(tokens: TokenStream): Result<AST> {
-    const token = tokens.peek();
-    if (token === undefined) {
-        return makeError('LHS EOF');
-    }
-
-    if (token.type === 'literal') {
-        tokens.next('literal');
-        return Result.ok({ type: 'literal', value: token.value });
-    }
-
-    if (token.type === 'lparen') {
-        tokens.next('operator');
-        const result = parseRecursive(tokens, 0);
-        tokens.next('operator');
-        return result;
-    }
-
-    const aggregation = parseAggregationName(token);
-    if (aggregation.isOk) {
-        tokens.next('operator');
-        return Result.ok({ type: 'aggregation', name: aggregation.value });
-    }
-
-    const functionName = parseFunctionName(token);
-    if (functionName.isOk) {
-        tokens.next('function');
-        return parseRecursive(tokens, functionName.value.bindingPower).map((expression) => ({
-            type: 'function',
-            name: functionName.value.name,
-            argument: expression,
-        }));
-    }
-
-    const prefixOperator = parsePrefixOperator(token);
-    if (prefixOperator.isOk) {
-        tokens.next('operator');
-        return parseRecursive(tokens, prefixOperator.value.bindingPower).map((expression) => ({
-            type: 'unary',
-            operator: prefixOperator.value.operator,
-            expression,
-        }));
-    }
-
-    if (token.type === 'identifier') {
-        tokens.next('variable');
-        return Result.ok({ type: 'variable', name: token.value });
-    }
-
-    return makeError('Unhandled left token ' + JSON.stringify(token));
 }
 
 function parseBinaryOperator(
@@ -318,6 +341,18 @@ class TokenStream {
 
     public peek(offset = 0): Token | undefined {
         return this.tokens.at(this.position + offset);
+    }
+
+    public pos(): number {
+        return this.peek()?.from ?? this.tokens.at(this.position - 1)?.to ?? 0;
+    }
+
+    public nextUntil(predicate: (token: Token) => boolean): void
+    {
+        let token = this.peek();
+        while (token !== undefined && !predicate(token)) {
+            token = this.next();
+        }
     }
 
     private use(type: HighlightTokenType): void {

@@ -1,45 +1,83 @@
 import { Result } from '@badrap/result';
 import { Environment } from './Environment';
-import { AST } from './parse';
+import { Statement, Program, Expression } from './parse';
 import { assertNever } from './assertNever';
 import { Value } from './Value';
 import { findUnit } from './Unit';
 
-export function evaluate(environment: Environment, ast: AST): Result<Value, Error> {
+export class ErrorWithPosition extends Error {
+    constructor(message: string, public readonly from: number, public readonly to: number) {
+        super(message);
+    }
+}
+
+export function evaluate(program: Program): Environment {
+    const environment = new Environment();
+    program.statements.forEach((statement) => {
+        environment.addResult(
+            statement.isOk ? evaluateStatement(environment, statement.value) : Result.err(statement.error),
+        );
+    });
+    return environment;
+}
+
+function evaluateStatement(environment: Environment, statement: Statement): Result<Value | null, Error> {
+    switch (statement.type) {
+        case 'empty':
+            return Result.ok(null);
+        case 'comment':
+            return Result.ok(null);
+        case 'expression':
+            return evaluateExpression(environment, statement.expression).map(
+                (value) => value,
+                (error) => new ErrorWithPosition(error.message, statement.pos.from, statement.pos.to),
+            );
+        case 'assignment':
+            return evaluateExpression(environment, statement.expression).map(
+                (value) => {
+                    environment.setVariable(statement.variableName, value);
+                    return value;
+                },
+                (error) => new ErrorWithPosition(error.message, statement.pos.from, statement.pos.to),
+            );
+        default:
+            assertNever(statement);
+    }
+}
+
+function evaluateExpression(environment: Environment, ast: Expression): Result<Value, Error> {
     switch (ast.type) {
         case 'literal':
             return Value.fromString(ast.value);
         case 'operator':
-            return Result.all([evaluate(environment, ast.lhs), evaluate(environment, ast.rhs)]).chain(([lhs, rhs]) =>
-                operation(ast.operator, lhs, rhs),
-            );
+            return Result.all([
+                evaluateExpression(environment, ast.lhs),
+                evaluateExpression(environment, ast.rhs),
+            ]).chain(([lhs, rhs]) => operation(ast.operator, lhs, rhs));
         case 'unary':
-            return evaluate(environment, ast.expression).chain((value) =>
+            return evaluateExpression(environment, ast.expression).chain((value) =>
                 ast.operator === '-' ? value.negated() : Result.ok(value),
             );
-        case 'assignment':
-            return evaluate(environment, ast.expression).map((value) => {
-                environment.setVariable(ast.variableName, value);
-                return value;
-            });
         case 'aggregation':
             return aggregation(environment, ast.name);
         case 'variable':
             return environment.getVariable(ast.name);
         case 'conversion':
-            return Result.all([findUnit(ast.unitName), evaluate(environment, ast.expression)]).chain(([unit, value]) =>
-                value.convertTo(unit),
+            return Result.all([findUnit(ast.unitName), evaluateExpression(environment, ast.expression)]).chain(
+                ([unit, value]) => value.convertTo(unit),
             );
         case 'function':
-            return evaluate(environment, ast.argument).chain((value) => applyFunction(ast.name, value));
-        case 'empty':
-            return Result.err(new Error(''));
+            return evaluateExpression(environment, ast.argument).chain((value) => applyFunction(ast.name, value));
         default:
             assertNever(ast);
     }
 }
 
-function operation(name: Extract<AST, { type: 'operator' }>['operator'], lhs: Value, rhs: Value): Result<Value, Error> {
+function operation(
+    name: Extract<Expression, { type: 'operator' }>['operator'],
+    lhs: Value,
+    rhs: Value,
+): Result<Value, Error> {
     switch (name) {
         case '+':
             return lhs.plus(rhs);
@@ -60,7 +98,7 @@ function operation(name: Extract<AST, { type: 'operator' }>['operator'], lhs: Va
 
 function aggregation(
     environment: Environment,
-    name: Extract<AST, { type: 'aggregation' }>['name'],
+    name: Extract<Expression, { type: 'aggregation' }>['name'],
 ): Result<Value, Error> {
     switch (name) {
         case 'sum':
@@ -81,7 +119,7 @@ function aggregation(
     }
 }
 
-function applyFunction(name: Extract<AST, { type: 'function' }>['name'], argument: Value): Result<Value, Error> {
+function applyFunction(name: Extract<Expression, { type: 'function' }>['name'], argument: Value): Result<Value, Error> {
     switch (name) {
         case 'cos':
             return Value.cos(argument);
@@ -115,7 +153,7 @@ function applyFunction(name: Extract<AST, { type: 'function' }>['name'], argumen
 function getAggregationValues(environment: Environment): Value[] {
     let values: Value[] = [];
     for (const result of environment.getResults()) {
-        if (result.isErr) {
+        if (result.isErr || result.value === null) {
             values = [];
         } else {
             values.push(result.value);

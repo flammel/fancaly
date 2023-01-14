@@ -1,13 +1,23 @@
 import { Result } from '@badrap/result';
 
-type TokenType = 'literal' | 'comment' | 'lparen' | 'rparen' | 'assignment' | 'conversion' | 'operator' | 'identifier';
+type TokenType =
+    | 'literal'
+    | 'comment'
+    | 'lparen'
+    | 'rparen'
+    | 'assignment'
+    | 'conversion'
+    | 'operator'
+    | 'identifier'
+    | 'newline';
 export type Token = { type: TokenType; value: string; from: number; to: number };
 
 type Scanner = (input: string, position: number) => Token | null;
 
 const scanners: Scanner[] = [
     regexScanner('literal', /^[0-9]([0-9]|_[0-9]| [0-9])*([,.][0-9]+)?([0-9]|_[0-9]| [0-9])*/g),
-    regexScanner('comment', /^#.*/g),
+    regexScanner('newline', /^(\n|\r|\r\n)/g),
+    regexScanner('comment', /^#([^\n\r])*/g),
     regexScanner('lparen', /^\(/g),
     regexScanner('rparen', /^\)/g),
     regexScanner('assignment', /^(=|:)/g),
