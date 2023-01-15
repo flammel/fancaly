@@ -5,6 +5,7 @@ import { makeEditor } from './editor';
 const inputEl = document.getElementById('input') as HTMLTextAreaElement;
 const outputEl = document.getElementById('output') as HTMLTextAreaElement;
 const separatorEl = document.getElementById('separator') as HTMLDivElement;
+const clearButtonEl = document.getElementById('clear-button') as HTMLButtonElement;
 
 //
 // Editor
@@ -12,12 +13,22 @@ const separatorEl = document.getElementById('separator') as HTMLDivElement;
 
 const editor = makeEditor((notazaState) => {
     window.location.hash = Base64.encode(notazaState.input);
+    window.localStorage.setItem('fancaly-content', notazaState.input);
     outputEl.innerHTML = notazaState.output.map((line) => `<span>${line === '' ? '&nbsp;' : line}</span>`).join('');
 });
 const hash = window.location.hash.substring(1);
-const initialDoc = hash === 'help' ? helpInput : hash === '' ? '' : Base64.decode(hash);
+const stored = window.localStorage.getItem('fancaly-content') ?? '';
+const initialDoc = hash === 'help' ? helpInput : hash === '' ? stored : Base64.decode(hash);
 editor.dispatch({ changes: { from: 0, insert: initialDoc } });
 editor.focus();
+clearButtonEl.addEventListener('click', () => {
+    if (confirm('Are you sure?')) {
+        window.location.hash = '';
+        window.localStorage.setItem('fancaly-content', '');
+        editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: '' } });
+        editor.focus();
+    }
+});
 
 //
 // Separator drag and drop (resizing input element)

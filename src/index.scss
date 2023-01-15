@@ -29,8 +29,23 @@ body {
 #header {
     padding-bottom: 0.5rem;
     display: flex;
-    justify-content: space-between;
     font-size: 0.75rem;
+    gap: 1rem;
+
+    :first-child {
+        margin-right: auto;
+    }
+
+    button {
+        margin: 0;
+        background: transparent;
+        padding: 0;
+        border: none;
+        font-size: 0.75rem;
+        font-family: monospace;
+        cursor: pointer;
+        text-decoration: underline;
+    }
 }
 
 #footer {
