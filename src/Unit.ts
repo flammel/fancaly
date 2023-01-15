@@ -25,9 +25,9 @@ export const units: Unit[] = [
     { name: 'ns', group: 'time', multiplier: 0.000000001 },
     { name: 'ms', group: 'time', multiplier: 0.001 },
     { name: 's', group: 'time', multiplier: 1, synonyms: ['sec'] },
-    { name: 'min', group: 'time', multiplier: 60 },
+    { name: 'min', group: 'time', multiplier: 60, synonyms: ['minute', 'minutes'] },
     { name: 'h', group: 'time', multiplier: 3600, synonyms: ['hour', 'hours'] },
-    { name: 'd', group: 'time', multiplier: 25200, synonyms: ['day', 'days'] },
+    { name: 'd', group: 'time', multiplier: 86400, synonyms: ['day', 'days'] },
 
     { name: '%', group: 'percent', multiplier: 1 },
 
