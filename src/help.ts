@@ -52,6 +52,21 @@ avg | 5.5
 100 + 20 % | 120
 100 * 20 % | 20
 100 - 20 % | 80
+
+# Functions
+
+# To round values, use round():
+
+round(pi) | 3
+round(10/3; 2) | 3.33
+
+# Other available functions are:
+# - sin, cos, tan
+# - arcsin, arccos, arctan
+# - abs
+# - ln, ld, lg
+# - sqrt
+
 `.trim();
 
 export const helpInput = helpData
