@@ -99,45 +99,31 @@ export const ast = {
 
 // https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html
 export function parse(tokens: Token[]): Result<{ line: Line; highlightTokens: HighlightToken[] }> {
-    if (tokens.length === 0) {
+    const tokenStream = new TokenStream(tokens);
+    const firstToken = tokenStream.peek();
+
+    if (firstToken === undefined) {
         return Result.ok({ line: ast.empty(), highlightTokens: [] });
     }
 
-    if (tokens.at(0)?.type === 'comment') {
+    if (firstToken.type === 'comment') {
         return Result.ok({ line: ast.comment(), highlightTokens: [] });
     }
 
-    const tokenStream = new TokenStream(tokens);
-
-    const assignment = parseAssignment(tokenStream);
-    if (assignment.isOk) {
-        if (aggregationNames.some((aggregationName) => aggregationName === assignment.value.variableName)) {
-            return makeError('Invalid variable name');
-        }
-        return Result.ok({
-            line: assignment.value,
-            highlightTokens: tokenStream.highlightTokens,
-        });
+    const isAssignment = firstToken.type === 'identifier' && tokenStream.peek(1)?.type === 'assignment';
+    const variableName = isAssignment ? firstToken.value : undefined;
+    if (aggregationNames.some((aggregationName) => aggregationName === variableName)) {
+        return makeError('Invalid variable name');
+    }
+    if (variableName !== undefined) {
+        tokenStream.next('variable');
+        tokenStream.next('operator');
     }
 
     return parseRecursive(tokenStream, 0).map((expression) => ({
-        line: ast.expression(expression),
+        line: variableName ? ast.assignment(variableName, expression) : ast.expression(expression),
         highlightTokens: tokenStream.highlightTokens,
     }));
-}
-
-function parseAssignment(tokens: TokenStream): Result<Extract<Line, { type: 'assignment' }>> {
-    const variableName = tokens.peek();
-    if (variableName?.type === 'identifier' && tokens.peek(1)?.type === 'assignment') {
-        tokens.next('variable');
-        tokens.next('operator');
-        return parseRecursive(tokens, 0).map((expression) => ({
-            type: 'assignment',
-            variableName: variableName.value,
-            expression,
-        }));
-    }
-    return makeError('Not an assignment');
 }
 
 function parseRecursive(tokens: TokenStream, minimumBindingPower: number): Result<Expression> {
