@@ -46,7 +46,8 @@ export type Expression =
     | { type: 'variable'; name: string }
     | { type: 'function'; name: FunctionName; argument: Expression }
     | { type: 'aggregation'; name: AggregationName }
-    | { type: 'conversion'; unitName: string; expression: Expression };
+    | { type: 'conversion'; unitName: string; expression: Expression }
+    | { type: 'cons'; expression: Expression; next: Expression | null };
 
 export const ast = {
     expression(expression: Expression): Line {
@@ -90,6 +91,9 @@ export const ast = {
     },
     conversion(unitName: string, expression: Expression): Expression {
         return { type: 'conversion', unitName, expression };
+    },
+    cons(expression: Expression, next: Expression | null): Expression {
+        return { type: 'cons', expression, next };
     },
 };
 
@@ -151,6 +155,19 @@ function parseRecursive(tokens: TokenStream, minimumBindingPower: number): Resul
 
         if (peekedToken.type === 'rparen') {
             break;
+        }
+
+        if (peekedToken.type === 'semicolon') {
+            if (2 < minimumBindingPower) {
+                break;
+            }
+
+            tokens.next('operator');
+            const rhs = parseRecursive(tokens, 1);
+            if (rhs.isOk) {
+                lhs = { type: 'cons', expression: lhs, next: rhs.value };
+            }
+            continue;
         }
 
         const binaryOperator = parseBinaryOperator(peekedToken);

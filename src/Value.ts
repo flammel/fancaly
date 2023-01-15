@@ -214,7 +214,7 @@ export class Value {
     public static sqrt(value: Value): Result<Value, Error> {
         return Result.ok(new Value(Math.sqrt(value.bignum.toNumber()), value.unit));
     }
-    public static round(value: Value): Result<Value, Error> {
-        return Result.ok(new Value(Math.round(value.bignum.toNumber()), value.unit));
+    public static round(value: Value, decimalPlaces = 0): Result<Value, Error> {
+        return Result.ok(new Value(value.bignum.decimalPlaces(decimalPlaces), value.unit));
     }
 }

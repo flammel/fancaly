@@ -46,9 +46,9 @@ export function evaluateExpression(environment: Environment, expression: Express
                 evaluateExpression(environment, expression.expression),
             ]).chain(([unit, value]) => value.convertTo(unit));
         case 'function':
-            return evaluateExpression(environment, expression.argument).chain((value) =>
-                applyFunction(expression.name, value),
-            );
+            return evaluateFunction(environment, expression.name, expression.argument);
+        case 'cons':
+            return Result.err(new Error('Standalone cons'));
         default:
             assertNever(expression);
     }
@@ -106,6 +106,21 @@ function aggregation(
         default:
             assertNever(name);
     }
+}
+
+function evaluateFunction(
+    environment: Environment,
+    name: Extract<Expression, { type: 'function' }>['name'],
+    argument: Expression,
+): Result<Value, Error> {
+    if (name === 'round' && argument.type === 'cons' && argument.next !== null) {
+        return Result.all([
+            evaluateExpression(environment, argument.expression),
+            evaluateExpression(environment, argument.next),
+        ]).chain(([value, decimalPlaces]) => Value.round(value, decimalPlaces.bignum.toNumber()));
+    }
+
+    return evaluateExpression(environment, argument).chain((value) => applyFunction(name, value));
 }
 
 function applyFunction(name: Extract<Expression, { type: 'function' }>['name'], argument: Value): Result<Value, Error> {

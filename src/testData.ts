@@ -363,4 +363,17 @@ export const testData: TestDataItem[] = [
         ),
         result: 'true',
     },
+    {
+        input: 'round(1,23456; 3)',
+        tokens: [
+            token('identifier', 'round'),
+            token('lparen', '('),
+            token('literal', '1,23456'),
+            token('semicolon', ';'),
+            token('literal', '3'),
+            token('rparen', ')'),
+        ],
+        line: ast.expression(ast.function('round', ast.cons(ast.literal('1,23456'), ast.literal('3')))),
+        result: '1.235',
+    },
 ];
