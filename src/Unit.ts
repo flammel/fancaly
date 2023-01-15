@@ -2,11 +2,13 @@ import { Result } from '@badrap/result';
 
 export type Unit = {
     name: string;
-    group: 'weight' | 'length' | 'percent' | 'currency' | 'time';
+    group: 'weight' | 'length' | 'percent' | 'currency' | 'time' | 'boolean';
     multiplier: number;
     exponent?: number;
     synonyms?: string[];
 };
+
+export const booleanUnit: Unit = { name: 'bool', group: 'boolean', multiplier: 1, synonyms: ['boolean'] };
 
 export const units: Unit[] = [
     { name: 'mm', group: 'length', multiplier: 1, exponent: 1 },
@@ -30,6 +32,8 @@ export const units: Unit[] = [
     { name: 'd', group: 'time', multiplier: 86400, synonyms: ['day', 'days'] },
 
     { name: '%', group: 'percent', multiplier: 1 },
+
+    booleanUnit,
 
     { name: 'EUR', group: 'currency', multiplier: 1, synonyms: ['€'] },
     { name: 'USD', group: 'currency', multiplier: 1, synonyms: ['$'] },

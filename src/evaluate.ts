@@ -72,6 +72,14 @@ function operation(
             return lhs.pow(rhs);
         case '**':
             return lhs.pow(rhs);
+        case '==':
+            return lhs.equals(rhs);
+        case '===':
+            return lhs.equals(rhs);
+        case '!=':
+            return lhs.notEquals(rhs);
+        case '!==':
+            return lhs.notEquals(rhs);
         default:
             assertNever(name);
     }

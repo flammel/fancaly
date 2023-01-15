@@ -21,7 +21,7 @@ const functionNames = [
 ] as const;
 type FunctionName = typeof functionNames[number];
 
-const binaryOperators = ['+', '-', '*', '/', '^', '**'] as const;
+const binaryOperators = ['+', '-', '*', '/', '^', '**', '==', '===', '!=', '!=='] as const;
 type BinaryOperator = typeof binaryOperators[number];
 
 const prefixOperators = ['+', '-'] as const;
@@ -258,6 +258,10 @@ function parseBinaryOperator(
     }
 
     const bindingPowers: Record<BinaryOperator, [number, number]> = {
+        '==': [1, 2],
+        '===': [1, 2],
+        '!=': [1, 2],
+        '!==': [1, 2],
         '+': [5, 6],
         '-': [5, 6],
         '*': [7, 8],

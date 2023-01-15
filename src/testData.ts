@@ -301,4 +301,66 @@ export const testData: TestDataItem[] = [
         ),
         result: '0.4253 2414 8261',
     },
+    {
+        input: '1m == 100 cm',
+        tokens: [
+            token('literal', '1'),
+            token('identifier', 'm'),
+            token('operator', '=='),
+            token('literal', '100'),
+            token('identifier', 'cm'),
+        ],
+        line: ast.expression(
+            ast.operator('==', ast.conversion('m', ast.literal('1')), ast.conversion('cm', ast.literal('100'))),
+        ),
+        result: 'true',
+    },
+    {
+        input: '1 kg === 1',
+        tokens: [token('literal', '1'), token('identifier', 'kg'), token('operator', '==='), token('literal', '1')],
+        line: ast.expression(ast.operator('===', ast.conversion('kg', ast.literal('1')), ast.literal('1'))),
+        result: 'true',
+    },
+    {
+        input: '1 kg === 1 m',
+        tokens: [
+            token('literal', '1'),
+            token('identifier', 'kg'),
+            token('operator', '==='),
+            token('literal', '1'),
+            token('identifier', 'm'),
+        ],
+        line: ast.expression(
+            ast.operator('===', ast.conversion('kg', ast.literal('1')), ast.conversion('m', ast.literal('1'))),
+        ),
+        result: 'false',
+    },
+    {
+        input: '1 cm == 11 mm',
+        tokens: [
+            token('literal', '1'),
+            token('identifier', 'cm'),
+            token('operator', '=='),
+            token('literal', '11'),
+            token('identifier', 'mm'),
+        ],
+        line: ast.expression(
+            ast.operator('==', ast.conversion('cm', ast.literal('1')), ast.conversion('mm', ast.literal('11'))),
+        ),
+        result: 'false',
+    },
+    {
+        input: '1 cm != 11 mm',
+        tokens: [
+            token('literal', '1'),
+            token('identifier', 'cm'),
+            token('operator', '!='),
+            token('literal', '11'),
+            token('identifier', 'mm'),
+        ],
+        line: ast.expression(
+            ast.operator('!=', ast.conversion('cm', ast.literal('1')), ast.conversion('mm', ast.literal('11'))),
+        ),
+        result: 'true',
+    },
 ];

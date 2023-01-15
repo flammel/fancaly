@@ -1,6 +1,6 @@
 import { Result } from '@badrap/result';
 import BigNumber from 'bignumber.js';
-import { Unit } from './Unit';
+import { booleanUnit, Unit } from './Unit';
 
 export class Value {
     public readonly bignum: BigNumber;
@@ -10,6 +10,13 @@ export class Value {
     }
 
     public toString(): string {
+        if (this.unit?.group === 'boolean') {
+            if (this.bignum.isEqualTo(0)) {
+                return 'false';
+            } else {
+                return 'true';
+            }
+        }
         return this.bignum.decimalPlaces(12).toFormat({
             decimalSeparator: '.',
             groupSeparator: ' ',
@@ -30,7 +37,7 @@ export class Value {
         }
 
         if (this.unit.group !== other.unit.group) {
-            return Result.err(new Error('Cannot addd ' + other.unit.name + ' to ' + this.unit.name));
+            return Result.err(new Error('Cannot add ' + other.unit.name + ' to ' + this.unit.name));
         }
 
         return Result.ok(
@@ -97,6 +104,18 @@ export class Value {
             // BigNumber.js does not support non-integer exponents.
             return Result.ok(new Value(Math.pow(this.bignum.toNumber(), other.bignum.toNumber()), this.unit));
         }
+    }
+
+    public equals(other: Value): Result<Value, Error> {
+        const converted = this.unit ? other.convertTo(this.unit) : Result.ok(other);
+        return converted.chain(
+            (value) => Result.ok(new Value(value.bignum.isEqualTo(this.bignum) ? 1 : 0, booleanUnit)),
+            () => Result.ok(new Value(0, booleanUnit)),
+        );
+    }
+
+    public notEquals(other: Value): Result<Value, Error> {
+        return this.equals(other).map((value) => new Value(value.bignum.isEqualTo(0) ? 1 : 0, booleanUnit));
     }
 
     public negated(): Result<Value, Error> {
