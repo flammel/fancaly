@@ -376,4 +376,26 @@ export const testData: TestDataItem[] = [
         line: ast.expression(ast.function('round', ast.cons(ast.literal('1,23456'), ast.literal('3')))),
         result: '1.235',
     },
+    {
+        input: '1lb to kg',
+        tokens: [
+            token('literal', '1'),
+            token('identifier', 'lb'),
+            token('identifier', 'to'),
+            token('identifier', 'kg'),
+        ],
+        line: ast.expression(ast.conversion('kg', ast.conversion('lb', ast.literal('1')))),
+        result: '0.4535 9237 kg',
+    },
+    {
+        input: '1kg to lbs',
+        tokens: [
+            token('literal', '1'),
+            token('identifier', 'kg'),
+            token('identifier', 'to'),
+            token('identifier', 'lbs'),
+        ],
+        line: ast.expression(ast.conversion('lbs', ast.conversion('kg', ast.literal('1')))),
+        result: '2.2046 2262 1849 lbs',
+    },
 ];
