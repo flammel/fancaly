@@ -32,10 +32,12 @@ function launch(): void {
 }
 
 function setUpEditor(inputEl: HTMLDivElement, outputEl: HTMLDivElement, clearButtonEl: HTMLButtonElement): void {
-    const editor = makeEditor(inputEl, (notazaState) => {
-        window.location.hash = Base64.encode(notazaState.input);
-        window.localStorage.setItem('fancaly-content', notazaState.input);
-        outputEl.innerHTML = notazaState.output.map((line) => `<span>${line === '' ? '&nbsp;' : line}</span>`).join('');
+    const editor = makeEditor(inputEl, (fancalyState) => {
+        window.location.hash = Base64.encode(fancalyState.input);
+        window.localStorage.setItem('fancaly-content', fancalyState.input);
+        outputEl.innerHTML = fancalyState.output
+            .map((line) => `<span>${line === '' ? '&nbsp;' : line}</span>`)
+            .join('');
     });
     const hash = window.location.hash.substring(1);
     const stored = window.localStorage.getItem('fancaly-content') ?? '';

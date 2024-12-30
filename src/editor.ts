@@ -6,22 +6,22 @@ import { acceptCompletion, autocompletion, CompletionContext, CompletionResult }
 import { execute, ExecutionResult } from './execute';
 import { assertNever } from './assertNever';
 
-const notazaHighlighter = ViewPlugin.fromClass(
+const fancalyHighlighter = ViewPlugin.fromClass(
     class {
         private marks = {
-            literal: Decoration.mark({ class: 'notaza-literal' }),
-            operator: Decoration.mark({ class: 'notaza-operator' }),
-            unit: Decoration.mark({ class: 'notaza-unit' }),
-            variable: Decoration.mark({ class: 'notaza-variable' }),
-            function: Decoration.mark({ class: 'notaza-function' }),
-            comment: Decoration.mark({ class: 'notaza-comment' }),
+            literal: Decoration.mark({ class: 'fancaly-literal' }),
+            operator: Decoration.mark({ class: 'fancaly-operator' }),
+            unit: Decoration.mark({ class: 'fancaly-unit' }),
+            variable: Decoration.mark({ class: 'fancaly-variable' }),
+            function: Decoration.mark({ class: 'fancaly-function' }),
+            comment: Decoration.mark({ class: 'fancaly-comment' }),
         };
         public decorations: DecorationSet;
         public constructor(view: EditorView) {
-            this.decorations = this.makeDecorations(view.state.field(notazaState).highlightingTokens);
+            this.decorations = this.makeDecorations(view.state.field(fancalyState).highlightingTokens);
         }
         public update(update: ViewUpdate) {
-            this.decorations = this.makeDecorations(update.state.field(notazaState).highlightingTokens);
+            this.decorations = this.makeDecorations(update.state.field(fancalyState).highlightingTokens);
         }
         private makeDecorations(tokens: ExecutionResult['highlightingTokens']): DecorationSet {
             return Decoration.set(
@@ -49,11 +49,11 @@ const notazaHighlighter = ViewPlugin.fromClass(
     },
 );
 
-const notazaLinter = linter((view) =>
-    view.state.field(notazaState).errors.map((error) => ({ ...error, severity: 'error' })),
+const fancalyLinter = linter((view) =>
+    view.state.field(fancalyState).errors.map((error) => ({ ...error, severity: 'error' })),
 );
 
-const notazaState = StateField.define<ExecutionResult>({
+const fancalyState = StateField.define<ExecutionResult>({
     create(state) {
         return execute(state.doc.toString());
     },
@@ -65,7 +65,7 @@ const notazaState = StateField.define<ExecutionResult>({
     },
 });
 
-function notazaCompletion(context: CompletionContext): CompletionResult | null {
+function fancalyCompletion(context: CompletionContext): CompletionResult | null {
     const word = context.matchBefore(/\w*/);
     if (word?.from === word?.to && !context.explicit) {
         return null;
@@ -74,7 +74,7 @@ function notazaCompletion(context: CompletionContext): CompletionResult | null {
     return {
         from: word?.from ?? context.pos,
         options: context.state
-            .field(notazaState)
+            .field(fancalyState)
             .variableNames.filter((variableName) => variableName.startsWith(word?.text ?? ''))
             .map((variableName) => ({
                 label: variableName,
@@ -95,15 +95,15 @@ export function makeEditor(parentEl: HTMLDivElement, onUpdate: (value: Execution
                     { key: 'Tab', run: acceptCompletion },
                 ]),
                 keymap.of(defaultKeymap),
-                notazaState,
-                notazaHighlighter,
-                notazaLinter,
+                fancalyState,
+                fancalyHighlighter,
+                fancalyLinter,
                 autocompletion({
-                    override: [notazaCompletion],
+                    override: [fancalyCompletion],
                 }),
                 EditorView.updateListener.of((update) => {
                     if (update.docChanged) {
-                        onUpdate(update.state.field(notazaState));
+                        onUpdate(update.state.field(fancalyState));
                     }
                 }),
             ],
