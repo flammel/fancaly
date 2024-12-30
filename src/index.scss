@@ -8,7 +8,6 @@ body {
 }
 
 body {
-    padding: 0.5rem;
     display: flex;
     flex-direction: row;
     justify-content: center;
@@ -21,7 +20,8 @@ body {
 }
 
 #container {
-    flex-basis: 800px;
+    padding: 0.5rem;
+    width: min(100%, 50rem);
     display: flex;
     flex-direction: column;
 }
@@ -84,6 +84,7 @@ body {
     display: flex;
     flex-direction: column;
     white-space: pre;
+    overflow-x: auto;
 }
 
 #separator {
@@ -92,6 +93,7 @@ body {
     cursor: e-resize;
     border-left: 0.5rem solid #fff;
     border-right: 0.5rem solid #fff;
+    flex-shrink: 0;
 }
 
 #input .cm-content,
