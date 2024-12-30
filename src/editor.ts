@@ -1,6 +1,6 @@
 import { EditorState, StateField } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view';
-import { history, redo, undo } from '@codemirror/commands';
+import { defaultKeymap, history, redo, undo } from '@codemirror/commands';
 import { linter } from '@codemirror/lint';
 import { acceptCompletion, autocompletion, CompletionContext, CompletionResult } from '@codemirror/autocomplete';
 import { execute, ExecutionResult } from './execute';
@@ -94,6 +94,7 @@ export function makeEditor(parentEl: HTMLDivElement, onUpdate: (value: Execution
                     { key: 'Ctrl-Shift-z', run: redo, preventDefault: true },
                     { key: 'Tab', run: acceptCompletion },
                 ]),
+                keymap.of(defaultKeymap),
                 notazaState,
                 notazaHighlighter,
                 notazaLinter,
