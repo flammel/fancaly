@@ -10,7 +10,12 @@ type TokenType =
     | 'operator'
     | 'assignment'
     | 'identifier';
-export type Token = { type: TokenType; value: string; from: number; to: number };
+export interface Token {
+    type: TokenType;
+    value: string;
+    from: number;
+    to: number;
+}
 
 type Scanner = (input: string, position: number) => Token | null;
 
@@ -26,7 +31,7 @@ const scanners: Scanner[] = [
     regexScanner('identifier', /^(%|\$|€|[a-zA-Z\u00C0-\u024F_][a-zA-Z0-9\u00C0-\u024F_]*)/g),
 ];
 
-export function lex(input: string): Result<Token[], Error> {
+export function lex(input: string): Result<Token[]> {
     const tokens: Token[] = [];
     let position = 0;
     while (position < input.length) {

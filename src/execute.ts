@@ -3,13 +3,13 @@ import { parse, HighlightToken } from './parse';
 import { evaluate } from './evaluate';
 import { Environment } from './Environment';
 
-export type ExecutionResult = {
+export interface ExecutionResult {
     input: string;
     output: string[];
     highlightingTokens: HighlightToken[];
     errors: { message: string; from: number; to: number }[];
     variableNames: string[];
-};
+}
 
 export function execute(input: string): ExecutionResult {
     const environment = new Environment();

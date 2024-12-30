@@ -5,7 +5,7 @@ import { assertNever } from './assertNever';
 import { Value } from './Value';
 import { findUnit } from './Unit';
 
-export function evaluate(environment: Environment, line: Line): Result<Value | null, Error> {
+export function evaluate(environment: Environment, line: Line): Result<Value | null> {
     switch (line.type) {
         case 'expression':
             return evaluateExpression(environment, line.expression);
@@ -23,7 +23,7 @@ export function evaluate(environment: Environment, line: Line): Result<Value | n
     }
 }
 
-export function evaluateExpression(environment: Environment, expression: Expression): Result<Value, Error> {
+export function evaluateExpression(environment: Environment, expression: Expression): Result<Value> {
     switch (expression.type) {
         case 'literal':
             return Value.fromString(expression.value);
@@ -54,11 +54,7 @@ export function evaluateExpression(environment: Environment, expression: Express
     }
 }
 
-function operation(
-    name: Extract<Expression, { type: 'operator' }>['operator'],
-    lhs: Value,
-    rhs: Value,
-): Result<Value, Error> {
+function operation(name: Extract<Expression, { type: 'operator' }>['operator'], lhs: Value, rhs: Value): Result<Value> {
     switch (name) {
         case '+':
             return lhs.plus(rhs);
@@ -88,7 +84,7 @@ function operation(
 function aggregation(
     environment: Environment,
     name: Extract<Expression, { type: 'aggregation' }>['name'],
-): Result<Value, Error> {
+): Result<Value> {
     switch (name) {
         case 'sum':
         case 'total':
@@ -112,7 +108,7 @@ function evaluateFunction(
     environment: Environment,
     name: Extract<Expression, { type: 'function' }>['name'],
     argument: Expression,
-): Result<Value, Error> {
+): Result<Value> {
     if (name === 'round' && argument.type === 'cons' && argument.next !== null) {
         return Result.all([
             evaluateExpression(environment, argument.expression),
@@ -123,7 +119,7 @@ function evaluateFunction(
     return evaluateExpression(environment, argument).chain((value) => applyFunction(name, value));
 }
 
-function applyFunction(name: Extract<Expression, { type: 'function' }>['name'], argument: Value): Result<Value, Error> {
+function applyFunction(name: Extract<Expression, { type: 'function' }>['name'], argument: Value): Result<Value> {
     switch (name) {
         case 'cos':
             return Value.cos(argument);

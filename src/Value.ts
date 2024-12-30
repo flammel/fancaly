@@ -5,7 +5,10 @@ import { booleanUnit, Unit } from './Unit';
 export class Value {
     public readonly bignum: BigNumber;
 
-    public constructor(bignum: BigNumber.Value, public readonly unit?: Unit) {
+    public constructor(
+        bignum: BigNumber.Value,
+        public readonly unit?: Unit,
+    ) {
         this.bignum = new BigNumber(bignum);
     }
 
@@ -27,7 +30,7 @@ export class Value {
         });
     }
 
-    public plus(other: Value): Result<Value, Error> {
+    public plus(other: Value): Result<Value> {
         if (this.unit?.group !== 'percent' && other.unit?.group === 'percent') {
             return Result.ok(new Value(this.bignum.plus(this.bignum.dividedBy(100).times(other.bignum)), this.unit));
         }
@@ -51,7 +54,7 @@ export class Value {
         );
     }
 
-    public minus(other: Value): Result<Value, Error> {
+    public minus(other: Value): Result<Value> {
         if (this.unit?.group !== 'percent' && other.unit?.group === 'percent') {
             return Result.ok(new Value(this.bignum.minus(this.bignum.dividedBy(100).times(other.bignum)), this.unit));
         }
@@ -75,7 +78,7 @@ export class Value {
         );
     }
 
-    public times(other: Value): Result<Value, Error> {
+    public times(other: Value): Result<Value> {
         if (this.unit?.group !== 'percent' && other.unit?.group === 'percent') {
             return Result.ok(new Value(this.bignum.dividedBy(100).times(other.bignum), this.unit));
         }
@@ -87,14 +90,14 @@ export class Value {
         return Result.ok(new Value(this.bignum.times(other.bignum), this.unit ?? other.unit));
     }
 
-    public dividedBy(other: Value): Result<Value, Error> {
+    public dividedBy(other: Value): Result<Value> {
         if (this.unit !== undefined || other.unit !== undefined) {
             return Result.err(new Error('Cannot divide values with units'));
         }
         return Result.ok(new Value(this.bignum.dividedBy(other.bignum), this.unit));
     }
 
-    public pow(other: Value): Result<Value, Error> {
+    public pow(other: Value): Result<Value> {
         if (this.unit !== undefined || other.unit !== undefined) {
             return Result.err(new Error('Cannot pow values with units'));
         }
@@ -106,7 +109,7 @@ export class Value {
         }
     }
 
-    public equals(other: Value): Result<Value, Error> {
+    public equals(other: Value): Result<Value> {
         const converted = this.unit ? other.convertTo(this.unit) : Result.ok(other);
         return converted.chain(
             (value) => Result.ok(new Value(value.bignum.isEqualTo(this.bignum) ? 1 : 0, booleanUnit)),
@@ -114,15 +117,15 @@ export class Value {
         );
     }
 
-    public notEquals(other: Value): Result<Value, Error> {
+    public notEquals(other: Value): Result<Value> {
         return this.equals(other).map((value) => new Value(value.bignum.isEqualTo(0) ? 1 : 0, booleanUnit));
     }
 
-    public negated(): Result<Value, Error> {
+    public negated(): Result<Value> {
         return Result.ok(new Value(this.bignum.negated(), this.unit));
     }
 
-    public convertTo(unit: Unit): Result<Value, Error> {
+    public convertTo(unit: Unit): Result<Value> {
         if (this.unit === undefined) {
             return Result.ok(new Value(this.bignum, unit));
         }
@@ -132,7 +135,7 @@ export class Value {
         return Result.ok(new Value(this.bignum.times(this.unit.multiplier).dividedBy(unit.multiplier), unit));
     }
 
-    public static sum(values: Value[]): Result<Value, Error> {
+    public static sum(values: Value[]): Result<Value> {
         if (values.length === 0) {
             return Result.err(new Error('No values'));
         }
@@ -141,11 +144,11 @@ export class Value {
         return converted.map((values) => new Value(BigNumber.sum(...values.map((value) => value.bignum)), unit));
     }
 
-    public static average(values: Value[]): Result<Value, Error> {
+    public static average(values: Value[]): Result<Value> {
         return Value.sum(values).chain((value) => value.dividedBy(new Value(values.length)));
     }
 
-    public static minimum(values: Value[]): Result<Value, Error> {
+    public static minimum(values: Value[]): Result<Value> {
         if (values.length === 0) {
             return Result.err(new Error('No values'));
         }
@@ -154,7 +157,7 @@ export class Value {
         return converted.map((values) => new Value(BigNumber.minimum(...values.map((value) => value.bignum)), unit));
     }
 
-    public static maximum(values: Value[]): Result<Value, Error> {
+    public static maximum(values: Value[]): Result<Value> {
         if (values.length === 0) {
             return Result.err(new Error('No values'));
         }
@@ -163,7 +166,7 @@ export class Value {
         return converted.map((values) => new Value(BigNumber.maximum(...values.map((value) => value.bignum)), unit));
     }
 
-    public static convertAll(values: Value[], unit: Unit): Result<Value[], Error> {
+    public static convertAll(values: Value[], unit: Unit): Result<Value[]> {
         const converted = [];
         for (const value of values) {
             const convertedValue = value.convertTo(unit);
@@ -176,45 +179,45 @@ export class Value {
         return Result.ok(converted);
     }
 
-    public static fromString(value: string, unit?: Unit): Result<Value, Error> {
+    public static fromString(value: string, unit?: Unit): Result<Value> {
         return Result.ok(
             new Value(new BigNumber(value.replace(',', '.').replaceAll('_', '').replaceAll(' ', '')), unit),
         );
     }
-    public static cos(value: Value): Result<Value, Error> {
+    public static cos(value: Value): Result<Value> {
         return Result.ok(new Value(Math.cos(value.bignum.toNumber()), value.unit));
     }
-    public static sin(value: Value): Result<Value, Error> {
+    public static sin(value: Value): Result<Value> {
         return Result.ok(new Value(Math.sin(value.bignum.toNumber()), value.unit));
     }
-    public static tan(value: Value): Result<Value, Error> {
+    public static tan(value: Value): Result<Value> {
         return Result.ok(new Value(Math.tan(value.bignum.toNumber()), value.unit));
     }
-    public static arccos(value: Value): Result<Value, Error> {
+    public static arccos(value: Value): Result<Value> {
         return Result.ok(new Value(Math.acos(value.bignum.toNumber()), value.unit));
     }
-    public static arcsin(value: Value): Result<Value, Error> {
+    public static arcsin(value: Value): Result<Value> {
         return Result.ok(new Value(Math.asin(value.bignum.toNumber()), value.unit));
     }
-    public static arctan(value: Value): Result<Value, Error> {
+    public static arctan(value: Value): Result<Value> {
         return Result.ok(new Value(Math.atan(value.bignum.toNumber()), value.unit));
     }
-    public static ln(value: Value): Result<Value, Error> {
+    public static ln(value: Value): Result<Value> {
         return Result.ok(new Value(Math.log(value.bignum.toNumber()), value.unit));
     }
-    public static lg(value: Value): Result<Value, Error> {
+    public static lg(value: Value): Result<Value> {
         return Result.ok(new Value(Math.log10(value.bignum.toNumber()), value.unit));
     }
-    public static ld(value: Value): Result<Value, Error> {
+    public static ld(value: Value): Result<Value> {
         return Result.ok(new Value(Math.log2(value.bignum.toNumber()), value.unit));
     }
-    public static abs(value: Value): Result<Value, Error> {
+    public static abs(value: Value): Result<Value> {
         return Result.ok(new Value(Math.abs(value.bignum.toNumber()), value.unit));
     }
-    public static sqrt(value: Value): Result<Value, Error> {
+    public static sqrt(value: Value): Result<Value> {
         return Result.ok(new Value(Math.sqrt(value.bignum.toNumber()), value.unit));
     }
-    public static round(value: Value, decimalPlaces = 0): Result<Value, Error> {
+    public static round(value: Value, decimalPlaces = 0): Result<Value> {
         return Result.ok(new Value(value.bignum.decimalPlaces(decimalPlaces), value.unit));
     }
 }

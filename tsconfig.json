@@ -6,5 +6,6 @@
         "esModuleInterop": true,
         "lib": ["ES2021", "DOM"],
         "module": "ES2020"
-    }
+    },
+    "exclude": ["src/serviceWorker.ts"]
 }

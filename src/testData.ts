@@ -10,14 +10,14 @@ function token(type: Token['type'], value: string): TokenWithoutPosition {
     return { type, value };
 }
 
-type TestDataItem = {
+interface TestDataItem {
     inputEnvironment?: Environment;
     input: string;
     tokens: TokenWithoutPosition[];
     line: Line;
     result: string;
     outputEnvironment?: Environment;
-};
+}
 
 export const testData: TestDataItem[] = [
     {

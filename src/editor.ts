@@ -4,6 +4,7 @@ import { history, redo, undo } from '@codemirror/commands';
 import { linter } from '@codemirror/lint';
 import { acceptCompletion, autocompletion, CompletionContext, CompletionResult } from '@codemirror/autocomplete';
 import { execute, ExecutionResult } from './execute';
+import { assertNever } from './assertNever';
 
 const notazaHighlighter = ViewPlugin.fromClass(
     class {
@@ -25,18 +26,20 @@ const notazaHighlighter = ViewPlugin.fromClass(
         private makeDecorations(tokens: ExecutionResult['highlightingTokens']): DecorationSet {
             return Decoration.set(
                 tokens.map((token) => {
-                    if (token.type === 'literal') {
-                        return this.marks.literal.range(token.from, token.to);
-                    } else if (token.type === 'operator') {
-                        return this.marks.operator.range(token.from, token.to);
-                    } else if (token.type === 'unit') {
-                        return this.marks.unit.range(token.from, token.to);
-                    } else if (token.type === 'variable') {
-                        return this.marks.variable.range(token.from, token.to);
-                    } else if (token.type === 'function') {
-                        return this.marks.function.range(token.from, token.to);
+                    switch (token.type) {
+                        case 'literal':
+                            return this.marks.literal.range(token.from, token.to);
+                        case 'operator':
+                            return this.marks.operator.range(token.from, token.to);
+                        case 'unit':
+                            return this.marks.unit.range(token.from, token.to);
+                        case 'variable':
+                            return this.marks.variable.range(token.from, token.to);
+                        case 'function':
+                            return this.marks.function.range(token.from, token.to);
+                        default:
+                            assertNever(token.type);
                     }
-                    return this.marks.comment.range(token.from, token.to);
                 }),
             );
         }
@@ -79,9 +82,9 @@ function notazaCompletion(context: CompletionContext): CompletionResult | null {
     };
 }
 
-export function makeEditor(onUpdate: (value: ExecutionResult) => unknown): EditorView {
+export function makeEditor(parentEl: HTMLDivElement, onUpdate: (value: ExecutionResult) => unknown): EditorView {
     return new EditorView({
-        parent: document.getElementById('input') as HTMLDivElement,
+        parent: parentEl,
         state: EditorState.create({
             extensions: [
                 history(),

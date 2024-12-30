@@ -1,12 +1,12 @@
 import { Result } from '@badrap/result';
 
-export type Unit = {
+export interface Unit {
     name: string;
     group: 'weight' | 'length' | 'percent' | 'currency' | 'time' | 'boolean' | 'volume';
     multiplier: number;
     exponent?: number;
     synonyms?: string[];
-};
+}
 
 export const booleanUnit: Unit = { name: 'bool', group: 'boolean', multiplier: 1, synonyms: ['boolean'] };
 
@@ -48,7 +48,7 @@ export const units: Unit[] = [
     { name: 'USD', group: 'currency', multiplier: 1, synonyms: ['$'] },
 ];
 
-export function findUnit(name: string): Result<Unit, Error> {
+export function findUnit(name: string): Result<Unit> {
     const unit = units.find(
         (unit) => unit.name.toLowerCase() === name.toLowerCase() || unit.synonyms?.includes(name.toLowerCase()),
     );

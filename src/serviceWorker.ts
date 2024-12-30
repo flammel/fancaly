@@ -1,6 +1,10 @@
+/// <reference lib="webworker" />
+
 import { manifest, version } from '@parcel/service-worker';
 
 export default null;
+
+declare const self: ServiceWorkerGlobalScope;
 
 self.addEventListener('install', (event) => {
     event.waitUntil(caches.open(version).then((cache) => cache.addAll(manifest)));

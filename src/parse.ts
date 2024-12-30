@@ -4,7 +4,7 @@ import { TokenStream } from './TokenStream';
 import { findUnit } from './Unit';
 
 export const aggregationNames = ['sum', 'total', 'average', 'avg', 'mean', 'min', 'max', 'minimum', 'maximum'] as const;
-type AggregationName = typeof aggregationNames[number];
+type AggregationName = (typeof aggregationNames)[number];
 
 const functionNames = [
     'cos',
@@ -20,18 +20,22 @@ const functionNames = [
     'sqrt',
     'round',
 ] as const;
-type FunctionName = typeof functionNames[number];
+type FunctionName = (typeof functionNames)[number];
 
 const binaryOperators = ['+', '-', '*', '/', '^', '**', '==', '===', '!=', '!=='] as const;
-type BinaryOperator = typeof binaryOperators[number];
+type BinaryOperator = (typeof binaryOperators)[number];
 
 const prefixOperators = ['+', '-'] as const;
-type PrefixOperator = typeof prefixOperators[number];
+type PrefixOperator = (typeof prefixOperators)[number];
 
 const conversionOperators = ['->', 'to', 'in'] as const;
 
 type HighlightTokenType = 'operator' | 'function' | 'variable' | 'literal' | 'unit';
-export type HighlightToken = { type: HighlightTokenType; from: number; to: number };
+export interface HighlightToken {
+    type: HighlightTokenType;
+    from: number;
+    to: number;
+}
 
 export type Line =
     | { type: 'expression'; expression: Expression }
@@ -245,7 +249,10 @@ function parseRight(tokens: TokenStream, minimumBindingPower: number, initialLhs
     return result;
 }
 
-type BindingPower = { left: number; right: number };
+interface BindingPower {
+    left: number;
+    right: number;
+}
 function bindingPower(left: number, right: number): BindingPower {
     return { left, right };
 }
